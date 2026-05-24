@@ -6,24 +6,16 @@ from collections import defaultdict
 from src.config import MAX_SOURCES_PER_CHANNEL
 
 def normalize_channel_name(name: str) -> str:
-    """
-    标准化频道名，用于合并。
-    注意：必须保留数字区分，避免 CCTV-1 和 CCTV-17 混淆。
-    """
-    # 去除清晰度标签（但保留数字和连字符）
+    """标准化频道名，保留数字和连字符，避免 CCTV-1 与 CCTV-17 混淆"""
     name = re.sub(r'\s*(?:1080[pi]|720[pi]|4K|8K|HD|高清|超清|标清|流畅|付费|备\d*)\s*', '', name, flags=re.IGNORECASE)
-    # 去除括号内容
     name = re.sub(r'[（(][^）)]*[）)]', '', name)
-    # 去除多余空格
     name = re.sub(r'\s+', ' ', name).strip()
-    # 将常见变体统一（例如 CCTV1 -> CCTV-1），但保留数字
+    # 将 CCTV1 → CCTV-1 等标准化，但保留完整数字
     name = re.sub(r'(?i)^CCTV\s*(\d+)$', r'CCTV-\1', name)
-    name = re.sub(r'(?i)^CCTV(\d+)\+?$', r'CCTV-\1', name)  # CCTV5+ -> CCTV-5+ 特殊处理
-    # 注意：不要移除连字符和数字间的空格，已经处理
+    name = re.sub(r'(?i)^CCTV(\d+)\+?$', r'CCTV-\1', name)
     return name
 
 def merge_channels_by_name(valid_channels: list) -> list:
-    """按标准化名称合并，每个频道保留最多 MAX_SOURCES_PER_CHANNEL 个源，按优先级排序"""
     groups = defaultdict(list)
     for ch in valid_channels:
         norm_name = normalize_channel_name(ch["name"])
@@ -31,7 +23,6 @@ def merge_channels_by_name(valid_channels: list) -> list:
     
     merged = []
     for norm_name, ch_list in groups.items():
-        # 排序：优先 H.264，然后延迟低
         def sort_key(ch):
             codec = ch.get("video_codec", "")
             codec_priority = 0 if codec == "h264" else 1 if codec == "hevc" else 2
@@ -41,7 +32,7 @@ def merge_channels_by_name(valid_channels: list) -> list:
         top = ch_list[:MAX_SOURCES_PER_CHANNEL]
         primary = top[0]
         merged_ch = {
-            "name": primary["name"],   # 使用原始名称（非标准化）作为显示名
+            "name": primary["name"],
             "urls": [c["url"] for c in top],
             "url": primary["url"],
             "latency": primary["latency"],
@@ -53,5 +44,5 @@ def merge_channels_by_name(valid_channels: list) -> list:
         }
         merged.append(merged_ch)
     
-    print(f"🔄 频道合并完成：{len(valid_channels)} 个源 -> {len(merged)} 个频道（每个频道最多 {MAX_SOURCES_PER_CHANNEL} 个源）")
+    print(f"🔄 频道合并完成：{len(valid_channels)} 个源 -> {len(merged)} 个频道")
     return merged
