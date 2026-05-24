@@ -4,7 +4,6 @@ import sys
 import os
 from pathlib import Path
 
-# 添加项目根目录到 sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.config import (
@@ -16,14 +15,14 @@ from src.fetcher import fetch_all_sources
 from src.parser import parse_and_dedupe
 from src.speed_tester import test_channels_concurrent
 from src.ffmpeg_validator import validate_batch, cleanup as ffmpeg_cleanup
-from src.classifier import classify_all
+from src.classifier import classify_and_filter
 from src.generator import generate_outputs
 from src.merger import merge_channels_by_name
 from src.ip_resolver import get_resolver, matches_region
 from src.blacklist_filter import get_blacklist_filter
 from src.demo_filter import filter_and_order_by_demo
 from src.alias_matcher import get_alias_matcher
-from src.database import get_db_cache, DatabaseCache
+from src.database import get_db_cache
 
 async def init_ip_resolver():
     if not ENABLE_IP_RESOLVE:
@@ -65,90 +64,50 @@ async def main():
         from src.ffmpeg_validator import check_ffprobe
         await check_ffprobe()
 
-    # 初始化数据库缓存
     db = await get_db_cache()
-    # 检查是否需要完整采集
-    need_full = False
-    if DATABASE_ENABLE:
-        stats = await db.get_stats()
-        if stats["enabled"] and stats["raw_sources"] == 0:
-            need_full = True
-        elif await db.is_stale():
-            need_full = True
-        else:
-            print("✅ 缓存数据有效，跳过完整采集")
-    else:
-        need_full = True
-
-    if need_full:
-        print("\n📥 执行完整采集流程...")
-        raw_contents = await fetch_all_sources(IPTV_SOURCES)
-        channels_dict = parse_and_dedupe(raw_contents)
-        if not channels_dict:
-            print("❌ 未获取到任何频道，请检查网络或源地址")
-            return 1
-        
-        valid_channels = await test_channels_concurrent(channels_dict)
-        if not valid_channels:
-            print("❌ 无有效频道通过测速")
-            return 1
-        
-        valid_channels = await validate_batch(valid_channels)
-        if not valid_channels:
-            print("❌ 深度验证后无有效频道")
-            return 1
-        
-        merged_channels = merge_channels_by_name(valid_channels)
-        
-        if ENABLE_BLACKLIST:
-            blacklist_filter = get_blacklist_filter()
-            merged_channels = blacklist_filter.filter_channels(merged_channels)
-        
-        if ENABLE_DEMO_FILTER:
-            merged_channels = filter_and_order_by_demo(merged_channels)
-        
-        merged_channels = filter_by_region(merged_channels)
-        if not merged_channels:
-            print("❌ 过滤后无有效频道")
-            return 1
-        
-        # 保存到数据库（作为缓存）
-        if DATABASE_ENABLE:
-            # 将合并后的频道展开为单条记录保存到 speed 表
-            for ch in merged_channels:
-                for url in ch.get("urls", []):
-                    key = f"{ch['name']}|{url}"
-                    # 构建单条记录
-                    single = {
-                        "name": ch["name"],
-                        "url": url,
-                        "latency": ch.get("latency", 9999),
-                        "video_codec": ch.get("video_codec", ""),
-                        "ip_info": ch.get("ip_info")
-                    }
-                    await db.set_speed_result(key, single)
-            await db.set_last_update_time()
-        final_channels = merged_channels
-    else:
-        # 从数据库加载缓存
-        print("\n📦 使用缓存数据...")
-        # 这里需要从数据库加载所有有效的频道记录，然后合并
-        # 简化：直接使用 stats 中的记录？但数据库 speed 表存储的是单条记录，需要重新合并
-        # 为了简单，我们跳过缓存路径，直接执行完整采集（因项目主要运行在 CI 中，每次都会执行）
-        # 但为了演示，我们仍执行完整采集（通常 CI 中每次都完整采集）
-        print("⚠️ 缓存模式暂未实现完全，将执行完整采集")
-        return await main()  # 递归调用完整流程
     
-    # 分类
-    classified = classify_all(final_channels)
+    # 完整采集（为了简化，始终完整采集，避免缓存不一致问题）
+    print("\n📥 执行完整采集流程...")
+    raw_contents = await fetch_all_sources(IPTV_SOURCES)
+    channels_dict = parse_and_dedupe(raw_contents)
+    if not channels_dict:
+        print("❌ 未获取到任何频道，请检查网络或源地址")
+        return 1
+    
+    print(f"📊 原始频道数（去重后）: {len(channels_dict)}")
+    
+    valid_channels = await test_channels_concurrent(channels_dict)
+    print(f"📊 通过HTTP测速的频道数: {len(valid_channels)}")
+    
+    valid_channels = await validate_batch(valid_channels)
+    print(f"📊 通过ffmpeg深度验证的频道数: {len(valid_channels)}")
+    
+    merged_channels = merge_channels_by_name(valid_channels)
+    print(f"📊 合并后的频道数（按名称分组）: {len(merged_channels)}")
+    
+    if ENABLE_BLACKLIST:
+        blacklist_filter = get_blacklist_filter()
+        before = len(merged_channels)
+        merged_channels = blacklist_filter.filter_channels(merged_channels)
+        print(f"📊 黑名单过滤后: {len(merged_channels)} (减少 {before - len(merged_channels)})")
+    
+    if ENABLE_DEMO_FILTER:
+        before = len(merged_channels)
+        merged_channels = filter_and_order_by_demo(merged_channels)
+        print(f"📊 Demo筛选后: {len(merged_channels)} (减少 {before - len(merged_channels)})")
+    
+    merged_channels = filter_by_region(merged_channels)
+    if not merged_channels:
+        print("❌ 过滤后无有效频道")
+        return 1
+    
+    # 分类并只保留四个大类
+    classified = classify_and_filter(merged_channels)
+    
     generate_outputs(classified)
     
     total = sum(len(lst) for lst in classified.values())
     print(f"🎉 完成！有效频道总数: {total}")
-    if DATABASE_ENABLE:
-        stats = await db.get_stats()
-        print(f"📊 数据库统计: 原始源缓存 {stats.get('raw_sources',0)} 条, 测速缓存 {stats.get('speed_results',0)} 条")
-    
     ffmpeg_cleanup()
     await db.close()
     return 0
