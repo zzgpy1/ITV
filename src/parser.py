@@ -1,11 +1,10 @@
 # src/parser.py
-# M3U/TXT 解析，并在解析后应用别名标准化
+# M3U/TXT 解析，并在解析后立即应用别名标准化
 
 import re
 from src.alias_matcher import get_alias_matcher
 
 def parse_m3u(content: str) -> list:
-    """解析 M3U，返回字典列表，每个字典包含 name, url, group_title, tvg_id, tvg_logo"""
     channels = []
     lines = content.splitlines()
     i = 0
@@ -41,7 +40,6 @@ def parse_m3u(content: str) -> list:
     return channels
 
 def parse_txt(content: str) -> list:
-    """解析 TXT 格式，每行一个 URL，上一行注释作为频道名"""
     channels = []
     lines = content.splitlines()
     current_name = None
@@ -66,7 +64,6 @@ def parse_txt(content: str) -> list:
     return channels
 
 def apply_alias_to_channels(channels: list) -> list:
-    """对频道列表应用别名标准化，修改每个频道的 name 字段"""
     matcher = get_alias_matcher()
     if not matcher:
         return channels
@@ -78,7 +75,6 @@ def apply_alias_to_channels(channels: list) -> list:
     return channels
 
 def parse_and_dedupe(raw_contents: dict) -> dict:
-    """解析所有源内容，合并去重，返回 {key: channel_dict} 字典"""
     all_channels = {}
     for url, content in raw_contents.items():
         if not content:
@@ -87,7 +83,6 @@ def parse_and_dedupe(raw_contents: dict) -> dict:
             channels = parse_m3u(content)
         else:
             channels = parse_txt(content)
-        # 应用别名标准化（关键步骤）
         channels = apply_alias_to_channels(channels)
         for ch in channels:
             key = f"{ch['name']}|{ch['url']}"
