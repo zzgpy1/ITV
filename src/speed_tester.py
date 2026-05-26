@@ -1,5 +1,5 @@
 # src/speed_tester.py
-# 轻量级 HTTP 头探测（快速测速），支持数据库缓存
+# 轻量级 HTTP 头探测，要求 Content-Type 包含 video
 
 import asyncio
 import aiohttp
@@ -16,6 +16,10 @@ async def probe_channel(session: aiohttp.ClientSession, channel: dict) -> tuple:
         async with session.head(url, timeout=TIMEOUT, allow_redirects=True, headers=HEADERS) as resp:
             latency = int((time.time() - start) * 1000)
             if resp.status == 200:
+                content_type = resp.headers.get("content-type", "").lower()
+                # 必须包含 video 或 mpegurl 才认为是有效视频流
+                if "video" not in content_type and "mpegurl" not in content_type:
+                    return channel, latency, False, None
                 ip_info = None
                 if ENABLE_IP_RESOLVE:
                     resolver = get_resolver()
@@ -28,7 +32,7 @@ async def probe_channel(session: aiohttp.ClientSession, channel: dict) -> tuple:
         return channel, 0, False, None
 
 async def test_channels_concurrent(channels_dict: dict) -> list:
-    """并发测速，返回有效的频道列表（按延迟排序），使用数据库缓存减少重复探测"""
+    """并发测速，返回有效的频道列表（按延迟排序），使用数据库缓存"""
     channels = list(channels_dict.values())
     db = await get_db_cache()
     
