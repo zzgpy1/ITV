@@ -1,0 +1,64 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:               # 手动触发
+  push:
+    branches: [ main ]
+    paths:
+      - 'output/tv.m3u'            # 当 m3u 文件更新时构建
+      - 'android/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build APK (phone)
+        run: |
+          cd android
+          # 动态注入 M3U_URL（替换为您的 Pages 地址）
+          M3U_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/tv.m3u"
+          echo "Using M3U_URL: $M3U_URL"
+          echo "M3U_URL=\"$M3U_URL\"" > local.properties
+          # 通过 gradle 属性传递 URL
+          ./gradlew assembleRelease -PM3U_URL="$M3U_URL"
+
+      - name: Upload Phone APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptv-player-phone
+          path: android/app/build/outputs/apk/release/*.apk
+
+      - name: Build APK (TV)
+        run: |
+          cd android
+          # TV 版使用相同 URL，但可定制不同 flavor（此处复用）
+          ./gradlew assembleRelease -PM3U_URL="$M3U_URL"
+          # 复制一份作为 TV 版（实际可用 flavor 区分）
+          cp app/build/outputs/apk/release/*.apk app/build/outputs/apk/release/iptv-player-tv.apk
+
+      - name: Upload TV APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: iptv-player-tv
+          path: android/app/build/outputs/apk/release/iptv-player-tv.apk
+
+      - name: Create Release and Upload APKs
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: android-latest
+          name: "IPTV Player APK"
+          body: "自动构建于 ${{ github.run_id }}\nM3U地址: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/tv.m3u"
+          files: |
+            android/app/build/outputs/apk/release/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
