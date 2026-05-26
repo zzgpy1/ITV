@@ -5,7 +5,6 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        // 升级到兼容 compileSdk 34 的版本
         classpath 'com.android.tools.build:gradle:8.5.2'
     }
 }
