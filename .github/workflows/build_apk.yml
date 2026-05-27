@@ -1,148 +1,64 @@
-name: "构建安卓 APK"
+name: Build Android APK
 
 on:
-  workflow_dispatch:                  # 手动触发
+  workflow_dispatch:                 # 手动触发
   push:
     branches: [ main, master ]
     paths:
-      - 'output/tv.m3u'              # 当 m3u 文件更新时触发
-  schedule:
-    - cron: "0 2 * * *"              # 每天凌晨2点构建一次
-
-permissions:
-  contents: write
-
-env:
-  APP_DOMAIN: ${{ vars.APP_DOMAIN || github.repository_owner }}.github.io
-  REPO_NAME: ${{ github.event.repository.name }}
+      - 'app/**'
+      - '.github/workflows/build-apk.yml'
+  # 也可以在上游更新成功后触发，但这里简单处理
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: 检出代码
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 设置 Java 环境
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
           java-version: '17'
+          distribution: 'temurin'
 
-      - name: 设置 Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platforms;android-34 build-tools;34.0.0'
+          cmdline-tools-version: 11076708
 
-      - name: 等待 IPTV 源更新完成（可选）
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Get GitHub Pages URL
+        id: pages-url
         run: |
-          # 等待 output/tv.m3u 存在
-          for i in {1..30}; do
-            if [ -f "output/tv.m3u" ]; then
-              echo "✅ tv.m3u 已存在"
-              break
-            fi
-            echo "等待 IPTV 源更新... ($i/30)"
-            sleep 10
-          done
+          REPO_NAME=${GITHUB_REPOSITORY#*/}
+          OWNER=${GITHUB_REPOSITORY_OWNER}
+          # 如果仓库启用了 Pages，默认域名是 https://$OWNER.github.io/$REPO_NAME/
+          # 这里我们使用 gh-pages 分支部署的原始地址
+          BASE_URL="https://$OWNER.github.io/$REPO_NAME/"
+          echo "base_url=$BASE_URL" >> $GITHUB_OUTPUT
 
-      - name: 获取最新 m3u 内容
+      - name: Build APK with gradle
         run: |
-          mkdir -p android/app/src/main/assets
-          if [ -f "output/tv.m3u" ]; then
-            cp output/tv.m3u android/app/src/main/assets/playlist.m3u
-          else
-            # 如果没有本地文件，从 GitHub Pages 获取
-            M3U_URL="https://${APP_DOMAIN}/${REPO_NAME}/tv.m3u"
-            curl -L -o android/app/src/main/assets/playlist.m3u "$M3U_URL" || echo "#EXTM3U" > android/app/src/main/assets/playlist.m3u
-          fi
-          echo "📺 M3U 文件大小: $(wc -c < android/app/src/main/assets/playlist.m3u) bytes"
+          ./gradlew assembleRelease \
+            -PbaseUrl=${{ steps.pages-url.outputs.base_url }}
 
-      - name: 生成构建配置
-        run: |
-          # 生成 config.xml 用于安卓应用
-          cat > android/app/src/main/assets/config.xml << EOF
-          <?xml version="1.0" encoding="utf-8"?>
-          <config>
-              <server>https://${APP_DOMAIN}/${REPO_NAME}</server>
-              <playlist>https://${APP_DOMAIN}/${REPO_NAME}/tv.m3u</playlist>
-              <update_url>https://${APP_DOMAIN}/${REPO_NAME}/version.json</update_url>
-          </config>
-          EOF
-          
-          # 生成版本信息
-          echo "{\"version\":\"$(date +%Y%m%d)\",\"build_time\":\"$(date -Iseconds)\"}" > android/app/src/main/assets/version.json
-
-      - name: 解码签名密钥（可选）
-        if: secrets.KEYSTORE_BASE64 != ''
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/keystore.jks
-          cat > android/keystore.properties << EOF
-          storeFile=../keystore.jks
-          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
-          keyAlias=${{ secrets.KEY_ALIAS }}
-          keyPassword=${{ secrets.KEY_PASSWORD }}
-          EOF
-
-      - name: 构建 Debug APK
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - name: 构建 Release APK（如果有签名）
-        if: secrets.KEYSTORE_BASE64 != ''
-        run: |
-          cd android
-          ./gradlew assembleRelease
-
-      - name: 上传 Debug APK
+      - name: Upload APK as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: iptv-player-debug
-          path: android/app/build/outputs/apk/debug/*.apk
-          retention-days: 7
+          name: iptv-player-apk
+          path: app/build/outputs/apk/release/*.apk
 
-      - name: 上传 Release APK
-        if: secrets.KEYSTORE_BASE64 != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: iptv-player-release
-          path: android/app/build/outputs/apk/release/*.apk
-          retention-days: 7
-
-      - name: 创建 GitHub Release
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      - name: Create Release and Upload APK
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "v$(date +%Y%m%d-%H%M%S)"
-          name: "IPTV Player $(date +%Y%m%d)"
-          body: |
-            ## 自动构建版本
-            
-            - 构建时间: $(date -Iseconds)
-            - 播放列表源: https://${APP_DOMAIN}/${REPO_NAME}/tv.m3u
-            - 频道数量: $(grep -c "#EXTINF" android/app/src/main/assets/playlist.m3u || echo "未知")
-            
-            ### 安装说明
-            1. 下载对应的 APK 文件
-            2. 在安卓设备上允许安装未知来源应用
-            3. 安装后首次启动会自动加载频道列表
-            
-            ### 版本说明
-            - **手机版**: 适配手机和平板，触摸操作优化
-            - **TV版**: 适配电视盒子，遥控器操作优化
-          files: |
-            android/app/build/outputs/apk/debug/*.apk
-            android/app/build/outputs/apk/release/*.apk
+          tag_name: "latest-apk"
+          name: "IPTV Player APK (自动构建)"
+          files: app/build/outputs/apk/release/*.apk
+          prerelease: false
+          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 部署到 Releases 分支
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./android/app/build/outputs/apk
-          publish_branch: releases
-          destination_dir: apk
-          keep_files: false
