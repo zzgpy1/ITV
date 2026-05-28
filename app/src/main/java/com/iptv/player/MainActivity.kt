@@ -1,15 +1,15 @@
 package com.iptv.player
 
-import android.content.pm.ActivityInfo
-import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
-import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
-import android.widget.ImageButton
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.exoplayer2.MediaItem
@@ -21,38 +21,95 @@ import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
+import kotlin.math.abs
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var playerView: PlayerView
+    private lateinit var loadingSpinner: ProgressBar
+    private lateinit var errorText: TextView
     private lateinit var channelList: RecyclerView
-    private lateinit var currentChannelName: TextView
-    private lateinit var channelCount: TextView
-    private lateinit var fullscreenButton: ImageButton
+    private lateinit var drawerContainer: CardView
     private var exoPlayer: SimpleExoPlayer? = null
     private var currentChannelUrl: String? = null
-    private var isFullscreen = false
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
+    private var drawerY = 0f
+    private var downY = 0f
+    private var isDragging = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 全屏沉浸式设置
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.insetsController?.hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
+            window.insetsController?.systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (
+                View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            )
+        }
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
         playerView = findViewById(R.id.player_view)
+        loadingSpinner = findViewById(R.id.loading_spinner)
+        errorText = findViewById(R.id.error_text)
         channelList = findViewById(R.id.channel_list)
-        currentChannelName = findViewById(R.id.current_channel_name)
-        channelCount = findViewById(R.id.channel_count)
-        fullscreenButton = findViewById(R.id.fullscreen_button)
+        drawerContainer = findViewById(R.id.drawer_container)
 
         channelList.layoutManager = LinearLayoutManager(this)
 
-        fullscreenButton.setOnClickListener { toggleFullscreen() }
+        // 抽屉滑动处理
+        drawerContainer.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downY = event.rawY
+                    drawerY = drawerContainer.translationY
+                    isDragging = true
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (isDragging) {
+                        val delta = event.rawY - downY
+                        var newY = drawerY + delta
+                        newY = newY.coerceIn(0f, drawerContainer.height.toFloat())
+                        drawerContainer.translationY = newY
+                        true
+                    } else false
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    isDragging = false
+                    // 自动回弹：如果滑动超过一半则隐藏，否则恢复原位
+                    val halfHeight = drawerContainer.height / 2f
+                    if (drawerContainer.translationY > halfHeight) {
+                        drawerContainer.animate().translationY(drawerContainer.height.toFloat()).start()
+                    } else {
+                        drawerContainer.animate().translationY(0f).start()
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
 
+        // 点击视频区域时显示/隐藏频道列表
+        playerView.setOnClickListener {
+            if (drawerContainer.translationY == 0f) {
+                drawerContainer.animate().translationY(drawerContainer.height.toFloat()).start()
+            } else {
+                drawerContainer.animate().translationY(0f).start()
+            }
+        }
+
+        // 加载播放列表
         val baseUrl = BuildConfig.BASE_URL
         val normalizedBase = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
         val m3uUrl = "${normalizedBase}tv.m3u"
@@ -63,7 +120,9 @@ class MainActivity : AppCompatActivity() {
                 loadPlaylist(txtUrl, false) { txtSuccess ->
                     if (!txtSuccess) {
                         runOnUiThread {
-                            Toast.makeText(this, "无法加载播放列表\n请检查网络或源地址", Toast.LENGTH_LONG).show()
+                            loadingSpinner.visibility = View.GONE
+                            errorText.text = "无法加载播放列表\n$m3uUrl\n$txtUrl"
+                            errorText.visibility = View.VISIBLE
                         }
                     }
                 }
@@ -72,6 +131,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadPlaylist(url: String, isM3u: Boolean, callback: (Boolean) -> Unit) {
+        runOnUiThread {
+            loadingSpinner.visibility = View.VISIBLE
+            errorText.visibility = View.GONE
+        }
+
         Thread {
             try {
                 val request = Request.Builder().url(url).build()
@@ -83,18 +147,24 @@ class MainActivity : AppCompatActivity() {
                 val content = response.body?.string() ?: ""
                 val channels = if (isM3u) parseM3u(content) else parseTxt(content)
                 runOnUiThread {
+                    loadingSpinner.visibility = View.GONE
                     if (channels.isEmpty()) {
-                        Toast.makeText(this, "未找到任何频道", Toast.LENGTH_SHORT).show()
+                        errorText.text = "未找到任何频道"
+                        errorText.visibility = View.VISIBLE
                         callback(false)
                     } else {
                         setupChannelList(channels)
-                        channelCount.text = "${channels.size}个频道"
-                        playChannel(channels[0].url, channels[0].name)
+                        playChannel(channels[0].url)
                         callback(true)
                     }
                 }
             } catch (e: Exception) {
-                Log.e("IPTVPlayer", "加载失败", e)
+                e.printStackTrace()
+                runOnUiThread {
+                    loadingSpinner.visibility = View.GONE
+                    errorText.text = "加载失败: ${e.message}"
+                    errorText.visibility = View.VISIBLE
+                }
                 callback(false)
             }
         }.start()
@@ -128,9 +198,7 @@ class MainActivity : AppCompatActivity() {
                 if (comma > 0) {
                     val name = trimmed.substring(0, comma)
                     val url = trimmed.substring(comma + 1)
-                    if (url.startsWith("http")) {
-                        channels.add(Channel(name, url))
-                    }
+                    if (url.startsWith("http")) channels.add(Channel(name, url))
                 }
             }
         }
@@ -138,29 +206,34 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupChannelList(channels: List<Channel>) {
-        val adapter = ChannelAdapter(channels) { channel, position ->
-            playChannel(channel.url, channel.name)
-            (channelList.adapter as? ChannelAdapter)?.setSelectedPosition(position)
+        val adapter = ChannelAdapter(channels) { channel ->
+            playChannel(channel.url)
         }
         channelList.adapter = adapter
+        // 设置默认选中第一项
+        channelList.post {
+            val firstView = channelList.layoutManager?.findViewByPosition(0)
+            firstView?.requestFocus()
+        }
     }
 
-    private fun playChannel(url: String, name: String) {
+    private fun playChannel(url: String) {
         if (currentChannelUrl == url && exoPlayer?.isPlaying == true) return
         currentChannelUrl = url
-        currentChannelName.text = "▶ $name"
-
         releasePlayer()
         val trackSelector = DefaultTrackSelector(this)
         exoPlayer = SimpleExoPlayer.Builder(this).setTrackSelector(trackSelector).build()
         playerView.player = exoPlayer
-
-        val dataSourceFactory = DefaultHttpDataSource.Factory()
-        val mediaSource = HlsMediaSource.Factory(dataSourceFactory)
+        val mediaSource = HlsMediaSource.Factory(DefaultHttpDataSource.Factory())
             .createMediaSource(MediaItem.fromUri(url))
         exoPlayer?.setMediaSource(mediaSource)
         exoPlayer?.prepare()
         exoPlayer?.playWhenReady = true
+        // 提示当前播放频道
+        val channelName = (channelList.adapter as? ChannelAdapter)?.let { adapter ->
+            // 简单提示
+            Toast.makeText(this, "正在播放", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun releasePlayer() {
@@ -169,44 +242,26 @@ class MainActivity : AppCompatActivity() {
         playerView.player = null
     }
 
-    private fun toggleFullscreen() {
-        if (isFullscreen) {
-            supportActionBar?.show()
-            window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-            fullscreenButton.setImageResource(R.drawable.ic_fullscreen)
-            isFullscreen = false
-        } else {
-            supportActionBar?.hide()
-            window.setFlags(
-                WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN
-            )
-            window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            )
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            fullscreenButton.setImageResource(R.drawable.ic_fullscreen_exit)
-            isFullscreen = true
-        }
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            supportActionBar?.hide()
-        } else {
-            supportActionBar?.show()
-        }
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         releasePlayer()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            // 重新进入全屏
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                window.insetsController?.hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
+            } else {
+                @Suppress("DEPRECATION")
+                window.decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                )
+            }
+        }
     }
 
     data class Channel(val name: String, val url: String)
