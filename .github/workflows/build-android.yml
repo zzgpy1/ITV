@@ -23,16 +23,42 @@ jobs:
       with:
         cmdline-tools-version: 11076708
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+    - name: Create Gradle Wrapper (if missing)
+      run: |
+        # 创建 gradle/wrapper 目录
+        mkdir -p gradle/wrapper
+        # 下载 gradle-wrapper.jar
+        curl -L -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.2.0/gradle/wrapper/gradle-wrapper.jar
+        # 创建 gradle-wrapper.properties
+        cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.2-bin.zip
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+EOF
+        # 创建 gradlew 脚本
+        cat > gradlew << 'EOF'
+#!/bin/sh
+exec java -cp "gradle/wrapper/gradle-wrapper.jar" org.gradle.wrapper.GradleWrapperMain "$@"
+EOF
+        chmod +x gradlew
+        # 创建 gradlew.bat (Windows 兼容)
+        cat > gradlew.bat << 'EOF'
+@if "%DEBUG%" == "" @echo off
+@rem ##########################################################################
+@rem
+@rem  Gradle startup script for Windows
+@rem
+@rem ##########################################################################
+set DIRNAME=%~dp0
+set APP_BASE_NAME=%~n0
+set CLASSPATH=%DIRNAME%\gradle\wrapper\gradle-wrapper.jar
+java -cp "%CLASSPATH%" org.gradle.wrapper.GradleWrapperMain %*
+EOF
 
     - name: Build APK
       run: ./gradlew assembleRelease
-
-    - name: Sign APK (optional)
-      # 如需签名，可配置签名密钥；此处不做签名，生成未签名APK
-      run: |
-        echo "Generated APK at app/build/outputs/apk/release/"
 
     - name: Upload APK as artifact
       uses: actions/upload-artifact@v4
