@@ -22,9 +22,9 @@ object DataManager {
 
     suspend fun loadChannels(context: Context): Boolean = withContext(Dispatchers.IO) {
         try {
-            val txtUrl = BuildConfig.IPTV_TXT_URL
-            Log.i(TAG, "Loading from $txtUrl")
-            val request = Request.Builder().url(txtUrl).build()
+            val m3uUrl = BuildConfig.IPTV_M3U_URL
+            Log.i(TAG, "Loading M3U from $m3uUrl")
+            val request = Request.Builder().url(m3uUrl).build()
             val response = client.newCall(request).execute()
 
             if (!response.isSuccessful) {
@@ -33,10 +33,10 @@ object DataManager {
             }
 
             val content = response.body?.string() ?: return@withContext false
-            val channels = parseTxtContent(content)
+            val channels = parseM3uContent(content)
 
             if (channels.isEmpty()) {
-                Log.e(TAG, "Parsed 0 channels")
+                Log.e(TAG, "Parsed 0 channels from M3U")
                 return@withContext false
             }
 
@@ -51,33 +51,51 @@ object DataManager {
         }
     }
 
-    private fun parseTxtContent(content: String): List<Channel> {
+    private fun parseM3uContent(content: String): List<Channel> {
         val channels = mutableListOf<Channel>()
+        val lines = content.lines()
+        var i = 0
         var currentGroup = ""
 
-        content.lines().forEach { line ->
-            val trimmed = line.trim()
+        while (i < lines.size) {
+            val line = lines[i].trim()
             when {
-                trimmed.startsWith("#") && !trimmed.startsWith("#EXT") -> {
-                    currentGroup = trimmed.drop(1).trim()
-                }
-                trimmed.contains(",") && trimmed.contains("http") -> {
-                    val lastComma = trimmed.lastIndexOf(',')
-                    if (lastComma > 0 && lastComma < trimmed.length - 1) {
-                        val name = trimmed.substring(0, lastComma).trim()
-                        val url = trimmed.substring(lastComma + 1).trim()
-                        if (url.startsWith("http")) {
-                            channels.add(Channel(name, url, currentGroup))
+                line.startsWith("#EXTINF") -> {
+                    // 提取频道名（逗号之后）
+                    val nameStart = line.indexOf(',')
+                    val name = if (nameStart != -1) line.substring(nameStart + 1).trim() else "未知频道"
+                    // 提取 group-title（如果有）
+                    val groupMatch = Regex("""group-title="([^"]+)"""").find(line)
+                    val group = groupMatch?.groupValues?.get(1) ?: currentGroup
+                    // 下一行应该是 URL
+                    if (i + 1 < lines.size) {
+                        val urlLine = lines[i + 1].trim()
+                        if (urlLine.startsWith("http")) {
+                            channels.add(Channel(name, urlLine, group))
+                        } else {
+                            Log.w(TAG, "Skipping non-http URL: $urlLine")
                         }
                     }
+                    i += 2
                 }
-                trimmed.startsWith("http") -> {
-                    val url = trimmed
-                    val name = "频道${channels.size + 1}"
-                    channels.add(Channel(name, url, currentGroup))
+                line.startsWith("#") -> {
+                    // 注释行可能是分组信息（如 # 央视）
+                    if (line.startsWith("# ") || line.startsWith("#\uD83D\uDCFA") || line.matches(Regex("#[\\u4e00-\\u9fa5]+"))) {
+                        currentGroup = line.drop(1).trim()
+                    }
+                    i++
+                }
+                line.isBlank() -> i++
+                else -> {
+                    // 单独 URL 行（无 EXTINF）
+                    if (line.startsWith("http")) {
+                        channels.add(Channel("频道${channels.size + 1}", line, currentGroup))
+                    }
+                    i++
                 }
             }
         }
+        Log.i(TAG, "Parsed ${channels.size} channels from M3U")
         return channels
     }
 
