@@ -3,27 +3,30 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#E6000000">
+    android:background="@drawable/channel_list_bg">
     
+    <!-- 分组滚动栏 -->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#CC000000"
-        android:scrollbars="none">
+        android:scrollbars="none"
+        android:padding="8dp">
         
         <LinearLayout
             android:id="@+id/group_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="10dp" />
+            android:orientation="horizontal" />
             
     </HorizontalScrollView>
     
+    <!-- 频道列表 -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/channel_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scrollbars="vertical" />
+        android:paddingHorizontal="8dp"
+        android:paddingTop="4dp"
+        android:clipToPadding="false" />
         
 </LinearLayout>
