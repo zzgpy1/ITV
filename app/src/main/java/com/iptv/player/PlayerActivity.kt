@@ -23,7 +23,7 @@ import com.iptv.player.model.Channel
 class PlayerActivity : AppCompatActivity() {
 
     private lateinit var playerView: PlayerView
-    private lateinit var exoPlayer: ExoPlayer
+    private var exoPlayer: ExoPlayer? = null
     private lateinit var channelListFragment: ChannelListFragment
 
     private lateinit var topBar: View
@@ -36,8 +36,8 @@ class PlayerActivity : AppCompatActivity() {
     private var isControlsVisible = true
     private var currentChannel: Channel? = null
     private var currentPosition = 0
+    private var isPlayerPrepared = false
 
-    // 滑动检测变量
     private var touchStartY = 0f
     private val SWIPE_THRESHOLD = 100f
 
@@ -49,18 +49,27 @@ class PlayerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_player)
 
-        initViews()
-        initPlayer()
-        initChannelList()
-        setupControls()
-        setupTouchListener()
+        try {
+            initViews()
+            initChannelList()
+            setupControls()
+            setupTouchListener()
+            initPlayer()
 
-        if (DataManager.allChannels.isNotEmpty()) {
-            currentPosition = 0
-            playChannel(DataManager.allChannels[currentPosition])
+            if (DataManager.allChannels.isNotEmpty()) {
+                currentPosition = 0
+                playChannel(DataManager.allChannels[currentPosition])
+            } else {
+                Toast.makeText(this, "无频道数据，请返回重试", Toast.LENGTH_LONG).show()
+                finish()
+            }
+
+            startControlsHideTimer()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "初始化失败: ${e.message}", Toast.LENGTH_LONG).show()
+            finish()
         }
-
-        startControlsHideTimer()
     }
 
     private fun initViews() {
@@ -73,22 +82,39 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun initPlayer() {
-        val trackSelector = DefaultTrackSelector(this).apply {
-            setParameters(buildUponParameters().setMaxVideoSize(1920, 1080))
-        }
-
-        exoPlayer = ExoPlayer.Builder(this)
-            .setTrackSelector(trackSelector)
-            .build()
-
-        playerView.player = exoPlayer
-
-        exoPlayer.addListener(object : Player.Listener {
-            override fun onPlayerError(error: PlaybackException) {
-                Toast.makeText(this@PlayerActivity, "播放失败，尝试下一个频道", Toast.LENGTH_SHORT).show()
-                nextChannel()
+        try {
+            val trackSelector = DefaultTrackSelector(this).apply {
+                setParameters(buildUponParameters().setMaxVideoSize(1920, 1080))
             }
-        })
+
+            exoPlayer = ExoPlayer.Builder(this)
+                .setTrackSelector(trackSelector)
+                .build()
+
+            playerView.player = exoPlayer
+
+            exoPlayer?.addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    when (playbackState) {
+                        Player.STATE_READY -> {
+                            isPlayerPrepared = true
+                        }
+                        Player.STATE_ENDED -> {
+                            // 自动播放下一个
+                            nextChannel()
+                        }
+                    }
+                }
+
+                override fun onPlayerError(error: PlaybackException) {
+                    Toast.makeText(this@PlayerActivity, "播放失败，尝试下一个频道", Toast.LENGTH_SHORT).show()
+                    nextChannel()
+                }
+            })
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "播放器初始化失败: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun initChannelList() {
@@ -121,7 +147,6 @@ class PlayerActivity : AppCompatActivity() {
             resetControlsHideTimer()
         }
 
-        // 点击视频区域显示/隐藏控制栏
         playerView.setOnClickListener {
             toggleControls()
         }
@@ -129,60 +154,67 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun setupTouchListener() {
         playerView.setOnTouchListener { _, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    touchStartY = event.y
-                    true
-                }
-                MotionEvent.ACTION_UP -> {
-                    val diffY = touchStartY - event.y
-                    if (Math.abs(diffY) > SWIPE_THRESHOLD) {
-                        if (diffY > 0) {
-                            // 向上滑动 -> 上一个频道
-                            previousChannel()
-                        } else {
-                            // 向下滑动 -> 下一个频道
-                            nextChannel()
-                        }
-                        resetControlsHideTimer()
+            try {
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        touchStartY = event.y
+                        true
                     }
-                    true
+                    MotionEvent.ACTION_UP -> {
+                        val diffY = touchStartY - event.y
+                        if (Math.abs(diffY) > SWIPE_THRESHOLD) {
+                            if (diffY > 0) {
+                                previousChannel()
+                            } else {
+                                nextChannel()
+                            }
+                            resetControlsHideTimer()
+                        }
+                        true
+                    }
+                    else -> false
                 }
-                else -> false
+            } catch (e: Exception) {
+                false
             }
         }
     }
 
     private fun playChannel(channel: Channel) {
-        currentChannel = channel
-        channelNameText.text = channel.name
+        try {
+            currentChannel = channel
+            channelNameText.text = channel.name
 
-        val mediaItem = MediaItem.Builder()
-            .setUri(channel.url)
-            .setMimeType("application/x-mpegURL")
-            .build()
+            val mediaItem = MediaItem.Builder()
+                .setUri(channel.url)
+                .setMimeType("application/x-mpegURL")
+                .build()
 
-        val dataSourceFactory = DefaultHttpDataSource.Factory()
-            .setUserAgent("IPTVPlayer/1.0")
+            val dataSourceFactory = DefaultHttpDataSource.Factory()
+                .setUserAgent("IPTVPlayer/1.0")
 
-        val hlsMediaSource = HlsMediaSource.Factory(dataSourceFactory)
-            .createMediaSource(mediaItem)
+            val hlsMediaSource = HlsMediaSource.Factory(dataSourceFactory)
+                .createMediaSource(mediaItem)
 
-        exoPlayer.setMediaSource(hlsMediaSource)
-        exoPlayer.prepare()
-        exoPlayer.play()
+            exoPlayer?.setMediaSource(hlsMediaSource)
+            exoPlayer?.prepare()
+            exoPlayer?.play()
 
-        channelListFragment.updateSelectedPosition(currentPosition)
+            channelListFragment.updateSelectedPosition(currentPosition)
+            isPlayerPrepared = false
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "播放失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            nextChannel()
+        }
     }
 
     private fun previousChannel() {
         if (DataManager.allChannels.isEmpty()) return
-
         currentPosition--
         if (currentPosition < 0) {
             currentPosition = DataManager.allChannels.size - 1
         }
-
         playChannel(DataManager.allChannels[currentPosition])
         showControls()
         resetControlsHideTimer()
@@ -190,12 +222,10 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun nextChannel() {
         if (DataManager.allChannels.isEmpty()) return
-
         currentPosition++
         if (currentPosition >= DataManager.allChannels.size) {
             currentPosition = 0
         }
-
         playChannel(DataManager.allChannels[currentPosition])
         showControls()
         resetControlsHideTimer()
@@ -226,7 +256,6 @@ class PlayerActivity : AppCompatActivity() {
             channelListFragment.hide()
         } else {
             channelListFragment.show()
-            // 显示列表时自动隐藏控制栏
             hideControls()
         }
     }
@@ -246,17 +275,18 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        exoPlayer.play()
+        exoPlayer?.play()
     }
 
     override fun onPause() {
         super.onPause()
-        exoPlayer.pause()
+        exoPlayer?.pause()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        exoPlayer.release()
+        exoPlayer?.release()
+        exoPlayer = null
         controlsHandler.removeCallbacksAndMessages(null)
     }
 
