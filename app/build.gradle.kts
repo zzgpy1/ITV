@@ -43,6 +43,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true   // 关键修复：启用 BuildConfig 字段
     }
 
     composeOptions {
