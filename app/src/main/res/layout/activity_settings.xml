@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+        android:key="m3u_url"
+        android:title="M3U 源地址"
+        android:dialogTitle="M3U 源地址"
+        android:defaultValue="https://itv.19860519.xyz/output/tv.m3u"
+        android:inputType="textUri" />
+</PreferenceScreen>
