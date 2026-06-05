@@ -31,7 +31,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: 缓存 IPTV 数据库（用于恢复，但会先删除）
+      - name: 缓存 IPTV 数据库
         uses: actions/cache@v4
         with:
           path: iptv_cache.db
@@ -39,7 +39,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-iptv-cache-
 
-      # 关键步骤：强制删除旧缓存，确保别名修正后重新采集
+      # 强制删除旧缓存，确保别名修正后重新采集
       - name: 删除旧缓存（确保别名生效）
         run: |
           if [ -f "iptv_cache.db" ]; then
@@ -69,11 +69,11 @@ jobs:
             ${{ runner.os }}-qqwry-dat
 
       - name: 更新 IP 数据库
-        run: python update_ipdb.py
+        run: python -m src.update_ipdb
         continue-on-error: true
 
       - name: 执行 IPTV 更新脚本
-        run: python run.py
+        run: python -m src.run
         env:
           MAX_WORKERS: 10
           TIMEOUT: 10
