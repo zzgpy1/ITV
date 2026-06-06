@@ -2,14 +2,15 @@
 import asyncio
 import sys
 import os
+import time
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.config import (
     IPTV_SOURCES, OUTPUT_DIR, ENABLE_REGION_FILTER,
     PREFERRED_LOCATION, PREFERRED_ISP, ENABLE_IP_RESOLVE,
     ENABLE_DEMO_FILTER, ENABLE_ALIAS, ENABLE_BLACKLIST,
-    CCTV_ORDER
+    CCTV_ORDER, MAX_WORKERS, TIMEOUT
 )
 from src.fetcher import fetch_all_sources
 from src.parser import parse_and_dedupe
@@ -65,7 +66,6 @@ def build_classified_from_ordered(ordered_channels, alias_matcher=None):
             mapped = alias_matcher.match(orig_name)
             if mapped:
                 display_name = mapped
-        # 临时修改名称用于分类
         if alias_matcher and mapped:
             if hasattr(ch, 'name'):
                 old = ch.name
@@ -102,7 +102,6 @@ def build_classified_from_ordered(ordered_channels, alias_matcher=None):
                 "ip_info": getattr(ch, 'ip_info', None)
             }
         temp[cat].append(ch_dict)
-    # 央视排序
     def ctv_key(ch):
         name = ch["name"]
         for idx, std in enumerate(CCTV_ORDER):
@@ -124,32 +123,46 @@ def build_classified_from_ordered(ordered_channels, alias_matcher=None):
     return result
 
 async def full_update(alias_matcher):
-    """全量采集流程（首次运行或数据全部过期时）"""
     print("\n📥 执行全量采集流程...")
-    raw_contents = await fetch_all_sources(IPTV_SOURCES)
-    channels_dict = parse_and_dedupe(raw_contents)
-    if not channels_dict:
-        print("❌ 未获取到任何频道，请检查网络或源地址")
-        return None
-    valid_channels = await test_channels_concurrent(channels_dict)
-    if not valid_channels:
-        print("❌ 无有效频道通过测速")
-        return None
-    valid_channels = await validate_with_ffmpeg_batch(valid_channels)
-    if not valid_channels:
-        print("❌ 深度验证后无有效频道")
-        return None
-    merged = merge_channels_by_name(valid_channels)
-    if ENABLE_BLACKLIST:
-        merged = get_blacklist_filter().filter_channels(merged)
-    if ENABLE_DEMO_FILTER:
-        merged = filter_and_order_by_demo(merged, alias_matcher=alias_matcher)
-    merged = filter_by_region(merged)
+    steps = [
+        "拉取源文件", "解析并去重", "HTTP测速", "ffmpeg深度验证", "合并多源", "应用过滤规则"
+    ]
+    for i, step in enumerate(steps, 1):
+        print(f"\n[{i}/6] {step}...")
+        if step == "拉取源文件":
+            raw_contents = await fetch_all_sources(IPTV_SOURCES)
+        elif step == "解析并去重":
+            channels_dict = parse_and_dedupe(raw_contents)
+            if not channels_dict:
+                print("❌ 未获取到任何频道")
+                return None
+            total_before = len(channels_dict)
+            print(f"   去重后共 {total_before} 个频道")
+        elif step == "HTTP测速":
+            valid = await test_channels_concurrent(channels_dict)
+            if not valid:
+                print("❌ 无有效频道")
+                return None
+            print(f"   测速通过 {len(valid)}/{total_before}")
+        elif step == "ffmpeg深度验证":
+            valid = await validate_with_ffmpeg_batch(valid)
+            if not valid:
+                print("❌ 深度验证后无有效频道")
+                return None
+            print(f"   通过 {len(valid)} 个")
+        elif step == "合并多源":
+            merged = merge_channels_by_name(valid)
+        elif step == "应用过滤规则":
+            if ENABLE_BLACKLIST:
+                merged = get_blacklist_filter().filter_channels(merged)
+            if ENABLE_DEMO_FILTER:
+                merged = filter_and_order_by_demo(merged, alias_matcher=alias_matcher)
+            merged = filter_by_region(merged)
     return merged
 
 async def main():
     print("🚀 IPTV智能整理平台启动")
-    print(f"📡 配置：超时={os.getenv('TIMEOUT','10')}s, 并发={os.getenv('MAX_WORKERS','10')}, ffmpeg={os.getenv('FFMPEG_ENABLE','true')}")
+    print(f"📡 配置：超时={TIMEOUT}s, 并发={MAX_WORKERS}, ffmpeg={os.getenv('FFMPEG_ENABLE','true')}")
     print(f"📋 增强过滤: demo={ENABLE_DEMO_FILTER}, alias={ENABLE_ALIAS}, blacklist={ENABLE_BLACKLIST}")
 
     init_ip_resolver()
@@ -175,10 +188,7 @@ async def main():
                 return 1
             cache.save_to_cache(final_channels, verified=True)
         else:
-            # 这里可以增加增量验证逻辑（仅验证过期的频道），为简化直接使用缓存
-            # 注意：如果希望定期验证，可以在后续版本实现
-            final_channels = cached
-            # 将缓存记录转换为与 full_update 相同格式（合并多源）
+            # 直接使用缓存，无需重新验证（7天内有效）
             class SimpleChannel:
                 def __init__(self, data):
                     self.name = data['name']
