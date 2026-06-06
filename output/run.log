@@ -150,3 +150,66 @@
 2026-06-06 07:45:12,145 - IPTVCollector - INFO - ✅ TXT 文件已生成: /home/runner/work/ITV/ITV/output/tv.txt
 2026-06-06 07:45:12,145 - IPTVCollector - INFO - 🎉 完成！有效频道总数: 393
 2026-06-06 07:45:12,145 - IPTVCollector - INFO - 📊 统计信息已保存至 /home/runner/work/ITV/ITV/output/stats.json
+2026-06-06 08:15:16,727 - IPTVCollector - INFO - 🚀 IPTV智能整理平台启动
+2026-06-06 08:15:16,727 - IPTVCollector - INFO - 📡 配置：超时=10s, 并发=10, ffmpeg=True
+2026-06-06 08:15:16,727 - IPTVCollector - INFO - 📋 增强过滤: demo=True, alias=True, blacklist=True
+2026-06-06 08:15:16,734 - IPTVCollector - INFO - ✅ IP 数据库加载成功: /home/runner/work/ITV/ITV/qqwry.dat, 版本: ('纯真网络', '2024年09月25日IP数据')
+2026-06-06 08:15:16,735 - IPTVCollector - INFO - ✅ IP解析器已就绪
+2026-06-06 08:15:16,775 - IPTVCollector - INFO - ✅ 数据库缓存已启用: /home/runner/work/ITV/ITV/iptv_cache.db
+2026-06-06 08:15:16,783 - IPTVCollector - INFO - 🧹 清理过期缓存: raw表保留24小时, speed表保留24小时
+2026-06-06 08:15:16,783 - IPTVCollector - INFO - 
+📥 执行增量源检测和拉取...
+2026-06-06 08:15:16,785 - IPTVCollector - INFO - 🔄 源有更新，拉取: https://raw.githubusercontent.com/iptv-org/iptv/gh-pages/countries/cn.m3u
+2026-06-06 08:15:16,785 - IPTVCollector - INFO - 🔄 源有更新，拉取: https://raw.githubusercontent.com/iptv-org/iptv/master/streams/cn.m3u
+2026-06-06 08:15:16,785 - IPTVCollector - INFO - 🔄 源有更新，拉取: https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.txt
+2026-06-06 08:15:16,785 - IPTVCollector - INFO - 🔄 源有更新，拉取: https://raw.githubusercontent.com/zzgpy1/iptv-api/master/output/result.txt
+2026-06-06 08:15:16,786 - IPTVCollector - INFO - 🔄 源有更新，拉取: https://raw.githubusercontent.com/dogwalkerg/IPTV-collect-tv-txt/main/others_output.txt
+2026-06-06 08:15:16,786 - IPTVCollector - INFO - 🔄 源有更新，拉取: https://raw.githubusercontent.com/zzgpy1/Collect-IPTV/main/best_sorted.m3u
+2026-06-06 08:15:16,786 - IPTVCollector - INFO - 🔄 源有更新，拉取: https://raw.githubusercontent.com/zzgpy1/UniIPTV/gh-pages/tv.m3u
+2026-06-06 08:15:16,786 - IPTVCollector - INFO - 🔄 源有更新，拉取: https://raw.githubusercontent.com/YueChan/Live/main/IPTV.m3u
+2026-06-06 08:15:16,787 - IPTVCollector - INFO - 🔄 源有更新，拉取: https://raw.githubusercontent.com/fanmingming/live/main/tv/m3u/ipv6.m3u
+2026-06-06 08:15:16,787 - IPTVCollector - INFO - 🔄 源有更新，拉取: https://raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u
+2026-06-06 08:15:16,787 - IPTVCollector - INFO - 🔄 源有更新，拉取: https://tv.19860519.xyz/abc123
+2026-06-06 08:15:17,065 - IPTVCollector - INFO - 📊 原始频道数（去重后）: 1543
+2026-06-06 08:15:17,336 - IPTVCollector - INFO - ⚡ 测速: 790 个新频道需探测，753 个来自缓存
+2026-06-06 08:21:25,272 - IPTVCollector - INFO - ✅ 测速完成，有效频道 753/1543
+2026-06-06 08:21:25,272 - IPTVCollector - INFO - 📊 通过HTTP测速的频道数: 753
+2026-06-06 08:21:25,440 - IPTVCollector - INFO - 🔍 ffmpeg 深度验证: 75 个需要验证，678 个来自缓存
+2026-06-06 08:24:11,548 - IPTVCollector - INFO - 🔍 ffmpeg 深度验证完成，通过 681/753 个频道
+2026-06-06 08:24:11,548 - IPTVCollector - INFO - 📊 通过ffmpeg深度验证的频道数: 681
+2026-06-06 08:24:12,210 - IPTVCollector - INFO - 💾 已保存 681 个频道源到数据库缓存
+2026-06-06 08:24:12,215 - IPTVCollector - INFO - 📊 合并后的频道数: 598
+2026-06-06 08:24:12,219 - IPTVCollector - INFO - 📊 黑名单过滤后: 579 (减少 19)
+2026-06-06 08:24:12,453 - IPTVCollector - INFO - 📊 Demo筛选后: 395 (减少 184)
+2026-06-06 08:24:12,453 - IPTVCollector - INFO - 📝 未匹配频道示例（前20个，用于调试）：
+2026-06-06 08:24:12,453 - IPTVCollector - INFO -   1. 春晚1986 (分类: 其他)
+2026-06-06 08:24:12,453 - IPTVCollector - INFO -   2. 春晚1987 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   3. 春晚1989 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   4. 春晚1993 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   5. 春晚1994 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   6. 春晚1995 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   7. 春晚2000 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   8. 春晚2003 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   9. 春晚2004 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   10. 春晚2005 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   11. 春晚2006 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   12. 春晚2010 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   13. 春晚2011 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   14. 春晚2013 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   15. 春晚2014 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   16. 春晚2015 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   17. 春晚2017 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   18. 春晚2018 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   19. 春晚2019 (分类: 其他)
+2026-06-06 08:24:12,454 - IPTVCollector - INFO -   20. 春晚2021 (分类: 其他)
+2026-06-06 08:24:12,459 - IPTVCollector - INFO - 
+🎉 最终有效频道分类统计：
+2026-06-06 08:24:12,459 - IPTVCollector - INFO -   央视: 20 个频道
+2026-06-06 08:24:12,459 - IPTVCollector - INFO -   其他: 147 个频道
+2026-06-06 08:24:12,459 - IPTVCollector - INFO -   卫视: 34 个频道
+2026-06-06 08:24:12,459 - IPTVCollector - INFO -   港澳台: 49 个频道
+2026-06-06 08:24:12,459 - IPTVCollector - INFO -   地方: 145 个频道
+2026-06-06 08:24:12,460 - IPTVCollector - INFO - ✅ M3U 文件已生成: /home/runner/work/ITV/ITV/output/tv.m3u
+2026-06-06 08:24:12,460 - IPTVCollector - INFO - ✅ TXT 文件已生成: /home/runner/work/ITV/ITV/output/tv.txt
+2026-06-06 08:24:12,461 - IPTVCollector - INFO - 🎉 完成！有效频道总数: 395
+2026-06-06 08:24:12,461 - IPTVCollector - INFO - 📊 统计信息已保存至 /home/runner/work/ITV/ITV/output/stats.json
