@@ -119,8 +119,38 @@ class IPTVDatabase:
             conn.commit()
 
     def batch_upsert(self, channels: List[Dict[str, Any]], verified: bool = True):
-        for ch in channels:
-            self.upsert_channel(ch, verified)
+    if not channels:
+        return
+    now = int(time.time())
+    with sqlite3.connect(self.db_path) as conn:
+        cursor = conn.cursor()
+        if verified:
+            # 使用 INSERT OR REPLACE 批量处理
+            data = []
+            for ch in channels:
+                name = ch.get("name", "")
+                url = ch.get("url", "")
+                if not url:
+                    continue
+                group_title = ch.get("group_title", "")
+                tvg_id = ch.get("id", "")
+                tvg_logo = ch.get("logo", "")
+                latency = ch.get("latency", 9999)
+                video_codec = ch.get("video_codec", "")
+                ip_info = json.dumps(ch.get("ip_info")) if ch.get("ip_info") else None
+                data.append((name, url, group_title, tvg_id, tvg_logo, latency, video_codec, ip_info, now, now, now))
+            cursor.executemany('''
+                INSERT OR REPLACE INTO channels
+                (name, url, group_title, tvg_id, tvg_logo, latency, video_codec, ip_info,
+                 first_seen, last_verified, last_attempt, failure_count, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'active')
+            ''', data)
+        else:
+            # 失败更新
+            for ch in channels:
+                self.upsert_channel(ch, verified)
+        conn.commit()
+        print(f"💾 数据库已保存 {len(data)} 条记录")
 
     def load_active_channels(self, max_age: int = DATA_VALID_SECONDS) -> List[Dict[str, Any]]:
         now = int(time.time())
