@@ -15,26 +15,18 @@ class CacheManager:
     def _print_stats(self):
         stats = self.db.get_stats()
         print(f"📊 数据库统计: 总计={stats['total']}, 活跃={stats['active']}, 失效={stats['inactive']}, 近期有效={stats['recent']}")
-        print(f"📅 数据有效期: {stats['valid_seconds'] // 86400}天, 全量更新阈值: {stats['expiry_seconds'] // 86400}天")
+        print(f"📅 数据有效期: {stats['valid_days']}天, 全量更新阈值: {stats['expiry_days']}天")
 
     def should_full_update(self) -> bool:
-        """
-        判断是否需要执行全量更新（不是增量更新）
-        条件：数据已全部过期（超过30天未验证）
-        """
+        """判断是否需要全量采集（所有数据已超过 expiry_days 天未验证）"""
         if self.db.is_expired():
             print(f"⏰ 所有活跃数据已超过 {DATA_EXPIRY_SECONDS // 86400} 天，执行全量更新")
             return True
         print(f"✅ 缓存数据有效，执行增量更新（只验证过期数据）")
         return False
 
-    def should_incremental_update(self) -> bool:
-        """是否需要增量更新（检查是否有数据需要重新验证）"""
-        stats = self.db.get_stats()
-        return stats['recent'] < stats['active']  # 有部分数据过期需要重新验证
-
     def load_active_channels(self) -> list:
-        """加载当前有效的频道（只返回最近验证成功的）"""
+        """加载当前有效的频道（只返回最近 valid_days 天内验证成功的）"""
         channels = self.db.load_active_channels()
         print(f"📂 从缓存加载了 {len(channels)} 个有效频道")
         return channels
@@ -59,6 +51,7 @@ class CacheManager:
                 elif 'url' in ch:
                     records.append(ch)
             else:
+                # 对象形式
                 if hasattr(ch, 'urls') and ch.urls:
                     for url in ch.urls:
                         records.append({
@@ -88,7 +81,7 @@ class CacheManager:
             print(f"💾 增量更新完成：处理 {len(records)} 条记录")
 
     def update_failed(self, channel) -> None:
-        """标记频道验证失败"""
+        """标记单个频道验证失败（用于增量验证时）"""
         if hasattr(channel, 'url'):
             self.db.upsert_channel({"name": channel.name, "url": channel.url}, verified=False)
         elif isinstance(channel, dict) and 'url' in channel:
