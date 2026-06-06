@@ -16,11 +16,11 @@ from typing import List, Dict, Optional, Any
 DB_PATH = "iptv_cache.db"
 
 # 数据时效配置（秒）
-# 验证成功后，在这个时间内都认为有效
+# 验证成功后，在这个时间内都认为有效，无需重新验证
 DATA_VALID_SECONDS = 7 * 24 * 3600  # 7天
 
 # 数据过期配置（秒）
-# 超过这个时间未验证，视为过期，输出时排除
+# 超过这个时间未验证，视为过期，输出时排除，并触发增量验证
 DATA_EXPIRY_SECONDS = 30 * 24 * 3600  # 30天
 
 # 失效标记阈值
@@ -46,19 +46,19 @@ class IPTVDatabase:
                     latency INTEGER DEFAULT 9999,
                     video_codec TEXT,
                     ip_info TEXT,
-                    first_seen INTEGER DEFAULT 0,      -- 首次发现时间
-                    last_verified INTEGER DEFAULT 0,    -- 最后验证成功时间
-                    last_attempt INTEGER DEFAULT 0,     -- 最后尝试时间
-                    failure_count INTEGER DEFAULT 0,    -- 连续失败次数
-                    status TEXT DEFAULT 'active',       -- active: 有效, inactive: 失效
+                    first_seen INTEGER DEFAULT 0,
+                    last_verified INTEGER DEFAULT 0,
+                    last_attempt INTEGER DEFAULT 0,
+                    failure_count INTEGER DEFAULT 0,
+                    status TEXT DEFAULT 'active',
                     UNIQUE(name, url)
                 )
             ''')
-            # 索引优化查询性能
+            # 索引
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_status ON channels(status)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_last_verified ON channels(last_verified)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_name ON channels(name)')
-            
+
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS metadata (
                     key TEXT PRIMARY KEY,
@@ -96,24 +96,21 @@ class IPTVDatabase:
         url = channel.get("url", "")
         if not url:
             return
-        
+
         group_title = channel.get("group_title", "")
         tvg_id = channel.get("id", "")
         tvg_logo = channel.get("logo", "")
         latency = channel.get("latency", 9999)
         video_codec = channel.get("video_codec", "")
         ip_info = json.dumps(channel.get("ip_info")) if channel.get("ip_info") else None
-        
+
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            # 检查是否存在
             cursor.execute("SELECT id, failure_count, status FROM channels WHERE name = ? AND url = ?", (name, url))
             existing = cursor.fetchone()
-            
+
             if existing:
-                # 已存在，更新
                 if verified:
-                    # 验证成功：重置失败计数，更新验证时间，状态设为 active
                     cursor.execute('''
                         UPDATE channels SET
                             group_title = ?, tvg_id = ?, tvg_logo = ?,
@@ -124,7 +121,6 @@ class IPTVDatabase:
                     ''', (group_title, tvg_id, tvg_logo, latency, video_codec, ip_info,
                           now, now, name, url))
                 else:
-                    # 验证失败：增加失败计数
                     cursor.execute('''
                         UPDATE channels SET
                             last_attempt = ?,
@@ -136,7 +132,6 @@ class IPTVDatabase:
                         WHERE name = ? AND url = ?
                     ''', (now, FAILURE_THRESHOLD, name, url))
             else:
-                # 新频道
                 if verified:
                     cursor.execute('''
                         INSERT INTO channels
@@ -148,18 +143,13 @@ class IPTVDatabase:
             conn.commit()
 
     def batch_upsert(self, channels: List[Dict[str, Any]], verified: bool = True):
-        """批量插入或更新"""
         for ch in channels:
             self.upsert_channel(ch, verified)
 
     def load_active_channels(self, max_age: int = DATA_VALID_SECONDS) -> List[Dict[str, Any]]:
-        """
-        加载有效的频道（最近验证成功的）
-        max_age: 最大有效时长（秒），超过此时间未验证的视为过期
-        """
+        """加载最近验证成功的活跃频道（max_age 天内验证过的）"""
         now = int(time.time())
         threshold = now - max_age
-        
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
@@ -168,7 +158,6 @@ class IPTVDatabase:
                 WHERE status = 'active' AND last_verified >= ?
                 ORDER BY name, latency
             ''', (threshold,))
-            
             channels = []
             for row in cursor.fetchall():
                 ch = dict(row)
@@ -180,7 +169,6 @@ class IPTVDatabase:
         return channels
 
     def get_stats(self) -> Dict[str, Any]:
-        """获取数据库统计"""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM channels")
@@ -189,26 +177,26 @@ class IPTVDatabase:
             active = cursor.fetchone()[0]
             cursor.execute("SELECT COUNT(*) FROM channels WHERE status = 'inactive'")
             inactive = cursor.fetchone()[0]
-            cursor.execute("SELECT COUNT(*) FROM channels WHERE status = 'active' AND last_verified >= ?", 
-                          (int(time.time()) - DATA_VALID_SECONDS,))
+            now = int(time.time())
+            threshold = now - DATA_VALID_SECONDS
+            cursor.execute("SELECT COUNT(*) FROM channels WHERE status = 'active' AND last_verified >= ?", (threshold,))
             recent = cursor.fetchone()[0]
         return {
-            "total": total, 
-            "active": active, 
+            "total": total,
+            "active": active,
             "inactive": inactive,
             "recent": recent,
-            "valid_seconds": DATA_VALID_SECONDS,
-            "expiry_seconds": DATA_EXPIRY_SECONDS
+            "valid_days": DATA_VALID_SECONDS // 86400,
+            "expiry_days": DATA_EXPIRY_SECONDS // 86400
         }
 
     def is_expired(self) -> bool:
-        """检查是否需要全量更新（数据是否全部过期）"""
+        """检查是否需要全量更新：没有活跃频道或所有活跃频道都已超过 expiry_days 天"""
+        threshold = int(time.time()) - DATA_EXPIRY_SECONDS
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            threshold = int(time.time()) - DATA_EXPIRY_SECONDS
             cursor.execute("SELECT COUNT(*) FROM channels WHERE status = 'active' AND last_verified >= ?", (threshold,))
             recent = cursor.fetchone()[0]
             cursor.execute("SELECT COUNT(*) FROM channels WHERE status = 'active'")
             active = cursor.fetchone()[0]
-        # 如果没有活跃频道，或所有活跃频道都已过期，需要全量更新
         return active == 0 or recent == 0
