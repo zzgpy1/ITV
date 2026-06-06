@@ -39,16 +39,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-iptv-cache-
 
-      # 强制删除旧缓存，确保别名修正后重新采集
-      - name: 删除旧缓存（确保别名生效）
-        run: |
-          if [ -f "iptv_cache.db" ]; then
-            echo "删除旧缓存文件 iptv_cache.db"
-            rm -f iptv_cache.db
-          else
-            echo "无缓存文件，跳过删除"
-          fi
-
       - name: 安装 ffmpeg
         run: |
           sudo apt-get update
@@ -75,7 +65,7 @@ jobs:
       - name: 执行 IPTV 更新脚本
         run: python -m src.run
         env:
-          MAX_WORKERS: 5
+          MAX_WORKERS: 10
           TIMEOUT: 10
           FFMPEG_ENABLE: true
           ENABLE_RETRY: true
@@ -83,11 +73,15 @@ jobs:
           ENABLE_REGION_FILTER: false
           PREFERRED_LOCATION: ""
           PREFERRED_ISP: ""
+          CACHE_SPEED_HOURS: 24
+          CACHE_RAW_HOURS: 24
+          MAX_SOURCES_PER_CHANNEL: 5
+          DEMO_MATCH_MODE: contains
 
       - name: 部署 output 目录到 main 分支
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          branch: main               # 目标分支
-          folder: output             # 要部署的文件夹
-          target-folder: output      # 目标子目录
-          clean: false               # 不清除目标分支的其他文件
+          branch: main
+          folder: output
+          target-folder: output
+          clean: false
