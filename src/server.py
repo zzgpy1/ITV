@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 # src/server.py
-# HTTP 静态文件服务器模块
-
 import os
 import sys
 from pathlib import Path
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
-# 添加项目根目录到路径
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
@@ -23,26 +20,21 @@ except ImportError as e:
     logger = logging.getLogger("HTTPServer")
 
 def start_file_server():
-    """在 OUTPUT_DIR 目录启动 HTTP 文件服务器"""
-    try:
-        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-        os.chdir(OUTPUT_DIR)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    os.chdir(OUTPUT_DIR)
 
-        class CORSRequestHandler(SimpleHTTPRequestHandler):
-            def end_headers(self):
-                self.send_header('Access-Control-Allow-Origin', '*')
-                super().end_headers()
-            def log_message(self, format, *args):
-                logger.info(f"HTTP: {self.address_string()} - {format % args}")
+    class CORSRequestHandler(SimpleHTTPRequestHandler):
+        def end_headers(self):
+            self.send_header('Access-Control-Allow-Origin', '*')
+            super().end_headers()
+        def log_message(self, format, *args):
+            logger.info(f"HTTP: {self.address_string()} - {format % args}")
 
-        server = HTTPServer((WEB_SERVER_HOST, WEB_SERVER_PORT), CORSRequestHandler)
-        logger.info(f"📁 HTTP 文件服务器已启动，提供文件服务: {OUTPUT_DIR}")
-        logger.info(f"🌐 访问地址: http://{WEB_SERVER_HOST}:{WEB_SERVER_PORT}/")
-        logger.info(f"📄 播放列表地址: http://{WEB_SERVER_HOST}:{WEB_SERVER_PORT}/tv.m3u")
-        server.serve_forever()
-    except Exception as e:
-        logger.exception(f"❌ HTTP 服务器启动失败: {e}")
-        sys.exit(1)
+    server = HTTPServer((WEB_SERVER_HOST, WEB_SERVER_PORT), CORSRequestHandler)
+    logger.info(f"📁 HTTP 文件服务器已启动，提供文件服务: {OUTPUT_DIR}")
+    logger.info(f"🌐 访问地址: http://{WEB_SERVER_HOST}:{WEB_SERVER_PORT}/")
+    logger.info(f"📄 播放列表地址: http://{WEB_SERVER_HOST}:{WEB_SERVER_PORT}/tv.m3u")
+    server.serve_forever()
 
 if __name__ == "__main__":
     start_file_server()
