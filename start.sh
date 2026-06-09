@@ -9,9 +9,13 @@ mkdir -p /app/data /app/output
 cd /app
 
 # 更新IP数据库（首次或文件无效时）
-if [ ! -f /app/qqwry.dat ] || [ "$(stat -c %s /app/qqwry.dat 2>/dev/null || echo 0)" -lt 1048576 ]; then
-    echo "正在更新 IP 数据库..."
-    python -m src.update_ipdb || echo "⚠️ IP 数据库更新失败，将使用已有文件（如有）"
+if [ "${ENABLE_IP_RESOLVE:-true}" = "true" ]; then
+    if [ ! -f /app/qqwry.dat ] || [ "$(stat -c %s /app/qqwry.dat 2>/dev/null || echo 0)" -lt 1048576 ]; then
+        echo "正在更新 IP 数据库..."
+        python -m src.update_ipdb || echo "⚠️ IP 数据库更新失败，将使用已有文件（如有）"
+    fi
+else
+    echo "⚙️ IP解析已禁用，跳过 IP 数据库更新"
 fi
 
 RUN_MODE=${RUN_MODE:-once}
