@@ -16,7 +16,7 @@ services:
       - TIMEOUT=10
       - FFMPEG_ENABLE=true
       - ENABLE_RETRY=true
-      - ENABLE_IP_RESOLVE=true
+      - ENABLE_IP_RESOLVE=false
       - ENABLE_REGION_FILTER=false
       - CACHE_SPEED_HOURS=24
       - CACHE_RAW_HOURS=24
