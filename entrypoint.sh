@@ -9,19 +9,16 @@ echo "=========================================="
 mkdir -p /app/data /app/output
 cd /app
 
-# 更新 IP 数据库（如果不存在或无效）
 if [ ! -f /app/qqwry.dat ] || [ "$(stat -c %s /app/qqwry.dat 2>/dev/null || echo 0)" -lt 1048576 ]; then
     echo "正在更新 IP 数据库..."
     python -m src.update_ipdb || echo "⚠️ IP 数据库更新失败，将使用已有文件（如有）"
 fi
 
-# 启动 HTTP 文件服务器（后台运行，并将输出重定向到 stdout）
 echo "启动 HTTP 服务器，监听 0.0.0.0:8000，目录 /app/output"
 python -m src.server >> /app/output/http.log 2>&1 &
 HTTP_PID=$!
 echo "HTTP 服务器进程 PID: $HTTP_PID"
 
-# 等待 2 秒确保服务器启动
 sleep 2
 if ! kill -0 $HTTP_PID 2>/dev/null; then
     echo "❌ HTTP 服务器启动失败，查看 /app/output/http.log"
@@ -33,13 +30,11 @@ echo "✅ HTTP 服务器已启动"
 RUN_MODE=${RUN_MODE:-once}
 INTERVAL=${SCHEDULE_INTERVAL:-21600}
 
-# 采集任务函数（前台运行）
 run_collector() {
     if [ "$RUN_MODE" = "once" ]; then
         echo "执行一次性采集任务..."
         python -m src.run
         echo "✅ 一次性采集完成，HTTP 服务器继续运行"
-        # 保持 HTTP 服务器在前台
         wait $HTTP_PID
     elif [ "$RUN_MODE" = "schedule" ]; then
         echo "启动定时模式，每 ${INTERVAL} 秒执行一次"
@@ -55,5 +50,4 @@ run_collector() {
     fi
 }
 
-# 运行采集（前台阻塞）
 run_collector
