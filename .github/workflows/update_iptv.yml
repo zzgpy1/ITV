@@ -50,18 +50,6 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 缓存 IP 数据库
-        uses: actions/cache@v4
-        with:
-          path: qqwry.dat
-          key: ${{ runner.os }}-qqwry-dat
-          restore-keys: |
-            ${{ runner.os }}-qqwry-dat
-
-      - name: 更新 IP 数据库
-        run: python -m src.update_ipdb
-        continue-on-error: true
-
       - name: 执行 IPTV 更新脚本
         run: python -m src.run
         env:
