@@ -1,7 +1,11 @@
 # src/fetcher.py
 import asyncio
 import aiohttp
-from src.config import HEADERS, TIMEOUT, RETRY_MAX_ATTEMPTS, RETRY_BACKOFF_FACTOR, RETRY_MAX_WAIT, ENABLE_RETRY, CDN_PROXY_ENABLE, CDN_PROXY_URL, CDN_PROXY_DOMAINS
+from src.config import (
+    HEADERS, TIMEOUT, RETRY_MAX_ATTEMPTS, RETRY_BACKOFF_FACTOR,
+    RETRY_MAX_WAIT, ENABLE_RETRY,
+    CDN_PROXY_ENABLE, CDN_PROXY_URL, CDN_PROXY_DOMAINS
+)
 from src.database import get_db_cache
 from src.logger import logger
 
@@ -9,6 +13,7 @@ class FetchError(Exception):
     pass
 
 def apply_cdn_proxy(url: str) -> str:
+    """如果启用CDN且域名匹配，则返回代理URL，否则原样返回"""
     if not CDN_PROXY_ENABLE:
         return url
     proxy_base = CDN_PROXY_URL.rstrip('/') + '/'
@@ -18,6 +23,7 @@ def apply_cdn_proxy(url: str) -> str:
     return url
 
 async def check_source_modified(session: aiohttp.ClientSession, url: str, db):
+    # 使用原始URL查缓存，但请求时使用代理URL
     proxy_url = apply_cdn_proxy(url)
     cached_etag = None
     cached_last_modified = None
@@ -56,11 +62,12 @@ async def fetch_url_with_metadata(session: aiohttp.ClientSession, url: str, db):
         logger.debug(f"✅ 源无变化，使用缓存: {url}")
         return cached_content
 
-    logger.info(f"🔄 源有更新，拉取: {url} (代理: {proxy_url if proxy_url != url else '无'})")
+    logger.info(f"🔄 拉取: {url} (代理: {proxy_url if proxy_url != url else '无'})")
     attempt = 0
     while True:
         attempt += 1
         try:
+            # 使用代理URL发起GET请求
             async with session.get(proxy_url, timeout=TIMEOUT, headers=HEADERS) as resp:
                 if resp.status != 200:
                     raise FetchError(f"HTTP {resp.status}")
@@ -93,6 +100,7 @@ async def fetch_all_sources_incremental(sources: list, db) -> dict:
         for url, res in zip(sources, results):
             if isinstance(res, Exception):
                 logger.warning(f"⚠️ 拉取失败 {url}: {res}")
+                # 尝试从数据库取缓存
                 if db and db._conn:
                     cursor = await db._conn.execute(
                         "SELECT content FROM channel_cache_raw WHERE url = ?",
