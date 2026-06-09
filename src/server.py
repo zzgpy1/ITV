@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
+print("Starting HTTP server...", flush=True)
+sys.stdout.flush()
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 try:
