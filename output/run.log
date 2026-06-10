@@ -2300,3 +2300,74 @@
 2026-06-09 22:09:59,643 - IPTVCollector - INFO - ✅ TXT 文件已生成: /home/runner/work/ITV/ITV/output/tv.txt (共 3160 个频道)
 2026-06-09 22:09:59,643 - IPTVCollector - INFO - 🎉 完成！有效频道总数: 316
 2026-06-09 22:09:59,643 - IPTVCollector - INFO - 📊 统计信息已保存至 /home/runner/work/ITV/ITV/output/stats.json
+2026-06-10 03:06:51,795 - IPTVCollector - INFO - 🚀 IPTV 智能整理平台启动
+2026-06-10 03:06:51,795 - IPTVCollector - INFO - 📡 配置：超时=10s, 并发=10, ffmpeg=True
+2026-06-10 03:06:51,795 - IPTVCollector - INFO - 📋 增强过滤: demo=True, alias=True, blacklist=True
+2026-06-10 03:06:51,805 - IPTVCollector - INFO - 📋 Demo 顺序: 1521 个频道
+2026-06-10 03:06:51,809 - IPTVCollector - INFO - ✅ 数据库缓存已启用: /home/runner/work/ITV/ITV/iptv_cache.db
+2026-06-10 03:06:51,809 - IPTVCollector - INFO - 
+📥 拉取 IPTV 源...
+2026-06-10 03:06:51,810 - IPTVCollector - INFO - 🔄 拉取: https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/cn.m3u
+2026-06-10 03:06:51,811 - IPTVCollector - INFO - 🔄 拉取: https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.txt
+2026-06-10 03:06:51,812 - IPTVCollector - INFO - 🔄 拉取: https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/zzgpy1/iptv-api/master/output/result.txt
+2026-06-10 03:06:51,812 - IPTVCollector - INFO - 🔄 拉取: https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/zzgpy1/IPTV-collect-tv-txt/main/live.txt
+2026-06-10 03:06:51,812 - IPTVCollector - INFO - 🔄 拉取: https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/zzgpy1/Collect-IPTV/main/best_sorted.m3u
+2026-06-10 03:06:51,812 - IPTVCollector - INFO - 🔄 拉取: https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/YueChan/Live/main/IPTV.m3u
+2026-06-10 03:06:51,813 - IPTVCollector - INFO - 🔄 拉取: https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/fanmingming/live/main/tv/m3u/ipv6.m3u
+2026-06-10 03:06:51,813 - IPTVCollector - INFO - 🔄 拉取: https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u
+2026-06-10 03:06:51,813 - IPTVCollector - INFO - 🔄 拉取: https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/zhanghanyun/backup/main/tv.m3u
+2026-06-10 03:06:51,813 - IPTVCollector - INFO - 🔄 拉取: https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/WeiZuoXu/IPTV/main/ipv6.m3u
+2026-06-10 03:06:51,900 - IPTVCollector - WARNING -   重试 https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/WeiZuoXu/IPTV/main/ipv6.m3u (1/3)，等待 1s
+2026-06-10 03:06:51,906 - IPTVCollector - WARNING -   重试 https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/zhanghanyun/backup/main/tv.m3u (1/3)，等待 1s
+2026-06-10 03:06:52,926 - IPTVCollector - WARNING -   重试 https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/zhanghanyun/backup/main/tv.m3u (2/3)，等待 2s
+2026-06-10 03:06:52,927 - IPTVCollector - WARNING -   重试 https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/WeiZuoXu/IPTV/main/ipv6.m3u (2/3)，等待 2s
+2026-06-10 03:06:54,955 - IPTVCollector - WARNING - ⚠️ 拉取失败 https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/zhanghanyun/backup/main/tv.m3u: HTTP 404
+2026-06-10 03:06:54,956 - IPTVCollector - WARNING - ⚠️ 拉取失败 https://gh-proxy.19860519.xyz/https://raw.githubusercontent.com/WeiZuoXu/IPTV/main/ipv6.m3u: HTTP 404
+2026-06-10 03:06:54,981 - IPTVCollector - INFO - 📊 原始频道数（去重后）: 1413
+2026-06-10 03:06:55,202 - IPTVCollector - INFO - ⚡ 测速: 1413 个新频道需探测，0 个来自缓存
+2026-06-10 03:11:38,956 - IPTVCollector - INFO - ✅ 测速完成: 有效 603/1413，过滤 810 个无效/广告源
+2026-06-10 03:11:38,956 - IPTVCollector - INFO - 📊 通过HTTP测速的频道数: 603
+2026-06-10 03:11:39,133 - IPTVCollector - INFO - 🔍 ffmpeg 深度验证: 603 个需要验证，0 个来自缓存
+2026-06-10 03:20:32,557 - IPTVCollector - INFO - 🔍 ffmpeg 深度验证完成，通过 520/603 个频道
+2026-06-10 03:20:32,557 - IPTVCollector - INFO - 📊 通过ffmpeg验证的频道数: 520
+2026-06-10 03:20:32,971 - IPTVCollector - INFO - 🔄 频道合并完成：520 个源 -> 486 个频道
+2026-06-10 03:20:32,971 - IPTVCollector - INFO - 🖼️ 图标匹配：为 68 个频道自动匹配了图标
+2026-06-10 03:20:32,971 - IPTVCollector - INFO - 📊 合并后的频道数: 486
+2026-06-10 03:20:32,975 - IPTVCollector - INFO - 📊 黑名单过滤后: 479 (减少 7)
+2026-06-10 03:20:33,175 - IPTVCollector - INFO - 📊 Demo筛选后: 363 (减少 116)
+2026-06-10 03:20:33,176 - IPTVCollector - INFO - 
+🎉 最终有效频道分类统计：
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   📺央视频道: 23 个频道
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   📡卫视频道: 33 个频道
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   ☘️北京频道: 2 个频道
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   ☘️上海频道: 13 个频道
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   ☘️天津频道: 2 个频道
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   ☘️重庆频道: 3 个频道
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   ☘️广东频道: 9 个频道
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   ☘️浙江频道: 71 个频道
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   ☘️江苏频道: 21 个频道
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   ☘️安徽频道: 11 个频道
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   ☘️福建频道: 7 个频道
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   ☘️河南频道: 8 个频道
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   ☘️湖北频道: 3 个频道
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   ☘️湖南频道: 10 个频道
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   ☘️广西频道: 5 个频道
+2026-06-10 03:20:33,176 - IPTVCollector - INFO -   ☘️海南频道: 1 个频道
+2026-06-10 03:20:33,177 - IPTVCollector - INFO -   ☘️四川频道: 14 个频道
+2026-06-10 03:20:33,177 - IPTVCollector - INFO -   ☘️贵州频道: 2 个频道
+2026-06-10 03:20:33,177 - IPTVCollector - INFO -   ☘️云南频道: 12 个频道
+2026-06-10 03:20:33,177 - IPTVCollector - INFO -   ☘️陕西频道: 8 个频道
+2026-06-10 03:20:33,177 - IPTVCollector - INFO -   ☘️甘肃频道: 1 个频道
+2026-06-10 03:20:33,177 - IPTVCollector - INFO -   ☘️青海频道: 1 个频道
+2026-06-10 03:20:33,177 - IPTVCollector - INFO -   ☘️宁夏频道: 3 个频道
+2026-06-10 03:20:33,177 - IPTVCollector - INFO -   ☘️新疆频道: 9 个频道
+2026-06-10 03:20:33,177 - IPTVCollector - INFO -   ☘️山西频道: 6 个频道
+2026-06-10 03:20:33,177 - IPTVCollector - INFO -   ☘️辽宁频道: 4 个频道
+2026-06-10 03:20:33,177 - IPTVCollector - INFO -   ☘️吉林频道: 25 个频道
+2026-06-10 03:20:33,177 - IPTVCollector - INFO -   ☘️黑龙江频道: 12 个频道
+2026-06-10 03:20:33,177 - IPTVCollector - INFO -   ☘️河北频道: 17 个频道
+2026-06-10 03:20:33,177 - IPTVCollector - INFO -   🌊港·澳·台: 27 个频道
+2026-06-10 03:20:33,182 - IPTVCollector - INFO - ✅ M3U 文件已生成: /home/runner/work/ITV/ITV/output/tv.m3u
+2026-06-10 03:20:33,186 - IPTVCollector - INFO - ✅ TXT 文件已生成: /home/runner/work/ITV/ITV/output/tv.txt
+2026-06-10 03:20:33,186 - IPTVCollector - INFO - ✅ 多源 M3U 文件已生成: /home/runner/work/ITV/ITV/output/tv_multi.m3u，支持自动切换
+2026-06-10 03:20:33,186 - IPTVCollector - INFO - 🎉 完成！有效频道总数: 363
