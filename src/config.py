@@ -20,7 +20,7 @@ IPTV_SOURCES = [
     GH_PROXY + "https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/cn.m3u",
     GH_PROXY + "https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.txt",
     GH_PROXY + "https://raw.githubusercontent.com/zzgpy1/iptv-api/master/output/result.txt",
-    GH_PROXY + "https://raw.githubusercontent.com/zzgpy1/IPTV-collect-tv-txt/main/live.txt",
+    GH_PROXY + "https://raw.githubusercontent.com/dogwalkerg/IPTV-collect-tv-txt/main/live.txt",
     GH_PROXY + "https://raw.githubusercontent.com/zzgpy1/Collect-IPTV/main/best_sorted.m3u",
     GH_PROXY + "https://raw.githubusercontent.com/YueChan/Live/main/IPTV.m3u",
     GH_PROXY + "https://raw.githubusercontent.com/fanmingming/live/main/tv/m3u/ipv6.m3u",
