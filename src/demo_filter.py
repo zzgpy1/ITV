@@ -45,6 +45,13 @@ def parse_demo_order_with_categories(demo_file: Path = DEMO_FILE) -> List[Tuple[
                 order.append(("其他", line))
     
     logger.info(f"📋 从 demo.txt 解析到 {len(order)} 个有序频道，共 {len(set(c for c, _ in order))} 个分类")
+    
+    # 调试：打印前30个 demo 项，确认 CCTV-5+ 是否存在
+    logger.info("📋 Demo 顺序预览（前30项）：")
+    for i, (cat, name) in enumerate(order[:30]):
+        marker = " ← CCTV-5+" if name == "CCTV-5+" else ""
+        logger.info(f"   {i+1}. [{cat}] {name}{marker}")
+    
     return order
 
 
@@ -59,27 +66,32 @@ def match_channel_name(channel_name: str, demo_name: str) -> bool:
     cn_lower = channel_name.lower()
     dn_lower = demo_name.lower()
     
-    # ========== 特殊处理 CCTV-5 和 CCTV-5+ ==========
-    # CCTV-5 匹配（排除 CCTV-5+）
+    # ========== CCTV-5+ 精确匹配（必须包含加号）==========
+    if dn_lower == "cctv-5+":
+        # 匹配任何包含 CCTV-5+ 或 CCTV5+ 的频道名
+        result = ('cctv-5+' in cn_lower or 
+                  'cctv5+' in cn_lower or 
+                  'cctv-5＋' in cn_lower or
+                  'cctv5＋' in cn_lower or
+                  ('cctv-5' in cn_lower and ('+' in channel_name or '＋' in channel_name)))
+        if result:
+            logger.debug(f"✅ CCTV-5+ 匹配: '{channel_name}' -> '{demo_name}'")
+        return result
+    
+    # ========== CCTV-5 匹配（排除 CCTV-5+）==========
     if dn_lower == "cctv-5":
         # 如果频道名包含加号，则不匹配 CCTV-5
         if '+' in channel_name or '＋' in channel_name:
             return False
-        # 匹配各种 CCTV-5 写法
-        return ('cctv-5' in cn_lower or 
-                'cctv5' in cn_lower or 
-                '央视5' in channel_name or
-                '中央5' in channel_name)
+        result = ('cctv-5' in cn_lower or 
+                  'cctv5' in cn_lower or 
+                  '央视5' in channel_name or
+                  '中央5' in channel_name)
+        if result:
+            logger.debug(f"✅ CCTV-5 匹配: '{channel_name}' -> '{demo_name}'")
+        return result
     
-    # CCTV-5+ 匹配（必须包含加号）
-    if dn_lower == "cctv-5+":
-        # 必须包含加号
-        return ('cctv-5+' in cn_lower or 
-                'cctv5+' in cn_lower or 
-                'cctv-5＋' in cn_lower or
-                'cctv5＋' in cn_lower)
-    
-    # ========== 特殊处理 CGTN 系列 ==========
+    # ========== CGTN 系列 ==========
     if dn_lower.startswith("cgtn"):
         if dn_lower == "cgtn":
             return 'cgtn' in cn_lower and 'cgtn俄' not in cn_lower and 'cgtn法' not in cn_lower
@@ -251,7 +263,10 @@ def filter_and_order_by_demo(channels: list) -> tuple:
     matched = []
     unmatched = list(channels)
     matched_names = set()
-    matched_demo_items = set()
+    
+    # 统计 CCTV-5+ 的匹配情况
+    cctv5plus_matched = False
+    cctv5_matched = False
 
     # 第一遍：精确/包含匹配 demo 中的频道名
     for category, demo_name in demo_order:
@@ -263,8 +278,12 @@ def filter_and_order_by_demo(channels: list) -> tuple:
             if ch["name"] not in matched_names:
                 matched.append(ch)
                 matched_names.add(ch["name"])
-                matched_demo_items.add(demo_name)
                 unmatched = [c for c in unmatched if c["name"] != ch["name"]]
+                if demo_name == "CCTV-5+":
+                    cctv5plus_matched = True
+                    logger.info(f"🎯 精确匹配到 CCTV-5+")
+                if demo_name == "CCTV-5":
+                    cctv5_matched = True
                 continue
         
         # 尝试模糊匹配
@@ -278,14 +297,21 @@ def filter_and_order_by_demo(channels: list) -> tuple:
                 ch_copy["demo_name"] = demo_name
                 matched.append(ch_copy)
                 matched_names.add(ch["name"])
-                matched_demo_items.add(demo_name)
                 unmatched.pop(i)
                 found = True
+                if demo_name == "CCTV-5+":
+                    cctv5plus_matched = True
+                    logger.info(f"🎯 模糊匹配到 CCTV-5+: {ch['name']}")
+                if demo_name == "CCTV-5":
+                    cctv5_matched = True
                 break
         
-        if not found:
-            # 调试：记录未匹配的 demo 项
-            logger.debug(f"未匹配 demo 项: {category} - {demo_name}")
+        if not found and demo_name in ["CCTV-5", "CCTV-5+"]:
+            logger.warning(f"⚠️ 未找到匹配的频道: {demo_name}")
+
+    # 输出匹配结果
+    logger.info(f"📊 CCTV-5 匹配: {'成功' if cctv5_matched else '失败'}")
+    logger.info(f"📊 CCTV-5+ 匹配: {'成功' if cctv5plus_matched else '失败'}")
 
     # 第二遍：处理剩余未匹配的频道，自动归类
     remaining = []
@@ -304,11 +330,11 @@ def filter_and_order_by_demo(channels: list) -> tuple:
 
     logger.info(f"🎯 Demo 筛选：原始 {len(channels)} 个频道 -> 匹配 {len(matched)} 个频道，未匹配 {len(remaining)} 个")
     
-    # 输出未匹配的样例（前10个）
+    # 输出未匹配的样例
     if remaining:
-        logger.debug("未匹配频道样例（前10个）：")
+        logger.info("未匹配频道样例（前10个）：")
         for ch in remaining[:10]:
-            logger.debug(f"  - {ch['name']}")
+            logger.info(f"  - {ch['name']}")
 
     return matched, remaining
 
