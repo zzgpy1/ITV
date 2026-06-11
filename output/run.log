@@ -3984,3 +3984,139 @@
 2026-06-11 08:41:39,874 - IPTVCollector - INFO - ✅ TXT 文件已生成: /home/runner/work/ITV/ITV/output/tv.txt
 2026-06-11 08:41:39,875 - IPTVCollector - INFO - ✅ 多源 M3U 文件已生成: /home/runner/work/ITV/ITV/output/tv_multi.m3u
 2026-06-11 08:41:39,875 - IPTVCollector - INFO - 🎉 完成！有效频道总数: 373
+2026-06-11 08:48:02,739 - IPTVCollector - INFO - 🚀 IPTV 智能整理平台启动
+2026-06-11 08:48:02,739 - IPTVCollector - INFO - 📡 配置：超时=10s, 并发=10, ffmpeg=True
+2026-06-11 08:48:02,739 - IPTVCollector - INFO - 📋 增强过滤: demo=True, alias=True, blacklist=True
+2026-06-11 08:48:02,741 - IPTVCollector - INFO - 📋 从 demo.txt 解析到 1521 个有序频道，共 33 个分类
+2026-06-11 08:48:02,741 - IPTVCollector - INFO - 📋 Demo 顺序预览（前30项）：
+2026-06-11 08:48:02,741 - IPTVCollector - INFO -    1. [📺央视频道,#genre#] CCTV-1
+2026-06-11 08:48:02,741 - IPTVCollector - INFO -    2. [📺央视频道,#genre#] CCTV-2
+2026-06-11 08:48:02,741 - IPTVCollector - INFO -    3. [📺央视频道,#genre#] CCTV-3
+2026-06-11 08:48:02,741 - IPTVCollector - INFO -    4. [📺央视频道,#genre#] CCTV-4
+2026-06-11 08:48:02,741 - IPTVCollector - INFO -    5. [📺央视频道,#genre#] CCTV-5
+2026-06-11 08:48:02,741 - IPTVCollector - INFO -    6. [📺央视频道,#genre#] CCTV-5+ ← CCTV-5+
+2026-06-11 08:48:02,741 - IPTVCollector - INFO -    7. [📺央视频道,#genre#] CCTV-6
+2026-06-11 08:48:02,741 - IPTVCollector - INFO -    8. [📺央视频道,#genre#] CCTV-7
+2026-06-11 08:48:02,741 - IPTVCollector - INFO -    9. [📺央视频道,#genre#] CCTV-8
+2026-06-11 08:48:02,741 - IPTVCollector - INFO -    10. [📺央视频道,#genre#] CCTV-9
+2026-06-11 08:48:02,741 - IPTVCollector - INFO -    11. [📺央视频道,#genre#] CCTV-10
+2026-06-11 08:48:02,741 - IPTVCollector - INFO -    12. [📺央视频道,#genre#] CCTV-11
+2026-06-11 08:48:02,741 - IPTVCollector - INFO -    13. [📺央视频道,#genre#] CCTV-12
+2026-06-11 08:48:02,741 - IPTVCollector - INFO -    14. [📺央视频道,#genre#] CCTV-13
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    15. [📺央视频道,#genre#] CCTV-14
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    16. [📺央视频道,#genre#] CCTV-15
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    17. [📺央视频道,#genre#] CCTV-16
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    18. [📺央视频道,#genre#] CCTV-17
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    19. [📺央视频道,#genre#] CCTV+1
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    20. [📺央视频道,#genre#] CCTV+2
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    21. [📺央视频道,#genre#] CETV-1
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    22. [📺央视频道,#genre#] CETV-2
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    23. [📺央视频道,#genre#] CETV-3
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    24. [📺央视频道,#genre#] CETV-4
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    25. [📺央视频道,#genre#] CCTV世界地理
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    26. [📺央视频道,#genre#] CCTV央视台球
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    27. [📺央视频道,#genre#] 央视台球
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    28. [📺央视频道,#genre#] CCTV女性时尚
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    29. [📺央视频道,#genre#] CCTV怀旧剧场
+2026-06-11 08:48:02,742 - IPTVCollector - INFO -    30. [📺央视频道,#genre#] CCTV第一剧场
+2026-06-11 08:48:02,743 - IPTVCollector - INFO - 📋 Demo 顺序: 1521 个频道
+2026-06-11 08:48:02,744 - IPTVCollector - INFO - ✅ 数据库缓存已启用: /home/runner/work/ITV/ITV/iptv_cache.db
+2026-06-11 08:48:02,744 - IPTVCollector - INFO - 
+📥 拉取 IPTV 源...
+2026-06-11 08:48:02,782 - IPTVCollector - INFO - 📊 原始频道数（去重后）: 1390
+2026-06-11 08:48:03,122 - IPTVCollector - INFO - ⚡ 测速: 781 个新频道需探测，609 个来自缓存
+2026-06-11 08:51:34,817 - IPTVCollector - INFO - ✅ 测速完成: 有效 609/1390，过滤 781 个无效/广告源
+2026-06-11 08:51:34,817 - IPTVCollector - INFO - 📊 通过HTTP测速的频道数: 609
+2026-06-11 08:51:35,041 - IPTVCollector - INFO - 🔍 ffmpeg 深度验证: 72 个需要验证，537 个来自缓存
+2026-06-11 08:53:12,506 - IPTVCollector - INFO - 🔍 ffmpeg 深度验证完成，通过 542/609 个频道
+2026-06-11 08:53:12,506 - IPTVCollector - INFO - 📊 通过ffmpeg验证的频道数: 542
+2026-06-11 08:53:13,064 - IPTVCollector - INFO - 📊 合并结果: CCTV-5=0, CCTV-5+=1
+2026-06-11 08:53:13,064 - IPTVCollector - INFO - 🔄 频道合并完成：542 个源 -> 499 个频道
+2026-06-11 08:53:13,064 - IPTVCollector - INFO - 📊 合并后的频道数: 499
+2026-06-11 08:53:13,068 - IPTVCollector - INFO - 📊 黑名单过滤后: 491 (减少 8)
+2026-06-11 08:53:13,069 - IPTVCollector - INFO - 📋 从 demo.txt 解析到 1521 个有序频道，共 33 个分类
+2026-06-11 08:53:13,069 - IPTVCollector - INFO - 📋 Demo 顺序预览（前30项）：
+2026-06-11 08:53:13,069 - IPTVCollector - INFO -    1. [📺央视频道,#genre#] CCTV-1
+2026-06-11 08:53:13,069 - IPTVCollector - INFO -    2. [📺央视频道,#genre#] CCTV-2
+2026-06-11 08:53:13,069 - IPTVCollector - INFO -    3. [📺央视频道,#genre#] CCTV-3
+2026-06-11 08:53:13,069 - IPTVCollector - INFO -    4. [📺央视频道,#genre#] CCTV-4
+2026-06-11 08:53:13,069 - IPTVCollector - INFO -    5. [📺央视频道,#genre#] CCTV-5
+2026-06-11 08:53:13,069 - IPTVCollector - INFO -    6. [📺央视频道,#genre#] CCTV-5+ ← CCTV-5+
+2026-06-11 08:53:13,069 - IPTVCollector - INFO -    7. [📺央视频道,#genre#] CCTV-6
+2026-06-11 08:53:13,069 - IPTVCollector - INFO -    8. [📺央视频道,#genre#] CCTV-7
+2026-06-11 08:53:13,069 - IPTVCollector - INFO -    9. [📺央视频道,#genre#] CCTV-8
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    10. [📺央视频道,#genre#] CCTV-9
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    11. [📺央视频道,#genre#] CCTV-10
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    12. [📺央视频道,#genre#] CCTV-11
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    13. [📺央视频道,#genre#] CCTV-12
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    14. [📺央视频道,#genre#] CCTV-13
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    15. [📺央视频道,#genre#] CCTV-14
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    16. [📺央视频道,#genre#] CCTV-15
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    17. [📺央视频道,#genre#] CCTV-16
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    18. [📺央视频道,#genre#] CCTV-17
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    19. [📺央视频道,#genre#] CCTV+1
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    20. [📺央视频道,#genre#] CCTV+2
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    21. [📺央视频道,#genre#] CETV-1
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    22. [📺央视频道,#genre#] CETV-2
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    23. [📺央视频道,#genre#] CETV-3
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    24. [📺央视频道,#genre#] CETV-4
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    25. [📺央视频道,#genre#] CCTV世界地理
+2026-06-11 08:53:13,070 - IPTVCollector - INFO -    26. [📺央视频道,#genre#] CCTV央视台球
+2026-06-11 08:53:13,071 - IPTVCollector - INFO -    27. [📺央视频道,#genre#] 央视台球
+2026-06-11 08:53:13,071 - IPTVCollector - INFO -    28. [📺央视频道,#genre#] CCTV女性时尚
+2026-06-11 08:53:13,071 - IPTVCollector - INFO -    29. [📺央视频道,#genre#] CCTV怀旧剧场
+2026-06-11 08:53:13,071 - IPTVCollector - INFO -    30. [📺央视频道,#genre#] CCTV第一剧场
+2026-06-11 08:53:13,071 - IPTVCollector - WARNING - ⚠️ 未找到匹配的频道: CCTV-5
+2026-06-11 08:53:13,072 - IPTVCollector - INFO - 🎯 精确匹配到 CCTV-5+
+2026-06-11 08:53:13,281 - IPTVCollector - INFO - 📊 CCTV-5 匹配: 失败
+2026-06-11 08:53:13,282 - IPTVCollector - INFO - 📊 CCTV-5+ 匹配: 成功
+2026-06-11 08:53:13,334 - IPTVCollector - INFO - 🎯 Demo 筛选：原始 491 个频道 -> 匹配 376 个频道，未匹配 115 个
+2026-06-11 08:53:13,334 - IPTVCollector - INFO - 未匹配频道样例（前10个）：
+2026-06-11 08:53:13,334 - IPTVCollector - INFO -   - CH5
+2026-06-11 08:53:13,334 - IPTVCollector - INFO -   - 八度空间
+2026-06-11 08:53:13,334 - IPTVCollector - INFO -   - Newsmax
+2026-06-11 08:53:13,335 - IPTVCollector - INFO -   - CHU
+2026-06-11 08:53:13,335 - IPTVCollector - INFO -   - CH8
+2026-06-11 08:53:13,335 - IPTVCollector - INFO -   - Astro AOD
+2026-06-11 08:53:13,335 - IPTVCollector - INFO -   - 亚洲武侠
+2026-06-11 08:53:13,335 - IPTVCollector - INFO -   - NOW NEWS
+2026-06-11 08:53:13,335 - IPTVCollector - INFO -   - WionNews
+2026-06-11 08:53:13,335 - IPTVCollector - INFO -   - Trace Sports
+2026-06-11 08:53:13,335 - IPTVCollector - INFO - 📊 Demo筛选后: 376 (减少 115)
+2026-06-11 08:53:13,335 - IPTVCollector - INFO - 📄 未匹配频道列表已保存到: /home/runner/work/ITV/ITV/output/shai.txt
+2026-06-11 08:53:13,336 - IPTVCollector - INFO - 
+🎉 最终有效频道分类统计：
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   📺央视频道,#genre#: 24 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   📡卫视频道,#genre#: 44 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️北京频道,#genre#: 2 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️上海频道,#genre#: 12 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️天津频道,#genre#: 2 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️重庆频道,#genre#: 3 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️广东频道,#genre#: 9 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️浙江频道,#genre#: 63 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️江苏频道,#genre#: 21 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️安徽频道,#genre#: 16 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️福建频道,#genre#: 8 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️河南频道,#genre#: 8 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️湖北频道,#genre#: 3 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️湖南频道,#genre#: 9 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️广西频道,#genre#: 5 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️海南频道,#genre#: 1 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️四川频道,#genre#: 17 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️贵州频道,#genre#: 2 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️云南频道,#genre#: 12 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️陕西频道,#genre#: 9 个频道
+2026-06-11 08:53:13,336 - IPTVCollector - INFO -   ☘️甘肃频道,#genre#: 1 个频道
+2026-06-11 08:53:13,337 - IPTVCollector - INFO -   ☘️青海频道,#genre#: 1 个频道
+2026-06-11 08:53:13,337 - IPTVCollector - INFO -   ☘️宁夏频道,#genre#: 3 个频道
+2026-06-11 08:53:13,337 - IPTVCollector - INFO -   ☘️新疆频道,#genre#: 9 个频道
+2026-06-11 08:53:13,337 - IPTVCollector - INFO -   ☘️山西频道,#genre#: 7 个频道
+2026-06-11 08:53:13,337 - IPTVCollector - INFO -   ☘️辽宁频道,#genre#: 6 个频道
+2026-06-11 08:53:13,337 - IPTVCollector - INFO -   ☘️吉林频道,#genre#: 25 个频道
+2026-06-11 08:53:13,337 - IPTVCollector - INFO -   ☘️黑龙江频道,#genre#: 12 个频道
+2026-06-11 08:53:13,337 - IPTVCollector - INFO -   ☘️河北频道,#genre#: 16 个频道
+2026-06-11 08:53:13,337 - IPTVCollector - INFO -   🌊港·澳·台,#genre#: 26 个频道
+2026-06-11 08:53:13,338 - IPTVCollector - INFO - ✅ M3U 文件已生成: /home/runner/work/ITV/ITV/output/tv.m3u
+2026-06-11 08:53:13,339 - IPTVCollector - INFO - ✅ TXT 文件已生成: /home/runner/work/ITV/ITV/output/tv.txt
+2026-06-11 08:53:13,340 - IPTVCollector - INFO - ✅ 多源 M3U 文件已生成: /home/runner/work/ITV/ITV/output/tv_multi.m3u
+2026-06-11 08:53:13,340 - IPTVCollector - INFO - 🎉 完成！有效频道总数: 376
