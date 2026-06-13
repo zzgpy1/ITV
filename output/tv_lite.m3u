@@ -1,42 +1,42 @@
 #EXTM3U
 # 精简版 - 仅保留最稳定源，适合移动设备
-# 共 315 个频道（央视全部保留，其他分类限50个）
+# 共 317 个频道（央视全部保留，其他分类限50个）
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-1
-http://198.204.240.250:82/live/cctv1.m3u8
+http://45.192.97.170:8880/play/1.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-2
-http://74.91.26.218:82/live/cctv2hd.m3u8
+http://45.192.97.170:8880/play/2.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-3
-http://74.91.26.218:82/live/cctv3hd.m3u8
+http://45.192.97.170:8880/play/3.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-4
-http://198.204.240.250:82/live/cctv4k.m3u8
+http://45.192.97.170:8880/play/4.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-5
-http://112.27.235.94:8000/hls/5/index.m3u8
+http://45.192.97.170:8880/play/5.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-5+
-http://69.64.57.208/atv/playlist.m3u8
+http://45.192.97.170:8880/play/6.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-6
-http://198.204.240.250:82/live/cctv6.m3u8
+http://45.192.97.170:8880/play/7.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-7
-http://74.91.26.218:82/live/cctv7hd.m3u8
+http://45.192.97.170:8880/play/8.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-8
-http://198.204.240.250:82/live/cctv8k.m3u8
+http://45.192.97.170:8880/play/9.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-9
-http://112.27.235.94:8000/hls/10/index.m3u8
+http://45.192.97.170:8880/play/10.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-10
-http://74.91.26.218:82/live/cctv10hd.m3u8
+http://45.192.97.170:8880/play/11.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-11
-https://xykt-fix.github.io/play/a02b/index.m3u8
+http://45.192.97.170:8880/play/12.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-12
-http://74.91.26.218:82/live/cctv12hd.m3u8
+http://45.192.97.170:8880/play/13.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-13
-http://74.91.26.218:82/live/cctv13hd.m3u8
+http://45.192.97.170:8880/play/14.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-14
-http://74.91.26.218:82/live/cctv14hd.m3u8
+http://45.192.97.170:8880/play/15.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-15
-https://xykt-fix.github.io/play/a02e/index.m3u8
+http://45.192.97.170:8880/play/16.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-16
 http://74.91.26.218:82/live/cctv16hd.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-17
-http://74.91.26.218:82/live/cctv17hd.m3u8
+http://45.192.97.170:8880/play/17.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CTV
 https://live.ctvbolivia.com/hls/ctv.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",ETV
@@ -119,6 +119,8 @@ https://liveout.xntv.tv/a65jur/96iln2.m3u8
 http://38.64.72.148:80/hls/modn/list/4009/playlist.m3u8
 #EXTINF:-1 group-title="📡卫视频道,#genre#",澳门卫视
 http://php.jdshipin.com:8880/TVOD/iptv.php?id=as
+#EXTINF:-1 group-title="📡卫视频道,#genre#",金鹰卡通
+http://183.11.239.36:808/hls/69/index.m3u8
 #EXTINF:-1 group-title="📡卫视频道,#genre#",Bread TV面包台
 https://video.bread-tv.com:8091/hls-live24/online/index.m3u8
 #EXTINF:-1 group-title="📡卫视频道,#genre#",明珠台
@@ -257,6 +259,8 @@ http://l.cztvcloud.com/channels/lantian/SXwencheng1/720p.m3u8?zzhed?
 http://l.cztvcloud.com/channels/lantian/SXwencheng1/720p.m3u8
 #EXTINF:-1 group-title="☘️浙江频道,#genre#",开化新闻综合
 http://l.cztvcloud.com/channels/lantian/SXkaihua1/720p.m3u8?zzhed
+#EXTINF:-1 group-title="☘️浙江频道,#genre#",开化国家公园
+http://l.cztvcloud.com/channels/lantian/SXkaihua2/720p.m3u8
 #EXTINF:-1 group-title="☘️浙江频道,#genre#",庆元综合
 http://l.cztvcloud.com/channels/lantian/SXqingyuan1/720p.m3u8
 #EXTINF:-1 group-title="☘️浙江频道,#genre#",庆元新闻综合
@@ -273,8 +277,6 @@ http://l.cztvcloud.com/channels/lantian/SXshengzhou1/720p.m3u8?zzhed#http://l.cz
 http://l.cztvcloud.com/channels/lantian/SXlanxi1/720p.m3u8
 #EXTINF:-1 group-title="☘️浙江频道,#genre#",余杭综合
 http://l.cztvcloud.com/channels/lantian/SXyuhang1/720p.m3u8
-#EXTINF:-1 group-title="☘️浙江频道,#genre#",余杭未来E
-http://l.cztvcloud.com/channels/lantian/SXyuhang3/720p.m3u8
 #EXTINF:-1 group-title="☘️江苏频道,#genre#",南京教科
 http://nklive.nbs.cn/hls/75b3c462-b831-4de7-a34b-5d3221db2069/index.m3u8
 #EXTINF:-1 group-title="☘️江苏频道,#genre#",南京新闻综合
@@ -323,8 +325,8 @@ http://112.27.235.94:8000/hls/18/index.m3u8
 http://www.guzhenm.com:7001/hls/hd-live.m3u8?%E5%85%B3%E6%B3%A8%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7[%E6%99%B4%E5%9B%AD]
 #EXTINF:-1 group-title="☘️安徽频道,#genre#",黄山新闻综合
 http://hslive.hsnewsnet.com/lsdream/hve9Wjs/1000/live.m3u8
-#EXTINF:-1 group-title="☘️安徽频道,#genre#",黄山
-https://gcalic.v.myalicdn.com/gc/ahhs01_1/index.m3u8
+#EXTINF:-1 group-title="☘️安徽频道,#genre#",黄山公共生活
+http://hslive.hsnewsnet.com/lsdream/iY92ady/1000/live.m3u8?zanhd
 #EXTINF:-1 group-title="☘️安徽频道,#genre#",铜陵新闻综合
 https://ls.qingting.fm/live/21303/64k.m3u8
 #EXTINF:-1 group-title="☘️安徽频道,#genre#",祁门综合
@@ -437,6 +439,8 @@ https://hwapi.yntv.net/62hdvf/rjwt14.m3u8
 https://zb-live.ynurl.com/yimen/3b75a2f9-7941-46b7-992d-a9796fbca5fe.m3u8
 #EXTINF:-1 group-title="☘️云南频道,#genre#",陇川综合
 https://zb-live.ynurl.com/longchuan/58f88df3-605e-4c57-865c-8e8f85241ca1.m3u8
+#EXTINF:-1 group-title="☘️陕西频道,#genre#",西安新闻
+http://112.46.105.20:8009/hls/28/index.m3u8
 #EXTINF:-1 group-title="☘️陕西频道,#genre#",西安都市
 http://112.46.105.20:8009/hls/29/index.m3u8
 #EXTINF:-1 group-title="☘️陕西频道,#genre#",都市青春
