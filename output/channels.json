@@ -1,7 +1,7 @@
 {
   "version": "2.0",
   "total": 328,
-  "generated": "2026-06-13T15:41:46.946944",
+  "generated": "2026-06-13T20:08:19.320010",
   "channels": [
     {
       "name": "CCTV-1",
@@ -313,7 +313,7 @@
       "urls": [
         "http://112.27.235.94:8000/hls/30/index.m3u8"
       ],
-      "latency": 156,
+      "latency": 386,
       "codec": "mpeg2video",
       "tvg_id": "GuangdongTV.cn",
       "logo": "https://live.fanmingming.cn/tv/广东卫视.png",
@@ -423,7 +423,7 @@
       "urls": [
         "http://112.27.235.94:8000/hls/46/index.m3u8"
       ],
-      "latency": 547,
+      "latency": 386,
       "codec": "h264",
       "tvg_id": "GuizhouTV.cn",
       "logo": "https://live.fanmingming.cn/tv/贵州卫视.png",
@@ -434,7 +434,7 @@
       "urls": [
         "http://112.27.235.94:8000/hls/39/index.m3u8"
       ],
-      "latency": 156,
+      "latency": 892,
       "codec": "h264",
       "tvg_id": "HebeiTV.cn",
       "logo": "https://live.fanmingming.cn/tv/河北卫视.png",
@@ -449,17 +449,6 @@
       "codec": "h264",
       "tvg_id": "HenanTV.cn",
       "logo": "https://live.fanmingming.cn/tv/河南卫视.png",
-      "category": "📡卫视频道,#genre#"
-    },
-    {
-      "name": "吉林卫视",
-      "urls": [
-        "http://cssbyd.imwork.net:8082/hls/41/index.m3u8"
-      ],
-      "latency": 1343,
-      "codec": "h264",
-      "tvg_id": "JilinTV.cn",
-      "logo": "https://live.fanmingming.cn/tv/吉林卫视.png",
       "category": "📡卫视频道,#genre#"
     },
     {
@@ -556,7 +545,7 @@
       "urls": [
         "http://112.27.235.94:8000/hls/42/index.m3u8"
       ],
-      "latency": 420,
+      "latency": 581,
       "codec": "h264",
       "tvg_id": "TianjinTV.cn",
       "logo": "https://live.fanmingming.cn/tv/天津卫视.png",
@@ -1398,16 +1387,6 @@
       "category": "☘️浙江频道,#genre#"
     },
     {
-      "name": "庆元综合",
-      "urls": [
-        "http://l.cztvcloud.com/channels/lantian/SXqingyuan1/720p.m3u8"
-      ],
-      "latency": 4484,
-      "codec": "h264",
-      "logo": "https://live.fanmingming.cn/tv/庆元综合.png",
-      "category": "☘️浙江频道,#genre#"
-    },
-    {
       "name": "庆元新闻综合",
       "urls": [
         "http://l.cztvcloud.com/channels/lantian/SXqingyuan1/720p.m3u8?fbl="
@@ -1527,6 +1506,16 @@
       "latency": 564,
       "codec": "h264",
       "logo": "https://live.fanmingming.cn/tv/云和新闻综合.png",
+      "category": "☘️浙江频道,#genre#"
+    },
+    {
+      "name": "义乌新闻综合",
+      "urls": [
+        "https://44911.hlsplay.aodianyun.com/tv_radio_44911/tv_channel_1796.m3u8?auth_key=4830573978-0-0-92824c2c03f95906a3c49a4aa28f1709&extra_key=Yc1XsmxOKy2UBoPM4Wy5vCPsEYqnj06taCR2SRB2Xrg2w28NPilH03KdIbbM5wgSql-VBohSnoO9AOKl94q2t2DWMftz-XB-2qUX-UjXcS80StcSZahBFjrKLivXaRjiY5r2NOMKWMKFbv-S0Bz2G6iEXgCK8yGjtrFHDcPfAQEE0pvXq0Bwy34b7We8zARN&ali_ffmpeg_version=mpengine"
+      ],
+      "latency": 2282,
+      "codec": "h264",
+      "logo": "https://live.fanmingming.cn/tv/义乌新闻综合.png",
       "category": "☘️浙江频道,#genre#"
     },
     {
@@ -1857,6 +1846,16 @@
       "latency": 4004,
       "codec": "h264",
       "logo": "https://live.fanmingming.cn/tv/祁门综合.png",
+      "category": "☘️安徽频道,#genre#"
+    },
+    {
+      "name": "广德生活",
+      "urls": [
+        "https://live.gdtv.ah.cn/live/newsTV.m3u8"
+      ],
+      "latency": 3238,
+      "codec": "h264",
+      "logo": "https://live.fanmingming.cn/tv/广德生活.png",
       "category": "☘️安徽频道,#genre#"
     },
     {
@@ -2554,7 +2553,7 @@
       "urls": [
         "http://file.loulannews.cn/nmip-media/channellive/channel103824/playlist.m3u8"
       ],
-      "latency": 1094,
+      "latency": 1496,
       "codec": "h264",
       "logo": "https://live.fanmingming.cn/tv/可克达拉综合.png",
       "category": "☘️新疆频道,#genre#"

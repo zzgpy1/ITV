@@ -1,14 +1,16 @@
 #EXTM3U
 # 国外频道合集 (Overseas Channels)
-# 共 1424 个频道
+# 共 1437 个频道
 # 按国家/地区分类
 
 
-# ========== 东南亚 (53个频道) ==========
+# ========== 东南亚 (54个频道) ==========
 #EXTINF:-1 group-title="东南亚·儿童",3ABN Kids Network
 https://3abn.bozztv.com/3abn2/Kids_live/smil:Kids_live.smil/playlist.m3u8
 #EXTINF:-1 group-title="东南亚·儿童",4 Fun Kids [[Not 24/7]]
 https://stream.4fun.tv:8889/hls/4fk_high/index.m3u8
+#EXTINF:-1 group-title="东南亚·综合",Aakaash Aath
+https://mumt03.tangotv.in/Dsly5z3HAAKASHAATH/index.m3u8
 #EXTINF:-1 group-title="东南亚·综合",Aastha Bhajan
 https://mumt05.tangotv.in/87NeALx2AASTHABHAJAN/index.m3u8
 #EXTINF:-1 group-title="东南亚·综合",Aastha Gujarati
@@ -134,7 +136,7 @@ https://svs.itworkscdn.net/sat7arabiclive/sat7arabic.smil/playlist_dvr.m3u8
 #EXTINF:-1 group-title="中东·电影",iFilm Arabic
 https://live.presstv.ir/hls/ifilmar.m3u8
 
-# ========== 俄罗斯 (17个频道) ==========
+# ========== 俄罗斯 (18个频道) ==========
 #EXTINF:-1 group-title="俄罗斯·综合",Alert [Not 24/7]
 https://itv.streams.ovh/ALEERT/ALEERT/playlist.m3u8
 #EXTINF:-1 group-title="俄罗斯·综合",AmarUjala
@@ -165,12 +167,14 @@ https://qazsporttv-stream.qazcdn.com/qazsporttv/qazsporttv/playlist.m3u8
 https://dt9mwqwe98q7o.cloudfront.net/master.m3u8
 #EXTINF:-1 group-title="俄罗斯·综合",Runtime Espanol
 https://run-rt-uh-roku.otteravision.com/run/rt_uh/rt_uh.m3u8
+#EXTINF:-1 group-title="俄罗斯·综合",Rupavahini
+https://mini.allinonereborn.fun/tata.php?id=11611
 #EXTINF:-1 group-title="俄罗斯·生活",Smart Healthy Green Living [Geo-blocked]
 https://amg16109-shgliving-amg16109c1-klowdtv-us-2235.playouts.now.amagi.tv/playlist/amg16109-shglivingnetwork-smarthealthygreenliving-klowdtvus/playlist.m3u8
 #EXTINF:-1 group-title="俄罗斯·体育",Speed Sport 1
 https://linear-599.frequency.stream/dist/stirr/599/hls/master/playlist.m3u8
 
-# ========== 其他 (843个频道) ==========
+# ========== 其他 (849个频道) ==========
 #EXTINF:-1 group-title="其他·新闻",100% News
 http://85.238.112.40:8810/hls_sec/239.33.16.32-.m3u8
 #EXTINF:-1 group-title="其他·综合",12 канал
@@ -219,6 +223,8 @@ https://iptv.prosto.tv/ch49/index.m3u8
 https://stream10.xdevel.com/video0s977798-2239/stream/playlist.m3u8
 #EXTINF:-1 group-title="其他·综合",88 Stereo [Not 24/7]
 http://k3.usastreams.com/CableLatino/88stereo/playlist.m3u8
+#EXTINF:-1 group-title="其他·综合",9XM
+https://9xjio.wiseplayout.com/9XM/master.m3u8
 #EXTINF:-1 group-title="其他·综合",A2i Religion [Not 24/7]
 https://stream.sen-gt.com/A2iReligion/myStream/playlist.m3u8
 #EXTINF:-1 group-title="其他·综合",ABN Afghanistan
@@ -401,6 +407,8 @@ http://livestream.biznetvideo.net/biznet_adventure/smil:adventure.smil/playlist.
 https://linear-493.frequency.stream/dist/glewedtv/493/hls/master/playlist.m3u8
 #EXTINF:-1 group-title="其他·综合",Blippi
 https://d2p70ev1g5q1aj.cloudfront.net/Blippi_SONO46.m3u8
+#EXTINF:-1 group-title="其他·综合",Boas Novas
+https://cdn.jmvstream.com/w/LVW-9375/LVW9375_6i0wPBCHYc/playlist.m3u8
 #EXTINF:-1 group-title="其他·综合",Bolajon
 https://stream8.cinerama.uz/1007/playlist.m3u8
 #EXTINF:-1 group-title="其他·综合",Bolivisión LPZ
@@ -687,6 +695,8 @@ https://aloula-redirect.vercel.app/10/playlist.m3u8
 https://aloula-redirect.vercel.app/16/playlist.m3u8
 #EXTINF:-1 group-title="其他·综合",KSHB 41
 https://content.uplynk.com/channel/50d0fa1b042945a3a4f550f9b8412c83.m3u8
+#EXTINF:-1 group-title="其他·新闻",Kairali News
+https://cdn-3.pishow.tv/live/1469/master.m3u8
 #EXTINF:-1 group-title="其他·综合",Kanal 12
 https://live.artidijitalmedya.com/artidijital_kanal12/kanal12/playlist.m3u8
 #EXTINF:-1 group-title="其他·综合",Kanal 15 [Not 24/7]
@@ -1277,6 +1287,8 @@ https://xumo-xumoent-ch828-w6val.fast.nbcuni.com/live/master.m3u8
 https://xumo-xumoent-ch824-d4q5c.fast.nbcuni.com/live/master.m3u8
 #EXTINF:-1 group-title="其他·综合",Urban Mix
 https://cloud.tvomix.com/URBANMIX/index.m3u8
+#EXTINF:-1 group-title="其他·综合",Utsav Bharat
+https://mini.allinonereborn.fun/tata.php?id=11779
 #EXTINF:-1 group-title="其他·综合",W24 [Not 24/7]
 https://ms01.w24.at/W24/smil:liveevent.smil/playlist.m3u8
 #EXTINF:-1 group-title="其他·综合",WION
@@ -1423,6 +1435,8 @@ http://live-bigasia.cdnvideo.ru/bigasia/bigasia.smil/playlist.m3u8
 http://serv24.vintera.tv:8081/vetta/vetta_office/playlist.m3u8
 #EXTINF:-1 group-title="其他·综合",Вместе РФ
 https://qcpdqumitwf.a.trbcdn.net/livemastersrt/pr4mw_lvie-vmesterf-srt.smil/playlist.m3u8
+#EXTINF:-1 group-title="其他·综合",Волга
+http://tele2dvrnat01-02.cdnvideo.ru/stream/NAT_Volga/hls/1920x1080@4504/playlist.m3u8
 #EXTINF:-1 group-title="其他·综合",Волгоград 24
 https://vgtrkregion-reg.cdnvideo.ru/vgtrk/volgograd/russia1-hd/index.m3u8
 #EXTINF:-1 group-title="其他·综合",Восток 24
@@ -1491,6 +1505,8 @@ http://hls.mirtv.cdnvideo.ru/mirtv-parampublish/mir24_2500/playlist.m3u8
 http://hls.mirtv.cdnvideo.ru/mirtv-parampublish/mirtv_2500/playlist.m3u8
 #EXTINF:-1 group-title="其他·综合",Мир Белагорья [Geo-blocked]
 http://mirbelogorya.ru:8080/mirbelogorya/index.m3u8
+#EXTINF:-1 group-title="其他·综合",Мир Сериала
+http://31.148.48.15/Mir_Seriala/index.m3u8
 #EXTINF:-1 group-title="其他·综合",Муз союз
 https://hls-tvsoyuz.cdnvideo.ru/tvsoyuz2/muzsoyuz.6fw0-58xp-acts-esy0/playlist.m3u8
 #EXTINF:-1 group-title="其他·综合",Мульт
@@ -1527,6 +1543,8 @@ http://ftp.orbita.dn.ua/hls/orbita.m3u8
 https://v4.proofix.ru/0mir/index.m3u8
 #EXTINF:-1 group-title="其他·综合",Патриот
 http://catchup.videoline.ru/asvtv/index.m3u8
+#EXTINF:-1 group-title="其他·综合",Первый Республиканский
+https://streaming.televizor-24-tochka.ru/live/27.m3u8
 #EXTINF:-1 group-title="其他·综合",Первый Ярославский
 https://yaroslavl.mediacdn.ru/cdn/pervyaroslavsk/playlist.m3u8
 #EXTINF:-1 group-title="其他·综合",Первый городской [Not 24/7]
@@ -1637,8 +1655,6 @@ https://uiptv.do.am/1ufc/602079679/playlist.m3u8
 https://live-uvelirochka.cdnvideo.ru/uvelirochka/uvelirochka_720p3/playlist.m3u8
 #EXTINF:-1 group-title="其他·综合",Югра
 https://live-ugratv.cdnvideo.ru/ugratv/ugratv/playlist.m3u8
-#EXTINF:-1 group-title="其他·综合",上虞1新闻综合 [Not 24/7]
-https://l.cztvcloud.com/channels/lantian/SXshangyu1/720p.m3u8
 #EXTINF:-1 group-title="其他·综合",上虞3新商都 [Not 24/7]
 https://l.cztvcloud.com/channels/lantian/SXshangyu3/720p.m3u8
 #EXTINF:-1 group-title="其他·综合",上虞經濟文化 [Not 24/7]
@@ -1858,11 +1874,13 @@ http://gctxyc.liveplay.myqcloud.com/gc/wgw02_1/index.m3u8
 #EXTINF:-1 group-title="其他·综合",黄花城水长城03
 https://gcalic.v.myalicdn.com/gc/wgw03_1/index.m3u8
 
-# ========== 加拿大 (12个频道) ==========
+# ========== 加拿大 (13个频道) ==========
 #EXTINF:-1 group-title="加拿大·综合",Atacama Noticias [Not 24/7]
 https://v2.tustreaming.cl/atacamanoticias/index.m3u8
 #EXTINF:-1 group-title="加拿大·综合",Azteca Honduras
 https://mdstrm.com/live-stream-playlist/65a1d2fd7e7f14355550d570.m3u8
+#EXTINF:-1 group-title="加拿大·综合",B15 Zacatecas
+https://s5.mexside.net:1936/envio2/envio2/playlist.m3u8
 #EXTINF:-1 group-title="加拿大·综合",Localish
 https://dnmfq3sh1jipj.cloudfront.net/DisneyLocalish.m3u8
 #EXTINF:-1 group-title="加拿大·综合",Location Location Location
@@ -1884,7 +1902,7 @@ https://d2dxg18pxtlgy0.cloudfront.net/Sensical_Makers.m3u8
 #EXTINF:-1 group-title="加拿大·综合",Strawberry Shortcake
 https://d2tdny619yw5x1.cloudfront.net/master.m3u8
 
-# ========== 印度 (111个频道) ==========
+# ========== 印度 (112个频道) ==========
 #EXTINF:-1 group-title="印度·综合",30A Golf Kingdom
 https://30a-tv.com/feeds/vidaa/golf.m3u8
 #EXTINF:-1 group-title="印度·综合",3ABN International Network
@@ -1985,6 +2003,8 @@ https://livejj.hyundaihmall.com:8443/live/ngrp:hmall.stream_pc/playlist.m3u8
 https://fast-rakuten.okast.tv/fa2e8c4385712f9af3e719ec904b3543/channels/34d82f76-b51f-4bf5-9b35-769fb5904e79/96f96405-90e7-489a-a1e6-8ede5d2b4933/media_.m3u8
 #EXTINF:-1 group-title="印度·综合",INWILD
 https://amg00861-terninternation-inwild-samsunguk-w5wic.amagi.tv/playlist/amg00861-terninternation-inwild-samsunguk/playlist.m3u8
+#EXTINF:-1 group-title="印度·综合",Ind 24
+https://mumt02.tangotv.in/IND24/index.m3u8
 #EXTINF:-1 group-title="印度·综合",India Daily Live
 https://indiadaily.ottlive.co.in/indiadailylive/index.m3u8
 #EXTINF:-1 group-title="印度·综合",Indiyskoye Kino
@@ -2428,7 +2448,7 @@ https://amg00453-reuters-amg00453c1-rakuten-uk-2110.playouts.now.amagi.tv/playli
 #EXTINF:-1 group-title="欧洲·综合",Shalom World Europe
 https://broadcaster-1.cclouds.in/srt/channel1_abr/playlist.m3u8
 
-# ========== 法国 (32个频道) ==========
+# ========== 法国 (33个频道) ==========
 #EXTINF:-1 group-title="法国·综合",3ABN French
 https://3abn.bozztv.com/3abn2/Fre_live/smil:Fre_live.smil/playlist.m3u8
 #EXTINF:-1 group-title="法国·综合",ABN Africa
@@ -2449,6 +2469,8 @@ https://cdn-euronews.akamaized.net/live/eds/africanews-fr/25050/index.m3u8
 https://stream.ecable.tv/afrobeats/index.m3u8
 #EXTINF:-1 group-title="法国·综合",Alfred Hitchcock Presents
 https://xumo-xumoent-ch825-ku23q.fast.nbcuni.com/live/master.m3u8
+#EXTINF:-1 group-title="法国·综合",B15 Fresnillo
+https://s5.mexside.net:1936/lsac/lsac/playlist.m3u8
 #EXTINF:-1 group-title="法国·综合",Barbie and Friends
 https://d1xqdnwy1bo05f.cloudfront.net/barb.m3u8
 #EXTINF:-1 group-title="法国·新闻",CGTN Français
@@ -2518,7 +2540,7 @@ http://124.109.47.101/hls/stream1.m3u8
 #EXTINF:-1 group-title="澳大利亚·综合",wedotv Auta
 https://amg00735-amg00735c57-rakuten-de-10677.playouts.now.amagi.tv/ts-eu-w1-n2/playlist/amg00735-videosolutionsagfast-wedotvauta-rakutende/cb553d1e726c678e9cd43d67d3ef42a0df2416fc087a8d6933fb4b926bc10f41f4e2a581b212bb785d9914ce1c553f080132c0099c3a0bc6da73b6512d6c6021c9c3ed64d89d1b17b2c8797368e62c4119e10f11d93b53309dbb1858dd68ec2b005ebb0d6f577fdcec0fac6b5ac58402967a7c82fc8e68312f5e56cd543fa29a7c9b1f0f5d65e94693d1605aa34f1abbd31c9df63d81b2a13ebedf52bbc33eabe7b5c98c50d7acad5b3ef4ac466f6f236f8a816ed1b835750fce1b5bcd2552213354fcac85f74f76ee2d250ca9b29fe635ad50a6fd540358406cb1d865a44989e5902bf9691a80e7d6fa575336b4c1145626b2f6a19dc1d352d742d6adf3d47f7098b94136178925f92c2f2a9ff4cf54d5954ed69b2c87bd651863808353c1cce6daa1e0c40abb20c9ccfbd76c16172d5442a054b09f6bd4319229fc975d712e202ecabb5bc094d65734102dd7d6249b797c8cd5808dd01935b0163c5fe665cb52062ced3a686eea24fdda11638b2f06807751d65737894ef9f81cfda8d5e00c58e48e91a29ebd7f4ba5b486210eed8f29b009af85251fe39768f8/106/426x240_611520/index.m3u8
 
-# ========== 美国 (84个频道) ==========
+# ========== 美国 (86个频道) ==========
 #EXTINF:-1 group-title="美国·音乐",30A Music
 https://30a-tv.com/music.m3u8
 #EXTINF:-1 group-title="美国·音乐",3ABN Praise Him Music Network
@@ -2643,6 +2665,8 @@ https://s.emisoras.tv:8081/penielmusical/index.m3u8
 https://musichls.persiana.live/hls/stream.m3u8
 #EXTINF:-1 group-title="美国·综合",Persiana Plus
 https://euhls.persiana.live/hls/stream.m3u8
+#EXTINF:-1 group-title="美国·音乐",Public Music [Not 24/7]
+https://cdn-3.pishow.tv/live/441/master.m3u8
 #EXTINF:-1 group-title="美国·音乐",Punjabi Music
 https://mumt02.tangotv.in/PUNJABIMUSICHD/index.m3u8
 #EXTINF:-1 group-title="美国·综合",R Plus
@@ -2653,6 +2677,8 @@ https://fr.crystalweb.net:1936/redmusic/redmusic/playlist.m3u8
 https://aegis-cloudfront-1.tubi.video/dfd312a3-99b3-45fe-89b2-d20579fee2e9/playlist.m3u8
 #EXTINF:-1 group-title="美国·新闻",Sadhna Plus News
 https://6n3yow8pl9ok-hls-live.5centscdn.com/sadhananewstv/live.stream/playlist.m3u8
+#EXTINF:-1 group-title="美国·音乐",Salto Brasa Music
+https://salto-streams.nl/hls/sotv1.m3u8
 #EXTINF:-1 group-title="美国·综合",Sana Plus
 https://mumbai-edge.smartplaytv.in/SanaPlusHD/index.m3u8
 #EXTINF:-1 group-title="美国·综合",Sanskar USA
