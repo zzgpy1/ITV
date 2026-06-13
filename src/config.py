@@ -135,6 +135,14 @@ WEB_SERVER_HOST = os.getenv("WEB_SERVER_HOST", "0.0.0.0")
 RUN_MODE = os.getenv("RUN_MODE", "once")
 SCHEDULE_INTERVAL = int(os.getenv("SCHEDULE_INTERVAL", 21600))
 
+# ========== 缓存优化配置（新增） ==========
+# 原始源缓存时长（小时）- 建议延长
+CACHE_RAW_HOURS = int(os.getenv("CACHE_RAW_HOURS", 48))  # 从24小时延长到48小时
+# 测速结果缓存时长（小时）
+CACHE_SPEED_HOURS = int(os.getenv("CACHE_SPEED_HOURS", 24))
+# 是否启用增量更新（只拉取变化的源）
+ENABLE_INCREMENTAL_FETCH = os.getenv("ENABLE_INCREMENTAL_FETCH", "true").lower() == "true"
+
 # ========== iptv-org 融合配置（新增） ==========
 # 是否启用 iptv-org 适配器
 IPTV_ORG_ENABLE = os.getenv("IPTV_ORG_ENABLE", "true").lower() == "true"
@@ -142,6 +150,8 @@ IPTV_ORG_ENABLE = os.getenv("IPTV_ORG_ENABLE", "true").lower() == "true"
 IPTV_ORG_CDN = os.getenv("IPTV_ORG_CDN", "https://raw.githubusercontent.com/iptv-org/iptv/master/resources")
 # 是否将 iptv-org 主列表加入采集源
 IPTV_ORG_ADD_MAIN_LIST = os.getenv("IPTV_ORG_ADD_MAIN_LIST", "true").lower() == "true"
+# iptv-org 特殊缓存（该源变化慢）
+IPTV_ORG_CACHE_HOURS = int(os.getenv("IPTV_ORG_CACHE_HOURS", 72))  # 3天
 
 # ========== 全球频道配置（新增） ==========
 # 是否启用全球频道扩展
