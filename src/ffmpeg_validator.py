@@ -1,18 +1,16 @@
-# src/ffmpeg_validator.py - 批量进度输出版本
+# src/ffmpeg_validator.py - 单一进度条版本
 
 import asyncio
 import subprocess
 import json
 import time
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from src.config import FFMPEG_ENABLE, TIMEOUT, FFMPEG_WORKERS
 from src.database import get_db_cache, channel_key
 from src.logger import logger
 
 _thread_pool = None
-
-# 进度输出间隔（每处理多少个频道输出一次）
-PROGRESS_INTERVAL = 50
 
 
 def get_thread_pool():
@@ -58,6 +56,17 @@ def validate_with_ffprobe_sync(url: str, timeout: int) -> dict:
         return {"valid": False, "has_video": False, "video_codec": ""}
 
 
+def print_progress_bar(current, total, passed_count, prefix="", length=30):
+    """打印单行动态进度条"""
+    percent = current * 100 // total if total > 0 else 0
+    filled = int(length * current // total) if total > 0 else 0
+    bar = '█' * filled + '░' * (length - filled)
+    
+    # 使用 \r 回到行首，实现单行刷新
+    sys.stdout.write(f'\r{prefix} |{bar}| {percent}% ({current}/{total}) 通过:{passed_count}')
+    sys.stdout.flush()
+
+
 async def validate_batch(channels: list) -> list:
     if not FFMPEG_ENABLE:
         logger.info("⚙️ ffmpeg 深度验证未启用，跳过")
@@ -101,11 +110,11 @@ async def validate_batch(channels: list) -> list:
         
         total = len(tasks)
         completed = 0
-        last_progress = 0
-        start_time = time.time()
         valid_need = []
         
-        # 批量收集结果
+        # 打印初始进度条
+        print_progress_bar(0, total, 0, prefix="🎬 验证", length=30)
+        
         for coro in asyncio.as_completed(tasks):
             res = await coro
             completed += 1
@@ -113,13 +122,11 @@ async def validate_batch(channels: list) -> list:
             if res is not None:
                 valid_need.append(res)
             
-            # 每 PROGRESS_INTERVAL 个或全部完成时输出进度
-            if completed - last_progress >= PROGRESS_INTERVAL or completed == total:
-                percent = completed * 100 // total
-                elapsed = time.time() - start_time
-                speed = completed / elapsed if elapsed > 0 else 0
-                logger.info(f"  🎬 验证进度: {completed}/{total} ({percent}%) - 通过: {len(valid_need)} - 速度: {speed:.1f}频道/秒")
-                last_progress = completed
+            # 每次更新进度条
+            print_progress_bar(completed, total, len(valid_need), prefix="🎬 验证", length=30)
+        
+        # 换行
+        print()
         
         valid_channels.extend(valid_need)
     
