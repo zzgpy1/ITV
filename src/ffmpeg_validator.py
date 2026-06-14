@@ -1,16 +1,18 @@
-# src/ffmpeg_validator.py - 单一进度条版本
+# src/ffmpeg_validator.py - 纯批量日志版本
 
 import asyncio
 import subprocess
 import json
 import time
-import sys
 from concurrent.futures import ThreadPoolExecutor
 from src.config import FFMPEG_ENABLE, TIMEOUT, FFMPEG_WORKERS
 from src.database import get_db_cache, channel_key
 from src.logger import logger
 
 _thread_pool = None
+
+# 进度输出间隔（每处理多少个频道输出一次）
+PROGRESS_INTERVAL = 200
 
 
 def get_thread_pool():
@@ -56,17 +58,6 @@ def validate_with_ffprobe_sync(url: str, timeout: int) -> dict:
         return {"valid": False, "has_video": False, "video_codec": ""}
 
 
-def print_progress_bar(current, total, passed_count, prefix="", length=30):
-    """打印单行动态进度条"""
-    percent = current * 100 // total if total > 0 else 0
-    filled = int(length * current // total) if total > 0 else 0
-    bar = '█' * filled + '░' * (length - filled)
-    
-    # 使用 \r 回到行首，实现单行刷新
-    sys.stdout.write(f'\r{prefix} |{bar}| {percent}% ({current}/{total}) 通过:{passed_count}')
-    sys.stdout.flush()
-
-
 async def validate_batch(channels: list) -> list:
     if not FFMPEG_ENABLE:
         logger.info("⚙️ ffmpeg 深度验证未启用，跳过")
@@ -91,44 +82,50 @@ async def validate_batch(channels: list) -> list:
 
     logger.info(f"🔍 ffmpeg 深度验证: {len(need_validate)} 个需验证，{len(valid_channels)} 个来自缓存")
     
-    if need_validate:
-        semaphore = asyncio.Semaphore(FFMPEG_WORKERS)
+    if not need_validate:
+        logger.info("✅ 所有频道均来自缓存，无需验证")
+        return valid_channels
+    
+    semaphore = asyncio.Semaphore(FFMPEG_WORKERS)
+    
+    async def validate_one(ch):
+        async with semaphore:
+            result = await asyncio.get_event_loop().run_in_executor(
+                get_thread_pool(), validate_with_ffprobe_sync, ch["url"], TIMEOUT
+            )
+            if result.get("valid"):
+                ch["video_codec"] = result.get("video_codec", "")
+                key = channel_key(ch["name"], ch["url"])
+                await db.set_speed_result(key, ch)
+                return ch
+            return None
+    
+    tasks = [validate_one(ch) for ch in need_validate]
+    
+    total = len(tasks)
+    completed = 0
+    last_log_count = 0
+    start_time = time.time()
+    valid_need = []
+    
+    logger.info(f"  🎬 开始验证 {total} 个频道，每 {PROGRESS_INTERVAL} 个输出一次进度...")
+    
+    for coro in asyncio.as_completed(tasks):
+        res = await coro
+        completed += 1
         
-        async def validate_one(ch):
-            async with semaphore:
-                result = await asyncio.get_event_loop().run_in_executor(
-                    get_thread_pool(), validate_with_ffprobe_sync, ch["url"], TIMEOUT
-                )
-                if result.get("valid"):
-                    ch["video_codec"] = result.get("video_codec", "")
-                    key = channel_key(ch["name"], ch["url"])
-                    await db.set_speed_result(key, ch)
-                    return ch
-                return None
+        if res is not None:
+            valid_need.append(res)
         
-        tasks = [validate_one(ch) for ch in need_validate]
-        
-        total = len(tasks)
-        completed = 0
-        valid_need = []
-        
-        # 打印初始进度条
-        print_progress_bar(0, total, 0, prefix="🎬 验证", length=30)
-        
-        for coro in asyncio.as_completed(tasks):
-            res = await coro
-            completed += 1
-            
-            if res is not None:
-                valid_need.append(res)
-            
-            # 每次更新进度条
-            print_progress_bar(completed, total, len(valid_need), prefix="🎬 验证", length=30)
-        
-        # 换行
-        print()
-        
-        valid_channels.extend(valid_need)
+        # 每完成 PROGRESS_INTERVAL 个或全部完成时输出一次日志
+        if completed - last_log_count >= PROGRESS_INTERVAL or completed == total:
+            percent = completed * 100 // total
+            elapsed = time.time() - start_time
+            speed = completed / elapsed if elapsed > 0 else 0
+            logger.info(f"  🎬 验证进度: {completed}/{total} ({percent}%) - 通过: {len(valid_need)} - 速度: {speed:.1f}频道/秒")
+            last_log_count = completed
+    
+    valid_channels.extend(valid_need)
     
     logger.info(f"✅ ffmpeg 验证完成: 通过 {len(valid_channels)}/{len(channels)} 个频道")
     return valid_channels
