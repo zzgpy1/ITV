@@ -53,7 +53,7 @@ def validate_with_ffprobe_sync(url: str, timeout: int) -> dict:
     except Exception:
         return {"valid": False, "has_video": False, "video_codec": ""}
 
-async def validate_batch(channels: list) -> list:
+async def validate_batch(channels: list, pbar: tqdm = None) -> list:
     if not FFMPEG_ENABLE:
         logger.info("⚙️ ffmpeg 深度验证未启用，跳过")
         return channels
@@ -66,10 +66,12 @@ async def validate_batch(channels: list) -> list:
     valid_channels = []
     for ch in channels:
         key = channel_key(ch["name"], ch["url"])
-        cached = await db.get_speed_result(key)  # 移除 max_age_hours 参数
+        cached = await db.get_speed_result(key)
         if cached and cached.get("video_codec"):
             ch["video_codec"] = cached["video_codec"]
             valid_channels.append(ch)
+            if pbar:
+                pbar.update(1)
         else:
             need_validate.append(ch)
 
@@ -88,12 +90,14 @@ async def validate_batch(channels: list) -> list:
                     await db.set_speed_result(key, ch)
                     return ch
                 return None
-        # 使用 tqdm 进度条
+        
         tasks = [validate_one(ch) for ch in need_validate]
         results = []
-        for coro in tqdm.as_completed(tasks, desc="🎬 ffmpeg深度验证", unit="频道", total=len(tasks), leave=True):
+        for coro in tqdm.as_completed(tasks, desc="🎬 ffmpeg深度验证", unit="频道", total=len(tasks), leave=False, position=0):
             res = await coro
             results.append(res)
+            if pbar:
+                pbar.update(1)
         valid_need = [r for r in results if r is not None]
         valid_channels.extend(valid_need)
     
