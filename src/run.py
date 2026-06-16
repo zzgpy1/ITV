@@ -28,7 +28,7 @@ from src.config import (
     ENABLE_INCREMENTAL_FETCH,
     CACHE_RAW_HOURS,
     IPTV_ORG_ENABLE,
-    AUTONOMOUS_MODE,  # 从 config 导入
+    AUTONOMOUS_MODE,
 )
 from src.fetcher import fetch_all_sources_incremental
 from src.parser import parse_and_dedupe
@@ -53,7 +53,7 @@ from src.overseas_filter import process_overseas_channels
 from src.special_categories import collect_and_append_special_categories
 
 
-# ========== 传统模式（原有逻辑） ==========
+# ========== 传统模式（原有逻辑，保持不变） ==========
 async def run_legacy_mode():
     """
     原有模式 - 完整的采集、测速、验证、输出流程
@@ -231,45 +231,51 @@ async def run_autonomous_mode():
     """
     自治模式 - 使用新架构：源池 → 候选版 → 稳定版 → 质量回路
     
-    特点：
-    - 自动发现新源
-    - 候选源观察验证
-    - 自动提升稳定源
-    - 持续质量监控
-    - 自动替换失效源
-    - 固定源保护
+    如果自治模式没有产生稳定源，自动回退到传统模式
     """
     logger.info("=" * 60)
     logger.info("🤖 IPTV 自治系统启动")
     logger.info("=" * 60)
     
+    stable_count_before = 0
     try:
         # 尝试导入自治模式模块
         from src.orchestrator import IPTVOrchestrator
         
+        # 先检查现有稳定源数量
+        from src.stable import StableManager
+        temp_manager = StableManager()
+        stable_count_before = len(temp_manager.get_active_sources())
+        logger.info(f"📊 现有稳定源: {stable_count_before} 个")
+        
         orchestrator = IPTVOrchestrator()
         stats = await orchestrator.run_once()
         
+        # 检查运行后是否有稳定源
+        from src.stable import StableManager
+        after_manager = StableManager()
+        stable_count_after = len(after_manager.get_active_sources())
+        
         logger.info("=" * 60)
-        logger.info("✅ 自治模式运行完成")
-        logger.info(f"📊 运行统计: {stats}")
-        return 0
+        
+        # 如果稳定源没有增加，或者仍然为0，回退到传统模式
+        if stable_count_after == 0:
+            logger.warning("⚠️ 自治模式未产生稳定源，回退到传统模式...")
+            logger.info("=" * 60)
+            return await run_legacy_mode()
+        else:
+            logger.info(f"✅ 自治模式运行完成，稳定源: {stable_count_after} 个")
+            logger.info(f"📊 运行统计: {stats}")
+            return 0
         
     except ImportError as e:
-        logger.error(f"❌ 自治模式模块未找到: {e}")
-        logger.info("💡 请确保所有自治模式文件已创建:")
-        logger.info("   - src/source_pool/")
-        logger.info("   - src/candidate/")
-        logger.info("   - src/stable/")
-        logger.info("   - src/quality/")
-        logger.info("   - src/orchestrator.py")
-        logger.info("")
-        logger.info("💡 或者设置 AUTONOMOUS_MODE=false 使用传统模式")
-        return 1
+        logger.warning(f"⚠️ 自治模式模块未找到: {e}")
+        logger.info("💡 回退到传统模式...")
+        return await run_legacy_mode()
     except Exception as e:
-        logger.exception(f"❌ 自治模式运行失败: {e}")
-        logger.info("💡 可以设置 AUTONOMOUS_MODE=false 回退到传统模式")
-        return 1
+        logger.warning(f"⚠️ 自治模式运行失败: {e}")
+        logger.info("💡 回退到传统模式...")
+        return await run_legacy_mode()
 
 
 # ========== 主入口 ==========
@@ -279,12 +285,9 @@ async def main():
     
     环境变量：
     - AUTONOMOUS_MODE=false (默认): 传统模式
-    - AUTONOMOUS_MODE=true: 自治模式
+    - AUTONOMOUS_MODE=true: 自治模式（无稳定源时自动回退到传统模式）
     """
-    # 从 config 导入 AUTONOMOUS_MODE
-    from src.config import AUTONOMOUS_MODE as AUTO_MODE
-    
-    if AUTO_MODE:
+    if AUTONOMOUS_MODE:
         logger.info("🔀 根据 AUTONOMOUS_MODE=true 切换到自治模式")
         return await run_autonomous_mode()
     else:
