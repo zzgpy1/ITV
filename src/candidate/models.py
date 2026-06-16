@@ -1,7 +1,7 @@
 # src/candidate/models.py
 """候选版数据模型"""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
