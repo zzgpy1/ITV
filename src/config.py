@@ -198,3 +198,7 @@ if AUTONOMOUS_MODE:
     print(f"   - 自动更新稳定版: {AUTO_UPDATE_STABLE}")
     print(f"   - 自动替换失效源: {AUTO_REPLACE_FAILED}")
     print(f"   - 质量检查间隔: {QUALITY_CHECK_INTERVAL}小时")
+    print(f"   - 候选观察期: {CANDIDATE_OBSERVATION_HOURS}小时")
+    print(f"   - 最少成功次数: {CANDIDATE_MIN_SUCCESS}")
+    print(f"   - 最低成功率: {CANDIDATE_MIN_SUCCESS_RATE}")
+    print(f"   - 最大延迟: {CANDIDATE_MAX_LATENCY}ms")
