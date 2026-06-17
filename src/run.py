@@ -43,10 +43,13 @@ from src.demo_filter import (
 from src.database import get_db_cache
 from src.logger import logger
 
-# 新增导入（保留自治模式相关）
+# 新增导入（保留增强输出和特色分类）
 from src.generator_enhanced import EnhancedOutputGenerator
-from src.overseas_filter import process_overseas_channels
 from src.special_categories import collect_and_append_special_categories
+
+# ============================================================
+# 注意：已移除 overseas_filter 导入，取消国外频道功能
+# ============================================================
 
 
 # ========== 传统模式（完整采集） ==========
@@ -153,10 +156,11 @@ async def run_legacy_mode():
         enable_epg=ENABLE_EPG_OUTPUT
     )
 
-    if ENABLE_DEMO_FILTER and unmatched_channels:
-        logger.info(f"🌍 正在处理 {len(unmatched_channels)} 个未匹配频道...")
-        process_overseas_channels(unmatched_channels, OUTPUT_DIR)
+    # ============================================================
+    # 已移除国外频道处理（overseas_filter 不再调用）
+    # ============================================================
 
+    # 采集特色分类内容
     special_stats = {}
     try:
         special_stats = await collect_and_append_special_categories(OUTPUT_DIR, db)
