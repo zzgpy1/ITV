@@ -1,6 +1,6 @@
 #EXTM3U
 # 精简版 - 仅保留最稳定源，适合移动设备
-# 共 320 个频道
+# 共 312 个频道
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-1
 http://45.192.97.170:8880/play/1.m3u8
 #EXTINF:-1 group-title="📺央视频道,#genre#",CCTV-2
@@ -625,22 +625,6 @@ http://php.jdshipin.com/TVOD/iptv.php?id=huali2
 http://61.221.215.25:8800/hls/48/index.m3u8
 #EXTINF:-1 group-title="🌊港·澳·台,#genre#",澳视澳门
 https://cdn6.163189.xyz/163189/asam
-#EXTINF:-1 group-title="🌊港·澳·台",澳门体育
-http://cdn6.163189.xyz/163189/amty
-#EXTINF:-1 group-title="🌊港·澳·台",澳门综艺
-http://cdn6.163189.xyz/163189/amzy
-#EXTINF:-1 group-title="🌊港·澳·台",TVB News
-http://r.jdshipin.com/CkuBd
-#EXTINF:-1 group-title="🌊港·澳·台",凤凰资讯台
-http://php.jdshipin.com/TVOD/iptv.php?id=fhzx
-#EXTINF:-1 group-title="🌊港·澳·台",TVB娱乐新闻台
-http://php.jdshipin.com/TVOD/iptv.php?id=tvbylxw
-#EXTINF:-1 group-title="🌊港·澳·台",TVB Plus
-http://r.jdshipin.com/Nr5jq
-#EXTINF:-1 group-title="🌊港·澳·台",凤凰香港台
-http://php.jdshipin.com/TVOD/iptv.php?id=fhhk
-#EXTINF:-1 group-title="🌊港·澳·台",福建漳州醉美沙滩翡翠湾
-https://gcalic.v.myalicdn.com/gc/fcw03_1/index.m3u8
 
 # ========== 特色分类内容 ==========
 

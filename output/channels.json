@@ -1,7 +1,7 @@
 {
   "version": "2.0",
-  "total": 332,
-  "generated": "2026-06-17T07:05:01.136880",
+  "total": 324,
+  "generated": "2026-06-17T07:28:44.111776",
   "channels": [
     {
       "name": "CCTV-1",
@@ -2966,78 +2966,6 @@
       "latency": 86,
       "codec": "h264",
       "category": "🌊港·澳·台,#genre#"
-    },
-    {
-      "name": "澳门体育",
-      "urls": [
-        "http://cdn6.163189.xyz/163189/amty"
-      ],
-      "latency": 53,
-      "codec": "h264",
-      "category": "🌊港·澳·台"
-    },
-    {
-      "name": "澳门综艺",
-      "urls": [
-        "http://cdn6.163189.xyz/163189/amzy"
-      ],
-      "latency": 82,
-      "codec": "h264",
-      "category": "🌊港·澳·台"
-    },
-    {
-      "name": "TVB News",
-      "urls": [
-        "http://r.jdshipin.com/CkuBd"
-      ],
-      "latency": 120,
-      "codec": "h264",
-      "category": "🌊港·澳·台"
-    },
-    {
-      "name": "凤凰资讯台",
-      "urls": [
-        "http://php.jdshipin.com/TVOD/iptv.php?id=fhzx"
-      ],
-      "latency": 189,
-      "codec": "h264",
-      "category": "🌊港·澳·台"
-    },
-    {
-      "name": "TVB娱乐新闻台",
-      "urls": [
-        "http://php.jdshipin.com/TVOD/iptv.php?id=tvbylxw"
-      ],
-      "latency": 209,
-      "codec": "h264",
-      "category": "🌊港·澳·台"
-    },
-    {
-      "name": "TVB Plus",
-      "urls": [
-        "http://r.jdshipin.com/Nr5jq"
-      ],
-      "latency": 373,
-      "codec": "h264",
-      "category": "🌊港·澳·台"
-    },
-    {
-      "name": "凤凰香港台",
-      "urls": [
-        "http://php.jdshipin.com/TVOD/iptv.php?id=fhhk"
-      ],
-      "latency": 535,
-      "codec": "hevc",
-      "category": "🌊港·澳·台"
-    },
-    {
-      "name": "福建漳州醉美沙滩翡翠湾",
-      "urls": [
-        "https://gcalic.v.myalicdn.com/gc/fcw03_1/index.m3u8"
-      ],
-      "latency": 578,
-      "codec": "h264",
-      "category": "🌊港·澳·台"
     }
   ]
 }

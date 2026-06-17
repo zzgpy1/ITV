@@ -1,16 +1,21 @@
 # Demo筛选丢弃的频道
 # 原始频道总数: 500
-# Demo匹配成功: 332
-# 丢弃数量: 168
+# Demo匹配成功: 324
+# 丢弃数量: 176
 
 Newsmax,http://nmxlive.akamaized.net/hls/live/529965/Live_1/index.m3u8
+澳门体育,http://cdn6.163189.xyz/163189/amty
 CHU,https://cdn6.163189.xyz/163189/chu
 八度空间,https://cdn6.163189.xyz/163189/8tv
 NOW NEWS,http://cdn.163189.xyz/163189/now
+澳门综艺,http://cdn6.163189.xyz/163189/amzy
 CH8,https://cdn6.163189.xyz/163189/ch8
 VOA美国之音,https://voa-ingest.akamaized.net/hls/live/2033878/tvmc08/playlist.m3u8
+TVB News,http://r.jdshipin.com/CkuBd
 CH5,https://cdn6.163189.xyz/163189/ch5
 亚洲武侠,http://php.jdshipin.com/TVOD/iptv.php?id=yzwx
+凤凰资讯台,http://php.jdshipin.com/TVOD/iptv.php?id=fhzx
+TVB娱乐新闻台,http://php.jdshipin.com/TVOD/iptv.php?id=tvbylxw
 Wild Earth,https://wildearth-plex.amagi.tv/masterR1080p.m3u8
 CGTN Documentary,https://amg00405-rakutentv-cgtndocumentary-rakuten-0ql8j.amagi.tv/master.m3u8
 Dali TV,http://www.dalitv.com.tw:4568/live/dali/index.m3u8
@@ -18,6 +23,7 @@ Dali TV,http://www.dalitv.com.tw:4568/live/dali/index.m3u8
 1989年春晚,https://txmov2.a.kwimgs.com/bs3/video-hls/5194620763762726260_hlsb.m3u8
 Supreme Master TV,https://lbs-us1.suprememastertv.com/720p.m3u8
 港台电视 32,http://php.jdshipin.com:8880/TVOD/iptv.php?id=rthk32
+TVB Plus,http://r.jdshipin.com/Nr5jq
 浙江民生休闲,http://ali-m-l.cztv.com/channels/lantian/channel006/1080p.m3u8
 新闻咨询,http://112.46.105.20:8009/hls/18/index.m3u8
 陕西都市青春,http://112.46.105.20:8009/hls/19/index.m3u8
@@ -29,6 +35,7 @@ CGTN英语,https://english-livebkali.cgtn.com/live/encgtn_0.m3u8
 萧山生活频道,http://l.cztvcloud.com/channels/lantian/SXxiaoshan2/720p.m3u8?zzhed
 广西玉林大容山莲花山顶,https://gcalic.v.myalicdn.com/gc/drs01_1/index.m3u8
 直中国,https://gcalic.v.myalicdn.com/gc/wgw05_1/index.m3u8?contentid=2820180516001
+凤凰香港台,http://php.jdshipin.com/TVOD/iptv.php?id=fhhk
 港台电视 31,http://php.jdshipin.com:8880/TVOD/iptv.php?id=rthk31
 黄山飞来石,https://gcalic.v.myalicdn.com/gc/hsptgy_1/index.m3u8
 萧山新闻综合 [Not 24/7],https://l.cztvcloud.com/channels/lantian/SXxiaoshan1/720p.m3u8
@@ -45,6 +52,7 @@ CGTN英语,https://english-livebkali.cgtn.com/live/encgtn_0.m3u8
 泰山主峰,https://gcalic.v.myalicdn.com/gc/taishan01_1/index.m3u8
 四川峨眉山远眺贡嘎雪山,https://gcalic.v.myalicdn.com/gc/emsyh_1/index.m3u8
 CNA,https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index_5.m3u8
+福建漳州醉美沙滩翡翠湾,https://gcalic.v.myalicdn.com/gc/fcw03_1/index.m3u8
 四川峨眉山普贤菩萨铜像,https://gcalic.v.myalicdn.com/gc/emspxps_1/index.m3u8
 浙江钱江频道,http://ali-m-l.cztv.com/channels/lantian/channel02/1080p.m3u8
 望乡台,https://gcalic.v.myalicdn.com/gc/hlwxt_1/index.m3u8
@@ -155,6 +163,7 @@ Xizang TV Tibetan [Not 24/7],http://php.jdshipin.com:8880/xztv.php?id=zy
 河南新闻,http://1.94.31.214/php/hntv.php?id=hnxw
 福州电视台少儿频道,http://live.zohi.tv/video/s10001-fztv-4/index.m3u8
 河南电视剧,http://1.94.31.214/php/hntv.php?id=hndsj
+云南丽江冰川,https://gcalic.v.myalicdn.com/gc/hkylxs05_1/index.m3u8
 Harbin Comprehensive News Channel,https://stream.hrbtv.net/xwzh/playlist.m3u8?_upt=ef41dd531755913594
 RT Doc-Русский,https://rt-doc.rttv.com/dvr/rtdru/rtdru1080.m3u8
 Harbin Movie Channel,https://stream.hrbtv.net/yspd/playlist.m3u8
@@ -170,4 +179,3 @@ Chifeng Comprehensive News Chanel,http://play1-qk.nmtv.cn/live/1735546697341033.
 兵团五师双河影,https://liveout.btzx.com.cn/62ds9e/6o77s4.m3u8?zxinjd
 雪乡梦幻家园,https://gcalic.v.myalicdn.com/gc/mdjxxmhjyxj_1/index.m3u8
 余杭未来E频道,http://l.cztvcloud.com/channels/lantian/SXyuhang3/720p.m3u8?zzhed
-云南丽江冰川,https://gcalic.v.myalicdn.com/gc/hkylxs05_1/index.m3u8
