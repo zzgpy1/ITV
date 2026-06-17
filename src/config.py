@@ -51,10 +51,6 @@ RAW_SOURCES = [
 # 不需要代理的源
 DIRECT_SOURCES = [
     "https://tv.19860519.xyz/abc123",
-]
-
-# ========== 港澳台日专用源（新增） ==========
-HMTJ_SOURCES = [
     "https://live.hacks.tools/tv/ipv4/categories/hong_kong.m3u",  # 香港
     "https://live.hacks.tools/tv/ipv4/categories/macau.m3u",      # 澳门
     "https://live.hacks.tools/tv/ipv4/categories/taiwan.m3u",     # 台湾
