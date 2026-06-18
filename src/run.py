@@ -43,9 +43,9 @@ from src.demo_filter import (
 from src.database import get_db_cache
 from src.logger import logger
 
-# 新增导入
+# 新增导入（增强输出 & 智能分类）
 from src.generator_enhanced import EnhancedOutputGenerator
-from src.special_categories import collect_and_append_special_categories
+from src.special_categories import fetch_and_classify_special_sources, append_special_to_output
 
 
 # ========== 传统模式（完整采集） ==========
@@ -59,6 +59,7 @@ async def run_legacy_mode():
         f"📋 增强过滤: demo={ENABLE_DEMO_FILTER}, alias={ENABLE_ALIAS}, blacklist={ENABLE_BLACKLIST}"
     )
 
+    # 获取 demo 顺序
     demo_order = parse_demo_order_with_categories() if ENABLE_DEMO_FILTER else []
     logger.info(f"📋 Demo 顺序: {len(demo_order)} 个频道")
 
@@ -141,43 +142,50 @@ async def run_legacy_mode():
     for cat, cnt in cat_counter.items():
         logger.info(f"  {cat}: {cnt} 个频道")
 
+    # 生成标准输出（按 demo 顺序）
     generate_outputs_from_demo(ordered_channels, demo_order)
 
-    # ========== 生成增强版输出（取消精简版和EPG版） ==========
+    # 生成增强版输出（仅保留 JSON，关闭精简版和 EPG）
     output_gen = EnhancedOutputGenerator()
     output_gen.generate_all_outputs(
         ordered_channels, 
         demo_order,
-        enable_json=ENABLE_JSON_OUTPUT,   # 保留 JSON
-        enable_lite=False,                # 关闭精简版
-        enable_epg=False                  # 关闭 EPG 兼容版
+        enable_json=ENABLE_JSON_OUTPUT,
+        enable_lite=False,
+        enable_epg=False
     )
 
-    # 采集特色分类内容
-    special_stats = {}
+    # ========== 智能补充：采集 abc123 源并分类融入 ==========
     try:
-        special_stats = await collect_and_append_special_categories(OUTPUT_DIR, db)
-        if special_stats:
-            logger.info("🎉 特色分类内容已追加到输出文件")
+        logger.info("🧠 开始智能补充采集（从 abc123 源）...")
+        special_data = await fetch_and_classify_special_sources(db, demo_order)
+        if special_data:
+            stats = append_special_to_output(special_data, OUTPUT_DIR, demo_order)
+            if stats:
+                logger.info(f"🎉 智能补充内容已追加，统计: {stats}")
+        else:
+            logger.info("📭 智能补充未采集到新频道")
     except Exception as e:
-        logger.warning(f"⚠️ 特色分类采集失败: {e}")
+        logger.warning(f"⚠️ 智能补充采集失败: {e}")
 
     total = len(ordered_channels)
     logger.info(f"🎉 完成！有效频道总数: {total}")
 
+    # 保存统计信息
     stats = {
         "total_channels": total,
         "timestamp": datetime.datetime.now().isoformat(),
         "category_stats": dict(cat_counter),
         "unmatched_count": len(unmatched_channels) if unmatched_channels else 0,
         "features": {
-            "epg_injection_enabled": False,   # 不再生成 EPG 文件
+            "epg_injection_enabled": False,
             "incremental_mode": is_fresh and ENABLE_INCREMENTAL_FETCH
         }
     }
     
-    if special_stats:
-        stats["special_categories"] = special_stats
+    # 如果智能补充有数据，加入统计
+    if special_data:
+        stats["smart_supplement"] = {cat: len(ch) for cat, ch in special_data.items()}
     
     stats_path = OUTPUT_DIR / "stats.json"
     with open(stats_path, "w", encoding="utf-8") as f:
