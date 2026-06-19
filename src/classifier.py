@@ -78,18 +78,30 @@ def classify_and_filter(channels: list) -> dict:
         else:
             other_count += 1
     
+    # 央视排序：使用更精确的匹配，确保 1-17 顺序正确
     if result["央视"]:
         def ctv_key(ch):
-            name = ch["name"]
+            name = ch.get("name", "")
+            # 处理 CCTV-5+ 特殊（排在 5 之后，6 之前）
+            if name == "CCTV-5+" or name == "CCTV5+" or name == "CCTV-5＋":
+                return 5  # 索引 5 对应位置
+            # 提取数字
+            match = re.search(r'CCTV[-\s]*(\d+)', name, re.IGNORECASE)
+            if match:
+                num = int(match.group(1))
+                if 1 <= num <= 17:
+                    return num - 1  # 0-based 索引
+            # 非数字央视频道（如 CCTV世界地理）放到后面
             for idx, std in enumerate(CCTV_ORDER):
-                if std.lower() == name.lower() or name.lower().startswith(std.lower()):
+                if name == std or name.startswith(std):
                     return idx
             return len(CCTV_ORDER)
         result["央视"].sort(key=ctv_key)
     
+    # 其他分类按名称排序
     for cat in ["卫视", "地方", "港澳台"]:
         if result[cat]:
-            result[cat].sort(key=lambda x: x["name"])
+            result[cat].sort(key=lambda x: x.get("name", ""))
     
     print("📊 分类统计（央视/卫视/地方/港澳台）：")
     for cat, lst in result.items():
