@@ -1,11 +1,12 @@
 # src/demo_filter.py
 # Demo 频道筛选与排序模块，支持拼音匹配和省份自动归类
 # 港澳台统一归入 🌊港·澳·台 分类
+# 央视频道按 CCTV_ORDER 排序
 
 import re
 from pathlib import Path
 from typing import List, Tuple
-from src.config import DEMO_FILE, OUTPUT_DIR, DEMO_MATCH_MODE
+from src.config import DEMO_FILE, OUTPUT_DIR, DEMO_MATCH_MODE, CCTV_ORDER
 from src.classifier import PROVINCES, classify_channel
 from src.logger import logger
 
@@ -138,11 +139,35 @@ def get_demo_category_for_province(province: str, demo_order: List[Tuple[str, st
     return f"☘️{province}频道"
 
 
+def get_cctv_sort_key(channel_name: str) -> int:
+    """
+    获取央视频道的排序键值，按 CCTV_ORDER 排序
+    非央视频道返回一个大数，排在后面
+    """
+    name_lower = channel_name.lower()
+    # 提取央视编号
+    for idx, std in enumerate(CCTV_ORDER):
+        if std.lower() == name_lower or name_lower.startswith(std.lower()):
+            return idx
+    # 匹配 CCTV-数字 格式
+    match = re.search(r'cctv[-\s]*(\d+)', name_lower)
+    if match:
+        num = int(match.group(1))
+        # 如果编号在 CCTV_ORDER 中，返回其索引
+        for idx, std in enumerate(CCTV_ORDER):
+            if std.lower().endswith(f"-{num}") or std.lower().endswith(f"{num}"):
+                return idx
+        # 否则按编号排序
+        return 100 + num
+    return 9999  # 非央视频道排在最后
+
+
 def filter_and_order_by_demo(channels: list) -> tuple:
     """
     增强筛选：
     1. 匹配 demo 中的频道（支持拼音）
     2. 未匹配的根据省份自动归类（港澳台统一归入 🌊港·澳·台）
+    3. 央视频道按 CCTV_ORDER 排序
     """
     demo_order = parse_demo_order_with_categories()
     if not demo_order:
@@ -203,6 +228,34 @@ def filter_and_order_by_demo(channels: list) -> tuple:
     
     if province_appended:
         logger.info(f"📊 自动归类统计: {dict(province_appended)}")
+    
+    # ========== 第三遍：对匹配结果按 demo_order 顺序排序 ==========
+    # 构建 demo_order 顺序映射
+    order_map = {name: idx for idx, (_, name) in enumerate(demo_order)}
+    
+    # 按 demo_order 顺序排序（未在 demo_order 中的按原顺序排在最后）
+    def sort_by_demo_order(ch):
+        name = ch.get("demo_name", ch.get("name", ""))
+        return order_map.get(name, len(demo_order))
+    
+    matched.sort(key=sort_by_demo_order)
+    
+    # ========== 第四遍：对央视分类内的频道按 CCTV_ORDER 排序 ==========
+    # 提取央视分类的频道
+    cctv_channels = []
+    other_channels = []
+    for ch in matched:
+        cat = ch.get("demo_category", "")
+        if "央视" in cat or "CCTV" in cat:
+            cctv_channels.append(ch)
+        else:
+            other_channels.append(ch)
+    
+    # 按 CCTV_ORDER 排序央视频道
+    cctv_channels.sort(key=lambda ch: get_cctv_sort_key(ch.get("demo_name", ch.get("name", ""))))
+    
+    # 重新组合
+    matched = cctv_channels + other_channels
     
     logger.info(f"🎯 Demo 筛选：原始 {len(channels)} -> 匹配 {len(matched)}，未匹配 {len(remaining)}")
     return matched, remaining
