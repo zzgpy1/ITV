@@ -36,19 +36,16 @@ PROXY_LIST = [
 # 允许用户通过环境变量自定义代理
 CUSTOM_PROXY = os.getenv("GITHUB_PROXY_URL", "").strip()
 
-
 def get_cdn_proxy() -> str:
-    """
-    根据运行环境决定是否使用 CDN 代理
-    - GitHub Actions: 不使用代理
-    - Docker/本地: 使用代理（可自定义）
-    """
+    """根据运行环境决定是否使用 CDN 代理"""
+    # 1. 显式禁用
+    if os.getenv("DISABLE_GITHUB_PROXY", "false").lower() == "true":
+        return ""
+    # 2. GitHub Actions 直接访问
     if is_github_actions():
-        return ""  # GitHub Actions 直接访问
-    if CUSTOM_PROXY:
-        return CUSTOM_PROXY
-    return DEFAULT_PROXY
-
+        return ""
+    # 3. 其他环境使用代理
+    return "https://gh-proxy.19860519.xyz/"
 
 def get_proxy_list() -> list:
     """获取可用的代理列表（用于重试）"""
@@ -66,7 +63,6 @@ def get_proxy_list() -> list:
             seen.add(p)
             unique.append(p)
     return unique
-
 
 # ========== IPTV 源地址配置 ==========
 RAW_SOURCES = [
