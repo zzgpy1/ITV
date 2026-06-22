@@ -1,7 +1,7 @@
 {
   "version": "2.0",
-  "total": 337,
-  "generated": "2026-06-22T12:15:07.574430",
+  "total": 336,
+  "generated": "2026-06-22T20:56:26.513010",
   "channels": [
     {
       "name": "CCTV-1",
@@ -636,15 +636,6 @@
       "category": "☘️重庆频道,#genre#"
     },
     {
-      "name": "荣昌综合 [Not 24/7]",
-      "urls": [
-        "http://183.64.181.25:40023/rongchang01.m3u8"
-      ],
-      "latency": 1106,
-      "codec": "h264",
-      "category": "☘️重庆频道,#genre#"
-    },
-    {
       "name": "江津新闻综合",
       "urls": [
         "http://222.179.155.21:1935/ch1.m3u8"
@@ -798,7 +789,7 @@
       "urls": [
         "https://ali-m-l.cztv.com/channels/lantian/channel012/1080p.m3u8"
       ],
-      "latency": 1304,
+      "latency": 832,
       "codec": "h264",
       "category": "☘️浙江频道,#genre#"
     },
