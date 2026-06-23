@@ -162,6 +162,17 @@ async def run_legacy_mode():
     total = len(ordered_channels)
     logger.info(f"🎉 完成！有效频道总数: {total}")
 
+        # 记录质量趋势到数据库
+    try:
+        from src.web.db import record_quality
+        from src.stable.manager import StableManager
+        stable_mgr = StableManager()
+        for name, src in stable_mgr.get_active_sources().items():
+            if src.url and src.latency:
+                record_quality(name, src.latency, True)
+    except Exception as e:
+        logger.warning(f"记录质量趋势失败: {e}")
+
     # 保存统计信息
     stats = {
         "total_channels": total,
