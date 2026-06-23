@@ -9,7 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+
+# 升级 pip 并使用国内镜像源（清华/阿里云）加速安装
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
 
 # 最终镜像
 FROM python:3.11-slim-bookworm
@@ -17,6 +20,7 @@ FROM python:3.11-slim-bookworm
 # 安装 ffmpeg 和运行时依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
+    curl \
     && rm -rf /var/lib/apt/lists/* \
     && ffprobe -version
 
@@ -36,9 +40,9 @@ RUN mkdir -p /app/data /app/output
 # 暴露 HTTP 服务端口
 EXPOSE 8080
 
-# 健康检查
+# 健康检查（需要 curl）
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8080/tv.m3u || exit 1
+    CMD curl -f http://localhost:8080/api/status || exit 1
 
 # 启动脚本
 COPY start.sh /start.sh
