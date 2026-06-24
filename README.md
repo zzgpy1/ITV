@@ -154,133 +154,134 @@ python -m src.server
 
 ⚙️ 环境变量配置
 
-运行模式  
+   运行模式  
+  
+    变量	                             默认值	                     说明
 
-变量	                     默认值	             说明
+   RUN_MODE	                         schedule            	once 或 schedule
 
-RUN_MODE	                schedule     	once 或 schedule
+  SCHEDULE_INTERVAL	                 21600	                 定时任务间隔（秒）
+    
+    性能配置
 
-SCHEDULE_INTERVAL	         21600	       定时任务间隔（秒）
-性能配置
+     变量	                         默认值	                       说明
 
-变量	                    默认值	           说明
+  MAX_WORKERS	                       20	                       最大并发数
 
-MAX_WORKERS	                 20	             最大并发数
+    TIMEOUT	                          8	                      请求超时（秒）
 
-TIMEOUT	                     8	             请求超时（秒）
+ DYNAMIC_CONCURRENCY	                true	                      是否启用动态并发
 
-DYNAMIC_CONCURRENCY	        true	       是否启用动态并发
+    MIN_WORKERS	                    5	                     最小并发数
 
-MIN_WORKERS	                  5	            最小并发数
+   验证配置
 
-验证配置
+   变量	                         默认值                         	说明
 
-变量	                    默认值           	说明
+FFMPEG_ENABLE	                   true	                   是否启用 ffmpeg 验证
 
-FFMPEG_ENABLE	             true	       是否启用 ffmpeg 验证
+FFMPEG_MODE	                      deep	                   deep / quick / off
 
-FFMPEG_MODE	                 deep	        deep / quick / off
+FFPROBE_CACHE_HOURS	              168	                 ffprobe 缓存时长（小时）
 
-FFPROBE_CACHE_HOURS	         168	     ffprobe 缓存时长（小时）
+  缓存配置
 
-缓存配置
+   变量	                        默认值	                       说明
 
-变量	                    默认值	            说明
+CACHE_RAW_HOURS	                48	                   原始源缓存时长
 
-CACHE_RAW_HOURS	             48	           原始源缓存时长
+CACHE_SPEED_HOURS	                24	                   测速结果缓存时长
 
-CACHE_SPEED_HOURS	         24	           测速结果缓存时长
+ENABLE_INCREMENTAL_FETCH	       true	                   启用增量更新
 
-ENABLE_INCREMENTAL_FETCH	true	         启用增量更新
+   功能开关
 
-功能开关
+    变量	                          默认值	                       说明
 
-变量	                    默认值	           说明
+ENABLE_DEMO_FILTER	              true	               启用 Demo 筛选
 
-ENABLE_DEMO_FILTER	         true	        启用 Demo 筛选
+ENABLE_ALIAS	                    true	               启用别名标准化
 
-ENABLE_ALIAS	             true	        启用别名标准化
+ENABLE_BLACKLIST	                 true	               启用 URL 黑名单
 
-ENABLE_BLACKLIST	         true	        启用 URL 黑名单
+DATABASE_ENABLE	                 true	               启用数据库缓存
 
-DATABASE_ENABLE	             true	        启用数据库缓存
+   自治模式
 
-自治模式
+    变量	                         默认值	                  说明
 
-变量	                     默认值	            说明
+AUTONOMOUS_MODE            	    false	               启用自治模式
 
-AUTONOMOUS_MODE            	 false	        启用自治模式
+AUTO_UPDATE_STABLE	              true	               自动更新稳定版
 
-AUTO_UPDATE_STABLE	         true	        自动更新稳定版
+AUTO_REPLACE_FAILED	              true	               自动替换失效源
 
-AUTO_REPLACE_FAILED	         true	        自动替换失效源
+QUALITY_CHECK_INTERVAL	            24	                  质量检查间隔（小时）
 
-QUALITY_CHECK_INTERVAL	      24	        质量检查间隔（小时）
-
-CANDIDATE_MIN_SUCCESS	      10	       候选稳定最少成功次数
+CANDIDATE_MIN_SUCCESS	            10	                 候选稳定最少成功次数
 
 
-CANDIDATE_MIN_SUCCESS_RATE	  0.8	        候选最低成功率
+CANDIDATE_MIN_SUCCESS_RATE	        0.8	                 候选最低成功率
 
-CANDIDATE_MAX_LATENCY	     2000	        候选最大延迟（ms）
+CANDIDATE_MAX_LATENCY	          2000	                候选最大延迟（ms）
 
-Web 界面
+   Web 界面
 
-变量	                     默认值	            说明
+    变量	                        默认值	                    说明
 
-WEB_SERVER_PORT            	 8080	         Web 服务端口
+WEB_SERVER_PORT                	 8080	                Web 服务端口
 
-WEB_SERVER_HOST	             0.0.0.0	      监听地址
+WEB_SERVER_HOST	               0.0.0.0	               监听地址
 
-输出配置
+   输出配置
+        
+    变量	                       默认值	                   说明
 
-变量	                    默认值	           说明
+ENABLE_JSON_OUTPUT	            true	                生成 JSON API
 
-ENABLE_JSON_OUTPUT	         true	        生成 JSON API
+ENABLE_LITE_VERSION	            false	                生成精简版
 
-ENABLE_LITE_VERSION	         false	        生成精简版
+ENABLE_EPG_OUTPUT	               false	                生成 EPG 版本
 
-ENABLE_EPG_OUTPUT	         false	        生成 EPG 版本
-
-MAX_SOURCES_PER_CHANNEL	      3	           每个频道保留源数
+MAX_SOURCES_PER_CHANNEL	           3	             每个频道保留源数
 
 📁 数据文件说明
 
-   文件	                         说明
+   文件	                                 说明
 
-output/tv.m3u	           标准 M3U 播放列表
+output/tv.m3u	                    标准 M3U 播放列表
 
-output/tv.txt	           TXT 格式播放列表
+output/tv.txt	                   TXT 格式播放列表
 
-output/tv_multi.m3u	         多源切换 M3U
+output/tv_multi.m3u	               多源切换 M3U
 
-output/channels.json	     JSON API 格式
+output/channels.json	             JSON API 格式
 
-output/stable_sources.json	   稳定源配置
+output/stable_sources.json	         稳定源配置
 
-output/stats.json	          运行统计信息
+output/stats.json	                  运行统计信息
 
-data/source_pool.json	      源池数据库
+data/source_pool.json	             源池数据库
 
-data/candidate_pool.json	  候选池数据库
+data/candidate_pool.json	         候选池数据库
 
-data/trend.db	          质量趋势数据库（SQLite）
+data/trend.db	                 质量趋势数据库（SQLite）
 
 🎯 使用说明
 
 Web 管理面板
 
-页面	                     功能
+页面	                                功能
 
-仪表盘	         查看系统状态（稳定源、固定源、源池、候选观察中数量，最后运行时间）
+仪表盘	                         查看系统状态（稳定源、固定源、源池、候选观察中数量，最后运行时间）
 
-频道列表	         查看所有稳定源，支持搜索和分类筛选（央视/卫视/地方/港澳台/其他）
+频道列表	                       查看所有稳定源，支持搜索和分类筛选（央视/卫视/地方/港澳台/其他）
 
-固定源管理	     添加/删除固定源，添加后该源不会被自动替换
+固定源管理	                   添加/删除固定源，添加后该源不会被自动替换
 
-配置管理	         调整并发数、超时时间、匹配模式等参数（需重启生效）
+配置管理	                      调整并发数、超时时间、匹配模式等参数（需重启生效）
 
-质量趋势	         输入频道名查看延迟变化曲线，绿色/红色点表示成功/失败
+质量趋势	                     输入频道名查看延迟变化曲线，绿色/红色点表示成功/失败
 
 固定源管理
 
