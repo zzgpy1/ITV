@@ -1,3 +1,5 @@
+IPTV 智能整理平台 · 自治版
+
 全自动 IPTV 直播源采集、测速、验证、分类、输出与自治管理平台
 
 本项目是一个集多源采集、双重测速、智能分类、固定源保护、质量回滚于一体的 IPTV 源管理工具。通过 GitHub Actions 或 Docker 一键部署，实现从“被动维护”到“主动自治”的升级，让老人孩子都能稳定观看电视。
@@ -13,25 +15,25 @@
 📦 多格式输出	tv.m3u、tv.txt、tv_multi.m3u（多源切换）、channels.json（API）
 🐳 简单部署	Docker 一键运行，内置 HTTP 文件服务器 + Flask Web 界面
 ⏱️ 定时自动化	GitHub Actions 每 6 小时运行，缓存复用，增量更新
+
 🏗️ 系统架构
-text
-┌─────────────────────────────────────────────────────────────┐
-│                     Web 管理界面 (Flask)                     │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ │
-│  │仪表盘   │ │频道列表 │ │固定源   │ │配置管理 │ │质量趋势 │ │
-│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘ │
-├─────────────────────────────────────────────────────────────┤
-│                      自治模式 (质量回路)                      │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
-│  │ 源池发现    │ │ 候选观察    │ │ 稳定提升    │ │ 质量回滚  │ │
-│  └─────────────┘ └─────────────┘ └─────────────┘ └───────────┘ │
-├─────────────────────────────────────────────────────────────┤
-│  稳定版        │  候选版         │  源池           │  固定源      │
-│  (家中电视)    │  (观察期)       │  (新源发现)     │  (用户指定)  │
-└─────────────────────────────────────────────────────────────┘
+系统分层	细分模块 / 源类型	说明
+Web 管理界面 (Flask)	仪表盘	系统数据总览首页
+Web 管理界面 (Flask)	频道列表	全部频道查询、编辑管理
+Web 管理界面 (Flask)	固定源	用户自定义播放源管理入口
+Web 管理界面 (Flask)	配置管理	系统参数、自动化策略配置
+Web 管理界面 (Flask)	质量趋势	播放源长期质量可视化图表
+自治模式（质量回路）	源池发现	自动采集、抓取全新播放源
+自治模式（质量回路）	候选观察	新源灰度测试，持续稳定性监测
+自治模式（质量回路）	稳定提升	测试达标候选源晋升稳定源
+自治模式（质量回路）	质量回滚	源故障时自动切回可靠源
+播放源分层	稳定版	家中电视正式输出使用
+播放源分层	候选版	测试观察期，未完全验证
+播放源分层	源池	新采集入库，等待质量检测
+播放源分层	固定源	用户手动指定，永久保留不自动替换
+
 🚀 快速开始
 方式一：Docker 部署（推荐）
-bash
 # 1. 克隆项目
 git clone https://github.com/zzgpy1/ITV.git
 cd ITV
@@ -75,6 +77,8 @@ https://你的用户名.github.io/ITV/tv.txt
 项目通过 环境变量（.env 文件或 Docker 环境）灵活配置。所有配置项见 .env.example。
 
 核心配置项
+
+
 变量	默认值	说明
 RUN_MODE	schedule	运行模式：once（一次性）或 schedule（定时）
 SCHEDULE_INTERVAL	21600	定时模式间隔（秒），默认 6 小时
@@ -86,15 +90,15 @@ AUTONOMOUS_MODE	false	是否启用自治模式（源池→候选→稳定）
 ENABLE_DEMO_FILTER	true	是否按 demo.txt 筛选频道
 CACHE_RAW_HOURS	48	原始源缓存时长（小时）
 WEB_SERVER_PORT	8080	Web 管理界面端口
+
 固定源配置
 编辑 src/fixed_sources.py 可预设优质源，格式：
-
-python
 CCTV_FIXED_SOURCES = {
     "CCTV-1": "http://45.192.97.170:8880/play/1.m3u8",
     "CCTV-5+": "http://45.192.97.170:8880/play/6.m3u8",
     # ...
 }
+
 📺 Web 管理界面
 访问 http://你的IP:8080 进入管理面板：
 
@@ -130,6 +134,8 @@ CCTV_FIXED_SOURCES = {
 成功/失败状态用绿/红点标识
 
 📂 输出文件说明
+
+
 文件	说明
 output/tv.m3u	标准 M3U 播放列表（按 demo.txt 顺序）
 output/tv.txt	标准 TXT 格式（频道名,URL）
@@ -141,6 +147,7 @@ output/stable_sources.json	稳定源列表（含固定标记）
 data/source_pool.json	源池（所有发现过的源）
 data/candidate_pool.json	候选池（观察中的源）
 data/trend.db	质量趋势数据库（SQLite）
+
 🔧 高级特性
 自治模式工作流程
 发现阶段：拉取所有源，新源进入候选池
@@ -167,7 +174,6 @@ data/trend.db	质量趋势数据库（SQLite）
 
 🐳 Docker 高级部署
 使用 Docker Compose（推荐）
-yaml
 # docker-compose.yml
 services:
   iptv-collector:
@@ -189,9 +195,9 @@ services:
       - RUN_MODE=schedule
       - SCHEDULE_INTERVAL=21600
       - WEB_SERVER_PORT=8080
-手动构建镜像
-bash
-docker build -t iptv-collector .
+
+      手动构建镜像
+      docker build -t iptv-collector .
 docker run -d \
   --name iptv-collector \
   -p 8080:8080 \
@@ -199,7 +205,8 @@ docker run -d \
   -v ./output:/app/output \
   -e AUTONOMOUS_MODE=true \
   iptv-collector
-📦 依赖与兼容性
+
+  📦 依赖与兼容性
 Python：3.10+
 
 关键依赖：aiohttp, aiosqlite, Flask, flask-cors, pypinyin, tqdm, Chart.js (前端)
@@ -242,7 +249,3 @@ Chart.js – 前端图表
 查看 Actions 运行日志
 
 交流讨论 Discussions
-
-🌟 如果本项目对您有帮助，请点个 Star 支持一下！
-
-本回答由 AI 生成，内容仅供参考，请仔细甄别
