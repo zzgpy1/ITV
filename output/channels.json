@@ -1,7 +1,7 @@
 {
   "version": "2.0",
   "total": 332,
-  "generated": "2026-06-23T20:16:05.918469",
+  "generated": "2026-06-24T03:57:58.573971",
   "channels": [
     {
       "name": "CCTV-1",
@@ -457,7 +457,7 @@
       "urls": [
         "https://video.bread-tv.com:8091/hls-live24/online/index.m3u8"
       ],
-      "latency": 1100,
+      "latency": 767,
       "codec": "h264",
       "category": "📡卫视频道,#genre#"
     },
@@ -630,7 +630,7 @@
       "urls": [
         "http://183.64.181.25:40023/rongchang01.m3u8"
       ],
-      "latency": 1422,
+      "latency": 957,
       "codec": "h264",
       "category": "☘️重庆频道,#genre#"
     },
@@ -789,7 +789,7 @@
         "https://ali-m-l.cztv.com/channels/lantian/channel012/1080p.m3u8",
         "https://ali-m-l.cztv.com/channels/lantian/channel12/720p.m3u8"
       ],
-      "latency": 832,
+      "latency": 464,
       "codec": "h264",
       "category": "☘️浙江频道,#genre#"
     },
@@ -1464,7 +1464,7 @@
       "urls": [
         "https://live.264788.xyz/channel/fujianlvyou?streamid=221239fcf3c7edb274f2f0760fe47f96&livekey=01WgOR41rriMmMkzNsd0UoaxJRwetZdxIvtVk"
       ],
-      "latency": 6879,
+      "latency": 3148,
       "codec": "h264",
       "category": "☘️福建频道,#genre#"
     },
