@@ -30,32 +30,35 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
     
-    - name: 创建资源目录和 __init__.py
+    - name: 创建资源目录
       run: |
         mkdir resources -Force
         echo "No icon" > resources/placeholder.txt
-        # 确保 __init__.py 存在
-        echo "# src package" > src\__init__.py
-        echo "# gui package" > src\gui\__init__.py
-        echo "# utils package" > src\utils\__init__.py
     
     - name: 打包成 exe
       run: |
         pyinstaller build.spec --clean --noconfirm
     
-    - name: 创建发布包
+    - name: 创建发布包（包含 src 目录）
       run: |
         mkdir dist_package
+        # 复制 exe
         copy dist\IPTV_Manager.exe dist_package\
+        # 复制整个 src 目录（已经包含所有模块）
+        xcopy src dist_package\src\ /E /I /Y
+        # 复制其他必需文件
         xcopy alias.txt dist_package\ /Y
         xcopy blacklist.txt dist_package\ /Y
         xcopy demo.txt dist_package\ /Y
+        xcopy resources dist_package\resources\ /E /I /Y
         mkdir dist_package\output
         mkdir dist_package\data
         echo 使用说明 > dist_package\使用说明.txt
         echo 1. 双击 IPTV_Manager.exe 启动工具 >> dist_package\使用说明.txt
         echo 2. 点击"启动采集"开始获取直播源 >> dist_package\使用说明.txt
         echo 3. 采集完成后在 output 目录查看结果 >> dist_package\使用说明.txt
+        echo. >> dist_package\使用说明.txt
+        echo 注意：src 目录为程序核心代码，请勿删除或移动。 >> dist_package\使用说明.txt
     
     - name: 打包为 ZIP
       run: |
@@ -85,6 +88,5 @@ jobs:
           
           ### 系统要求
           - Windows 10/11 或 Windows Server 2019+
-          - 需要安装 ffmpeg（首次运行时会提示下载）
         draft: false
         prerelease: false
