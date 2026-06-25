@@ -4,6 +4,8 @@
 DARK_STYLE = """
 QMainWindow {
     background-color: #1a1d20;
+/* 暗色主题样式 */
+QMainWindow { background-color: #1a1d20; }
 }
 
 QWidget {
