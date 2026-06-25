@@ -5,7 +5,18 @@ import os
 import sys
 from pathlib import Path
 
-ROOT_DIR = Path(__file__).parent.parent
+
+def get_base_dir():
+    """获取应用根目录（支持 PyInstaller 打包）"""
+    if getattr(sys, 'frozen', False):
+        # 打包环境，exe 所在路径
+        return Path(sys.executable).parent
+    else:
+        # 开发环境，项目根目录
+        return Path(__file__).parent.parent
+
+
+ROOT_DIR = get_base_dir()
 DATA_DIR = ROOT_DIR / "data"
 OUTPUT_DIR = ROOT_DIR / "output"
 DEMO_FILE = ROOT_DIR / "demo.txt"
@@ -24,43 +35,11 @@ def is_docker() -> bool:
     return os.path.exists("/.dockerenv") or os.path.exists("/run/.containerenv")
 
 
-# ========== CDN 代理配置 ==========
-# 默认代理地址
-DEFAULT_PROXY = "https://gh-proxy.19860519.xyz/"
-# 备用代理列表（按优先级）
-PROXY_LIST = [
-    "https://ghproxy.net/",
-    "https://gh-proxy.19860519.xyz/",
-    "https://ghproxy.19860519.xyz/",
-]
-# 允许用户通过环境变量自定义代理
-CUSTOM_PROXY = os.getenv("GITHUB_PROXY_URL", "").strip()
-
 def get_cdn_proxy() -> str:
-    """根据运行环境决定是否使用 CDN 代理"""
-    # 如果显式禁用代理
-    if os.getenv("DISABLE_GITHUB_PROXY", "false").lower() == "true":
-        return ""
     if is_github_actions():
-        return ""  # GitHub Actions 环境直接访问
+        return ""
     return "https://gh-proxy.19860519.xyz/"
 
-def get_proxy_list() -> list:
-    """获取可用的代理列表（用于重试）"""
-    if is_github_actions():
-        return []
-    proxies = []
-    if CUSTOM_PROXY:
-        proxies.append(CUSTOM_PROXY)
-    proxies.extend(PROXY_LIST)
-    # 去重
-    seen = set()
-    unique = []
-    for p in proxies:
-        if p not in seen:
-            seen.add(p)
-            unique.append(p)
-    return unique
 
 # ========== IPTV 源地址配置 ==========
 RAW_SOURCES = [
@@ -74,29 +53,21 @@ RAW_SOURCES = [
     "https://raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u",
 ]
 
-# 不需要代理的源
 DIRECT_SOURCES = [
     "https://tv.19860519.xyz/abc123",
 ]
 
-# ========== 代理配置 ==========
-ENABLE_GITHUB_PROXY = False   # 强制禁用代理
-
-# ========== 构建最终 IPTV_SOURCES 列表 ==========
 PROXY = get_cdn_proxy()
 IPTV_SOURCES = []
 
-# 添加 GitHub 源（根据环境决定是否加代理）
 for src in RAW_SOURCES:
     if PROXY:
         IPTV_SOURCES.append(PROXY + src)
     else:
         IPTV_SOURCES.append(src)
 
-# 添加直接访问的源（始终不加代理）
 IPTV_SOURCES.extend(DIRECT_SOURCES)
 
-# 打印环境信息
 if is_github_actions():
     print("🏃 检测到 GitHub Actions 环境，使用直接访问模式")
 elif is_docker():
@@ -106,7 +77,7 @@ else:
 
 print(f"📡 共配置 {len(IPTV_SOURCES)} 个源")
 
-# ========== 性能配置 ==========
+# 性能配置
 MAX_WORKERS = int(os.getenv("MAX_WORKERS", 20))
 TIMEOUT = int(os.getenv("TIMEOUT", 10))
 
@@ -116,7 +87,7 @@ FFMPEG_STRICT = os.getenv("FFMPEG_STRICT", "false").lower() == "true"
 FFMPEG_WORKERS = min(MAX_WORKERS, 5)
 
 # ffmpeg 模式
-FFMPEG_MODE = os.getenv("FFMPEG_MODE", "deep")  # deep / quick / off
+FFMPEG_MODE = os.getenv("FFMPEG_MODE", "deep")
 FFPROBE_CACHE_HOURS = int(os.getenv("FFPROBE_CACHE_HOURS", 168))
 
 # 重试配置
@@ -134,10 +105,9 @@ OUTPUT_CATEGORY_ORDER = ["央视", "卫视", "地方", "港澳台"]
 
 # 央视频道排序
 CCTV_ORDER = [
-    "CCTV-1", "CCTV-2", "CCTV-3", "CCTV-4", "CCTV-5", 
-    "CCTV-5+", "CCTV-6", "CCTV-7", "CCTV-8", "CCTV-9", 
-    "CCTV-10", "CCTV-11", "CCTV-12", "CCTV-13", "CCTV-14", 
-    "CCTV-15", "CCTV-16", "CCTV-17", "CCTV-4K", "CCTV-8K",
+    "CCTV-1", "CCTV-2", "CCTV-3", "CCTV-4", "CCTV-5", "CCTV-5+", "CCTV-6",
+    "CCTV-7", "CCTV-8", "CCTV-9", "CCTV-10", "CCTV-11", "CCTV-12", "CCTV-13",
+    "CCTV-14", "CCTV-15", "CCTV-16", "CCTV-17", "CCTV-4K", "CCTV-8K",
     "CCTV世界地理", "CCTV央视台球", "CCTV女性时尚", "CCTV怀旧剧场",
     "CCTV第一剧场", "CCTV风云足球", "CCTV老故事", "CGTN", "CGTN俄语",
     "CGTN法语", "CGTN纪录", "CGTN西语", "CGTN阿语"
