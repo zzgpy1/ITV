@@ -5,8 +5,9 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict
+from src.config import ROOT_DIR
 
-DB_PATH = Path("data/trend.db")
+DB_PATH = ROOT_DIR / "data" / "trend.db"
 
 def get_db():
     """获取数据库连接，自动创建表"""
@@ -81,5 +82,4 @@ def get_all_channels_with_history(days: int = 7) -> Dict[str, List[Dict]]:
         result[name].append({'timestamp': row['timestamp'], 'latency': row['latency'], 'success': row['success']})
     return result
 
-# 初始化
 init_db()
