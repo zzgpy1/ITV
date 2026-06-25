@@ -4,17 +4,27 @@
 import sys
 from pathlib import Path
 
+# 确保 resources 目录存在
+Path('resources').mkdir(exist_ok=True)
+
 block_cipher = None
 
+# 检查图标文件是否存在
+icon_path = Path('resources/icon.ico')
+if icon_path.exists():
+    icon_file = str(icon_path)
+else:
+    icon_file = None
+
 a = Analysis(
-    ['src/main.py'],                     # 入口文件
+    ['src/main.py'],
     pathex=[],
     binaries=[],
     datas=[
-        ('alias.txt', '.'),              # 别名文件
-        ('blacklist.txt', '.'),          # 黑名单文件
-        ('demo.txt', '.'),               # Demo 文件
-        ('resources', 'resources'),      # 图标资源
+        ('alias.txt', '.'),
+        ('blacklist.txt', '.'),
+        ('demo.txt', '.'),
+        ('resources', 'resources'),
     ],
     hiddenimports=[
         # 核心模块
@@ -91,11 +101,11 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,  # 显示控制台，方便查看日志
+    console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='resources/icon.ico' if sys.platform == 'win32' else None,
+    icon=icon_file if (sys.platform == 'win32' and icon_file) else None,
 )
