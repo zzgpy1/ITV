@@ -61,6 +61,12 @@ jobs:
             --name "IPTV_Collector" `
             gui/main.py
 
+      - name: Copy config files to dist (backup)
+        run: |
+          Copy-Item -Path demo.txt -Destination dist/IPTV_Collector/ -Force
+          Copy-Item -Path alias.txt -Destination dist/IPTV_Collector/ -Force
+          Copy-Item -Path blacklist.txt -Destination dist/IPTV_Collector/ -Force
+
       - name: Compress output folder to zip
         run: |
           Compress-Archive -Path dist/IPTV_Collector/* -DestinationPath dist/IPTV_Collector_Windows_x64.zip -Force
