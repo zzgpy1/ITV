@@ -33,12 +33,9 @@ jobs:
         run: |
           python -c "import PyQt5; print('PyQt5 installed')"
 
-      - name: Clean and rebuild gui directory with correct __init__.py
+      - name: Ensure gui/__init__.py is correct (do not delete gui folder)
         run: |
-          Remove-Item -Path gui -Recurse -Force -ErrorAction SilentlyContinue
-          New-Item -ItemType Directory -Force -Path gui
-          New-Item -ItemType Directory -Force -Path gui/resources
-          New-Item -ItemType Directory -Force -Path gui/styles
+          # 仅覆盖 __init__.py 文件，确保内容为有效 Python
           Set-Content -Path gui/__init__.py -Value "# gui package"
           Set-Content -Path gui/resources/__init__.py -Value "# placeholder"
           Set-Content -Path gui/styles/dark_theme.qss -Value "/* placeholder */"
@@ -60,19 +57,12 @@ jobs:
             --name "IPTV_Collector" `
             gui/main.py
 
-      - name: Copy config files to dist
+      - name: Copy config files to output folder
         run: |
-          # 确保目标目录存在
-          New-Item -ItemType Directory -Force -Path dist/IPTV_Collector
-          # 复制配置文件（如果存在）
-          if (Test-Path demo.txt) { Copy-Item -Path demo.txt -Destination dist/IPTV_Collector/ -Force }
-          if (Test-Path alias.txt) { Copy-Item -Path alias.txt -Destination dist/IPTV_Collector/ -Force }
-          if (Test-Path blacklist.txt) { Copy-Item -Path blacklist.txt -Destination dist/IPTV_Collector/ -Force }
-          if (Test-Path fixed_sources.py) { Copy-Item -Path fixed_sources.py -Destination dist/IPTV_Collector/ -Force }
-          # 创建默认 demo.txt（如果不存在）
-          if (-not (Test-Path dist/IPTV_Collector/demo.txt)) {
-            Set-Content -Path dist/IPTV_Collector/demo.txt -Value "# 默认 demo 列表`n央视,#genre#`nCCTV-1`nCCTV-2`nCCTV-3"
-          }
+          # 将根目录的配置文件复制到 exe 所在目录，方便用户使用
+          Copy-Item -Path demo.txt -Destination dist/IPTV_Collector/ -ErrorAction SilentlyContinue
+          Copy-Item -Path alias.txt -Destination dist/IPTV_Collector/ -ErrorAction SilentlyContinue
+          Copy-Item -Path blacklist.txt -Destination dist/IPTV_Collector/ -ErrorAction SilentlyContinue
 
       - name: Compress output folder to zip
         run: |
