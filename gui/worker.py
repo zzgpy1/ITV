@@ -6,66 +6,27 @@ import logging
 from PyQt5.QtCore import QThread, pyqtSignal
 
 class CollectionWorker(QThread):
-    # 在类级别定义信号（必须在 __init__ 之前）
     log_signal = pyqtSignal(str)
     finished_signal = pyqtSignal(bool)
 
     def __init__(self):
         super().__init__()
-        self.log_file = os.path.join(os.path.dirname(sys.executable), "worker_debug.log")
-        self.write_log("=== Worker 初始化 ===")
-
-    def write_log(self, msg):
-        try:
-            with open(self.log_file, "a", encoding="utf-8") as f:
-                f.write(msg + "\n")
-        except:
-            pass
 
     def run(self):
-        # 重定向标准输出到日志
-        sys.stdout = open(os.path.join(os.path.dirname(sys.executable), "stdout.log"), "w", encoding="utf-8")
-        sys.stderr = open(os.path.join(os.path.dirname(sys.executable), "stderr.log"), "w", encoding="utf-8")
-
         try:
-            self.write_log("run() 开始")
             self.log_signal.emit("🚀 开始 IPTV 采集任务...")
             
-            base_dir = os.path.dirname(sys.executable)
-            self.write_log(f"工作目录: {base_dir}")
-            self.log_signal.emit(f"📂 工作目录: {base_dir}")
-
-            # 确保 _internal 路径存在
-            internal_dir = os.path.join(base_dir, '_internal')
-            if os.path.exists(internal_dir) and internal_dir not in sys.path:
-                sys.path.insert(0, internal_dir)
-                self.write_log(f"已添加 _internal 路径: {internal_dir}")
-
-            # 导入 src 模块
-            try:
-                import src
-                self.write_log("src 导入成功")
-                self.log_signal.emit("✅ src 模块导入成功")
-            except ImportError as e:
-                self.write_log(f"src 导入失败: {e}")
-                self.log_signal.emit(f"❌ src 模块导入失败: {e}")
-                self.finished_signal.emit(False)
-                return
-
-            # 导入主函数
-            try:
-                from src.run import main as run_main
-                self.write_log("src.run 导入成功")
-                self.log_signal.emit("✅ src.run 导入成功")
-            except ImportError as e:
-                self.write_log(f"src.run 导入失败: {e}")
-                self.log_signal.emit(f"❌ src.run 导入失败: {e}")
-                self.finished_signal.emit(False)
-                return
-
-            # 日志捕获
+            # 切换到 exe 所在目录
+            exe_dir = os.path.dirname(sys.executable)
+            os.chdir(exe_dir)
+            sys.path.insert(0, exe_dir)
+            
+            # 设置环境变量（启用自治模式和 ffmpeg）
+            os.environ["AUTONOMOUS_MODE"] = "true"
+            os.environ["FFMPEG_ENABLE"] = "true"
+            
+            from src.run import main as run_main
             from src.logger import logger
-            self.write_log("日志模块加载成功")
 
             class GuiLogHandler(logging.Handler):
                 def __init__(self, signal):
@@ -79,14 +40,10 @@ class CollectionWorker(QThread):
             gui_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
             logger.addHandler(gui_handler)
 
-            # 运行采集
-            self.log_signal.emit("⏳ 正在运行采集任务，请稍候...")
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            try:
-                exit_code = loop.run_until_complete(run_main())
-            finally:
-                loop.close()
+            exit_code = loop.run_until_complete(run_main())
+            loop.close()
 
             if exit_code == 0:
                 self.log_signal.emit("✅ 采集任务成功完成")
@@ -96,17 +53,9 @@ class CollectionWorker(QThread):
                 self.finished_signal.emit(False)
 
         except Exception as e:
-            import traceback
-            tb = traceback.format_exc()
-            self.write_log(f"异常: {e}\n{tb}")
             self.log_signal.emit(f"❌ 采集任务异常: {str(e)}")
-            self.log_signal.emit(tb)
+            import traceback
+            self.log_signal.emit(traceback.format_exc())
             self.finished_signal.emit(False)
         finally:
-            try:
-                logger.removeHandler(gui_handler)
-            except:
-                pass
-            self.write_log("=== Worker 结束 ===")
-            sys.stdout.close()
-            sys.stderr.close()
+            logger.removeHandler(gui_handler)
