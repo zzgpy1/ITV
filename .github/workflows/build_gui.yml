@@ -28,7 +28,13 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Prepare GUI directories (Windows)
+      - name: Get PyQt5 Path
+        id: pyqt5_path
+        run: |
+          $pyqt_path = python -c "import PyQt5; print(PyQt5.__path__[0])"
+          echo "PYQT5_PATH=$pyqt_path" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Prepare GUI directories
         run: |
           New-Item -ItemType Directory -Force -Path gui/resources
           New-Item -ItemType Directory -Force -Path gui/styles
@@ -39,16 +45,19 @@ jobs:
             "/* placeholder */" | Out-File -FilePath gui/styles/dark_theme.qss -Encoding utf8
           }
 
-      - name: Build with PyInstaller (onedir)
+      - name: Build with PyInstaller (onedir + add-binary)
         run: |
           pyinstaller --clean --onedir --windowed `
             --add-data "gui/styles;styles" `
             --add-data "gui/resources;resources" `
+            --add-binary "$env:PYQT5_PATH;PyQt5" `
             --collect-all PyQt5 `
+            --collect-all PyQt5.sip `
             --hidden-import PyQt5 `
             --hidden-import PyQt5.QtCore `
             --hidden-import PyQt5.QtGui `
             --hidden-import PyQt5.QtWidgets `
+            --hidden-import sip `
             --collect-all src `
             --name "IPTV_Collector" `
             gui/main.py
