@@ -92,7 +92,7 @@ TIMEOUT = int(os.getenv("TIMEOUT", 10))
 
 # ffmpeg 配置
 FFMPEG_ENABLE = os.getenv("FFMPEG_ENABLE", "true").lower() == "true"
-FFMPEG_STRICT = os.getenv("FFMPEG_STRICT", "false").lower() == "true"
+FFMPEG_STRICT = os.getenv("FFMPEG_STRICT", "true").lower() == "true"
 FFMPEG_WORKERS = min(MAX_WORKERS, 5)
 
 # ffmpeg 模式
@@ -164,7 +164,7 @@ ENABLE_LITE_VERSION = os.getenv("ENABLE_LITE_VERSION", "true").lower() == "true"
 ENABLE_EPG_OUTPUT = os.getenv("ENABLE_EPG_OUTPUT", "true").lower() == "true"
 
 # ========== 自治模式配置 ==========
-AUTONOMOUS_MODE = os.getenv("AUTONOMOUS_MODE", "false").lower() == "true"
+AUTONOMOUS_MODE = os.getenv("AUTONOMOUS_MODE", "true").lower() == "true"
 AUTO_UPDATE_STABLE = os.getenv("AUTO_UPDATE_STABLE", "true").lower() == "true"
 AUTO_REPLACE_FAILED = os.getenv("AUTO_REPLACE_FAILED", "true").lower() == "true"
 QUALITY_CHECK_INTERVAL = int(os.getenv("QUALITY_CHECK_INTERVAL", 24))
