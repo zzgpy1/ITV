@@ -67,25 +67,22 @@ class MainWindow(QMainWindow):
             with open(style_path, "r", encoding="utf-8") as f:
                 self.setStyleSheet(f.read())
 
-    def start_collection(self):
-        """启动采集任务"""
-        if self.worker and self.worker.isRunning():
-            QMessageBox.information(self, "提示", "采集任务正在运行中")
-            return
+def start_collection(self):
+    if self.worker and self.worker.isRunning():
+        QMessageBox.information(self, "提示", "采集任务正在运行中")
+        return
 
-        self.log_text.clear()
-        self.run_btn.setEnabled(False)
-        self.progress_bar.setVisible(True)
-        self.progress_bar.setRange(0, 0)  # 不确定进度
-        self.status_label.setText("采集中...")
+    self.log_text.clear()
+    self.run_btn.setEnabled(False)
+    self.progress_bar.setVisible(True)
+    self.progress_bar.setRange(0, 0)
+    self.status_label.setText("采集中...")
 
-        # 创建并启动工作线程
-        self.worker = CollectionWorker()
-        self.worker.log_signal.connect(self.append_log)
-        self.worker.finished_signal.connect(self.on_collection_finished)
-        self.worker.progress_signal.connect(self.update_progress)
-        self.worker.start()
-
+    # 创建 worker 并连接信号
+    self.worker = CollectionWorker()
+    self.worker.log_signal.connect(self.append_log)
+    self.worker.finished_signal.connect(self.on_collection_finished)
+    self.worker.start()
     def append_log(self, text):
         """追加日志"""
         self.log_text.append(text)
