@@ -13,14 +13,20 @@ def create_app():
                 template_folder='templates',
                 static_folder='static')
     app.config['SECRET_KEY'] = os.urandom(24)
-    app.config['TEMPLATES_AUTO_RELOAD'] = True   # 禁用模板缓存
-    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # 禁用静态文件缓存
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     CORS(app)
     
     app.register_blueprint(api_bp)
     
+    # 原有文件路由（保留）
     @app.route('/files/<path:filename>')
     def serve_output(filename):
+        return send_from_directory(OUTPUT_DIR, filename)
+    
+    # 新增：支持 /output/tv.txt 这样的路径
+    @app.route('/output/<path:filename>')
+    def serve_output_direct(filename):
         return send_from_directory(OUTPUT_DIR, filename)
     
     @app.route('/')
