@@ -1,7 +1,7 @@
 {
   "version": "2.0",
-  "total": 338,
-  "generated": "2026-06-26T14:21:36.253135",
+  "total": 340,
+  "generated": "2026-06-26T19:50:04.788251",
   "channels": [
     {
       "name": "CCTV-1",
@@ -849,6 +849,15 @@
       "category": "☘️浙江频道"
     },
     {
+      "name": "嘉兴新闻综合",
+      "urls": [
+        "http://tvfile.jyrmt.cn:80/nmip-media/channellive/channel104452/playlist.m3u8"
+      ],
+      "latency": 883,
+      "codec": "h264",
+      "category": "☘️浙江频道"
+    },
+    {
       "name": "湖州公共民生",
       "urls": [
         "http://hzcm-live.media.hugd.com/1e6b554b9ab74513958c0e1ffe664d22/9acaa7634309494cb29a85eb12136607.m3u8?auth_key=2272900830-9a2389b8bf4e49d580d4ad807423d326-0-ea78a5c7a678c436263582d368f5009e"
@@ -1117,6 +1126,15 @@
         "http://l.cztvcloud.com/channels/lantian/SXyunhe1/720p.m3u8"
       ],
       "latency": 1653,
+      "codec": "h264",
+      "category": "☘️浙江频道"
+    },
+    {
+      "name": "义乌新闻综合",
+      "urls": [
+        "https://44911.hlsplay.aodianyun.com/tv_radio_44911/tv_channel_1796.m3u8?auth_key=4830573978-0-0-92824c2c03f95906a3c49a4aa28f1709&extra_key=Yc1XsmxOKy2UBoPM4Wy5vCPsEYqnj06taCR2SRB2Xrg2w28NPilH03KdIbbM5wgSql-VBohSnoO9AOKl94q2t2DWMftz-XB-2qUX-UjXcS80StcSZahBFjrKLivXaRjiY5r2NOMKWMKFbv-S0Bz2G6iEXgCK8yGjtrFHDcPfAQEE0pvXq0Bwy34b7We8zARN&ali_ffmpeg_version=mpengine"
+      ],
+      "latency": 1465,
       "codec": "h264",
       "category": "☘️浙江频道"
     },
