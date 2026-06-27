@@ -63,6 +63,8 @@ http://112.27.235.94:8000/hls/36/index.m3u8
 http://bp-resource-dfl.bestv.cn/148/3/video.m3u8
 #EXTINF:-1 group-title="📡卫视频道",甘肃卫视
 http://218.13.170.98:9901/tsfile/live/0141_1.m3u8
+#EXTINF:-1 group-title="📡卫视频道",广西卫视
+http://222.169.85.8:9901/tsfile/live/0113_1.m3u8
 #EXTINF:-1 group-title="📡卫视频道",河北卫视
 http://112.27.235.94:8000/hls/39/index.m3u8
 #EXTINF:-1 group-title="📡卫视频道",河南卫视
@@ -241,6 +243,8 @@ http://ali-m-l.cztv.com/channels/lantian/channel009/1080p.m3u8
 http://l.cztvcloud.com/channels/lantian/SXshangyu1/720p.m3u8?zzhed
 #EXTINF:-1 group-title="☘️浙江频道",上虞新商都
 http://l.cztvcloud.com/channels/lantian/SXshangyu3/720p.m3u8
+#EXTINF:-1 group-title="☘️浙江频道",嵊州综合 [Not 24/7]
+https://l.cztvcloud.com/channels/lantian/SXshengzhou1/720p.m3u8
 #EXTINF:-1 group-title="☘️江苏频道",南京教科
 http://nklive.nbs.cn/hls/75b3c462-b831-4de7-a34b-5d3221db2069/index.m3u8
 #EXTINF:-1 group-title="☘️江苏频道",南京新闻综合
@@ -353,6 +357,8 @@ https://gcalic.v.myalicdn.com/gc/zjjybf_1/index.m3u8
 https://gcalic.v.myalicdn.com/gc/zjjsrsm_1/index.m3u8
 #EXTINF:-1 group-title="☘️湖南频道",湖南张家界天门山西线玻璃栈道
 https://gcalic.v.myalicdn.com/gc/tms05_1/index.m3u8
+#EXTINF:-1 group-title="☘️广西频道",广西卫视
+http://222.169.85.8:9901/tsfile/live/0113_1.m3u8
 #EXTINF:-1 group-title="☘️广西频道",广西桂林漓江景区
 https://gcalic.v.myalicdn.com/gc/gllj01_1/index.m3u8
 #EXTINF:-1 group-title="☘️广西频道",来宾综合
