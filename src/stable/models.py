@@ -4,7 +4,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
-
+auto_optimize: bool = False
 
 class StableStatus:
     """稳定源状态"""
