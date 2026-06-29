@@ -1,4 +1,4 @@
-# src/database.py（完整）
+# src/database.py
 import json
 import aiosqlite
 from datetime import datetime, timedelta
@@ -6,7 +6,7 @@ from typing import Optional, Dict, List, Tuple
 from pathlib import Path
 import hashlib
 
-from src.config import DATABASE_ENABLE, DATABASE_PATH, CACHE_HOURS, SLOW_SPEED_THRESHOLD, MAX_RETRY_BEFORE_BLACKLIST
+from src.config import DATABASE_ENABLE, DATABASE_PATH, CACHE_HOURS, SLOW_SPEED_THRESHOLD, MAX_RETRY_BEFORE_BLACKLIST, AUTO_PROMOTE_THRESHOLD
 from src.logger import logger
 
 class DatabaseCache:
@@ -55,7 +55,7 @@ class DatabaseCache:
                 value TEXT
             )
         ''')
-        # 新增：黑名单
+        # 黑名单
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS blacklist (
                 url TEXT PRIMARY KEY,
@@ -64,7 +64,7 @@ class DatabaseCache:
                 fail_count INTEGER DEFAULT 1
             )
         ''')
-        # 新增：速度历史（用于健康度预测）
+        # 速度历史（健康度预测）
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS speed_history (
                 channel_key TEXT,
@@ -75,7 +75,7 @@ class DatabaseCache:
                 PRIMARY KEY (channel_key, timestamp)
             )
         ''')
-        # 新增：候选池（扩展，包含慢速源）
+        # 候选池（扩展）
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS candidate_pool (
                 channel_key TEXT PRIMARY KEY,
@@ -166,7 +166,7 @@ class DatabaseCache:
             )
         else:
             # 如果不存在，则添加
-            await self.add_to_candidate(channel_key, '', url, latency)
+            await self.add_to_candidate(channel_key, '', '', latency)
         await self._conn.commit()
     
     async def get_candidates_for_promotion(self) -> List[Dict]:
@@ -180,7 +180,7 @@ class DatabaseCache:
         await cursor.close()
         return [{'key': r[0], 'name': r[1], 'url': r[2], 'latency': r[3], 'success': r[4], 'fail': r[5]} for r in rows]
     
-    # ----- 速度历史（用于健康度预测）-----
+    # ----- 速度历史（健康度预测）-----
     async def save_speed_history(self, channel_key: str, url: str, latency: int, success: bool):
         if not self._conn:
             return
