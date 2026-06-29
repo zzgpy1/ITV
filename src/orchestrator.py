@@ -74,8 +74,8 @@ class IPTVOrchestrator:
         candidates = await self.db.get_candidates_for_promotion()
         replaced = 0
         for name, src in stable.items():
-            if src.is_fixed:
-                continue
+            if src.is_fixed and not src.auto_optimize:
+               continue
             key = channel_key(name, src.url)
             prob = await self.predict_failure_probability(key)
             if prob > PREDICT_THRESHOLD:
