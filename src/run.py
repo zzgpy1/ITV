@@ -10,13 +10,40 @@ progress = {
     'finished': False
 }
 
-import asyncio
+import os
 import sys
 import json
 import datetime
-import os
 from pathlib import Path
 from collections import Counter
+import asyncio
+
+# ===== 新增：进度共享变量 =====
+progress = {
+    'percent': 0,
+    'current': 0,
+    'total': 0,
+    'valid': 0,
+    'invalid': 0,
+    'finished': False,
+    'phase': 'idle'  # idle, fetching, parsing, testing, verifying, merging, output
+}
+
+# 在 main() 函数中，适当地点更新 progress
+async def main():
+    progress['phase'] = 'fetching'
+    # ... 拉取源 ...
+    progress['total'] = len(channels_dict)
+    progress['phase'] = 'testing'
+    # ... 测速 ...
+    progress['valid'] = len(valid_channels)
+    progress['current'] = len(valid_channels)  # 示意
+    progress['phase'] = 'verifying'
+    # ... ffmpeg ...
+    progress['phase'] = 'output'
+    # ... 输出 ...
+    progress['finished'] = True
+    progress['percent'] = 100
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
