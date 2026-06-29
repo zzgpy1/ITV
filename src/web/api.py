@@ -281,3 +281,42 @@ async def predict(channel_name):
         prob = await orchestrator.predict_failure_probability(key)
         return jsonify({'channel': channel_name, 'probability': prob})
     return jsonify({'error': '频道不存在'}), 404
+
+# 获取固定源列表（包含 auto_optimize）
+@api_bp.route('/fixed_sources', methods=['GET'])
+def get_fixed_sources():
+    stable_mgr = StableManager()
+    fixed = {}
+    for name, src in stable_mgr.stable_sources.items():
+        if src.is_fixed:
+            fixed[name] = {
+                'url': src.url,
+                'auto_optimize': src.auto_optimize
+            }
+    return jsonify(fixed)
+
+# 添加固定源（支持 auto_optimize）
+@api_bp.route('/fixed_sources', methods=['POST'])
+def add_fixed_source():
+    data = request.get_json()
+    name = data.get('name')
+    url = data.get('url')
+    auto_optimize = data.get('auto_optimize', False)
+    if not name or not url:
+        return jsonify({'error': '缺少频道名或URL'}), 400
+    stable_mgr = StableManager()
+    if stable_mgr.set_fixed_source(name, url, auto_optimize):
+        return jsonify({'success': True, 'message': f'已添加固定源 {name}'})
+    else:
+        return jsonify({'error': '添加失败'}), 500
+
+# 切换固定源的自动优化开关
+@api_bp.route('/fixed_sources/<name>/auto_optimize', methods=['PUT'])
+def toggle_auto_optimize(name):
+    data = request.get_json()
+    enabled = data.get('enabled', False)
+    stable_mgr = StableManager()
+    if stable_mgr.set_auto_optimize(name, enabled):
+        return jsonify({'success': True, 'message': f'{name} 自动优化已切换至 {enabled}'})
+    else:
+        return jsonify({'error': '更新失败'}), 400
