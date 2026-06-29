@@ -1,49 +1,13 @@
 #!/usr/bin/env python3
 # src/run.py
 
-progress = {
-    'percent': 0,
-    'current': 0,
-    'total': 0,
-    'valid': 0,
-    'invalid': 0,
-    'finished': False
-}
-
-import os
+import asyncio
 import sys
 import json
 import datetime
+import os
 from pathlib import Path
 from collections import Counter
-import asyncio
-
-# ===== 新增：进度共享变量 =====
-progress = {
-    'percent': 0,
-    'current': 0,
-    'total': 0,
-    'valid': 0,
-    'invalid': 0,
-    'finished': False,
-    'phase': 'idle'  # idle, fetching, parsing, testing, verifying, merging, output
-}
-
-# 在 main() 函数中，适当地点更新 progress
-async def main():
-    progress['phase'] = 'fetching'
-    # ... 拉取源 ...
-    progress['total'] = len(channels_dict)
-    progress['phase'] = 'testing'
-    # ... 测速 ...
-    progress['valid'] = len(valid_channels)
-    progress['current'] = len(valid_channels)  # 示意
-    progress['phase'] = 'verifying'
-    # ... ffmpeg ...
-    progress['phase'] = 'output'
-    # ... 输出 ...
-    progress['finished'] = True
-    progress['percent'] = 100
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -58,6 +22,8 @@ from src.config import (
     TIMEOUT,
     FFMPEG_ENABLE,
     ENABLE_JSON_OUTPUT,
+    ENABLE_LITE_VERSION,
+    ENABLE_EPG_OUTPUT,
     ENABLE_INCREMENTAL_FETCH,
     CACHE_RAW_HOURS,
     AUTONOMOUS_MODE,
@@ -81,11 +47,22 @@ from src.logger import logger
 from src.generator_enhanced import EnhancedOutputGenerator
 from src.special_categories import collect_and_append_special_categories
 
+# ===== 全局进度共享变量 =====
+progress = {
+    'percent': 0,
+    'current': 0,
+    'total': 0,
+    'valid': 0,
+    'invalid': 0,
+    'finished': False,
+    'phase': 'idle'  # idle, fetching, parsing, testing, verifying, merging, output
+}
+
 
 # ========== 传统模式（完整采集） ==========
 async def run_legacy_mode():
     """
-    传统模式 - 完整的采集、测速、验证、输出流程
+    原有模式 - 完整的采集、测速、验证、输出流程
     """
     logger.info("🚀 IPTV 智能整理平台启动 (传统模式)")
     logger.info(f"📡 配置：超时={TIMEOUT}s, 并发={MAX_WORKERS}, ffmpeg={FFMPEG_ENABLE}")
@@ -103,6 +80,7 @@ async def run_legacy_mode():
     last_update = await db.get_last_update_time() if DATABASE_ENABLE else None
     is_fresh = last_update and (datetime.datetime.now().timestamp() - last_update) < CACHE_RAW_HOURS * 3600
     
+    progress['phase'] = 'fetching'
     if is_fresh and ENABLE_INCREMENTAL_FETCH:
         logger.info("⚡ 启用增量更新模式（缓存有效）")
         for url in IPTV_SOURCES:
@@ -125,23 +103,32 @@ async def run_legacy_mode():
         logger.error("❌ 未获取到任何频道")
         return 1
 
-    logger.info(f"📊 原始频道数（去重后）: {len(channels_dict)}")
+    total_channels = len(channels_dict)
+    progress['total'] = total_channels
+    progress['phase'] = 'testing'
+    logger.info(f"📊 原始频道数（去重后）: {total_channels}")
 
     # HTTP 测速
     logger.info("🔍 开始 HTTP 测速...")
     valid_channels = await test_channels_concurrent(channels_dict)
+    progress['valid'] = len(valid_channels)
+    progress['current'] = len(valid_channels)
     logger.info(f"📊 通过HTTP测速的频道数: {len(valid_channels)}")
 
     # ffmpeg 验证
+    progress['phase'] = 'verifying'
     if FFMPEG_ENABLE and valid_channels:
         logger.info("🎬 开始 ffmpeg 深度验证...")
         valid_channels = await validate_batch(valid_channels)
+        progress['valid'] = len(valid_channels)
+        progress['current'] = len(valid_channels)
         logger.info(f"📊 通过ffmpeg验证的频道数: {len(valid_channels)}")
 
     if DATABASE_ENABLE and valid_channels:
         await db.save_speed_results(valid_channels)
         await db.set_last_update_time()
 
+    progress['phase'] = 'merging'
     merged_channels = merge_channels_by_name(valid_channels)
     logger.info(f"📊 合并后的频道数: {len(merged_channels)}")
 
@@ -151,6 +138,7 @@ async def run_legacy_mode():
         merged_channels = blacklist_filter.filter_channels(merged_channels)
         logger.info(f"📊 黑名单过滤后: {len(merged_channels)} (减少 {before - len(merged_channels)})")
 
+    progress['phase'] = 'output'
     unmatched_channels = []
     if ENABLE_DEMO_FILTER:
         before = len(merged_channels)
@@ -170,6 +158,7 @@ async def run_legacy_mode():
         logger.error("❌ 过滤后无有效频道")
         return 1
 
+    # 最终分类统计
     cat_counter = Counter(ch.get("demo_category", "其他") for ch in ordered_channels)
     logger.info("\n🎉 最终有效频道分类统计：")
     for cat, cnt in cat_counter.items():
@@ -177,7 +166,7 @@ async def run_legacy_mode():
 
     generate_outputs_from_demo(ordered_channels, demo_order)
 
-    # 生成增强版输出（取消精简版和EPG版）
+    # 增强版输出（取消精简版和EPG版）
     output_gen = EnhancedOutputGenerator()
     output_gen.generate_all_outputs(
         ordered_channels, 
@@ -187,7 +176,7 @@ async def run_legacy_mode():
         enable_epg=False
     )
 
-    # ========== 智能补充采集（只采集指定分类） ==========
+    # 智能补充采集
     try:
         special_stats = await collect_and_append_special_categories(OUTPUT_DIR, db)
         if special_stats:
@@ -196,19 +185,9 @@ async def run_legacy_mode():
         logger.warning(f"⚠️ 智能补充采集失败: {e}")
 
     total = len(ordered_channels)
+    progress['finished'] = True
+    progress['percent'] = 100
     logger.info(f"🎉 完成！有效频道总数: {total}")
-
-    # ========== 记录质量趋势数据 ==========
-    try:
-        from src.web.db import record_quality
-        from src.stable.manager import StableManager
-        stable_mgr = StableManager()
-        for name, src in stable_mgr.get_active_sources().items():
-            if src.url and src.latency:
-                record_quality(name, src.latency, True)
-        logger.info("📈 质量趋势数据已记录")
-    except Exception as e:
-        logger.warning(f"⚠️ 记录质量趋势失败: {e}")
 
     # 保存统计信息
     stats = {
