@@ -22,7 +22,6 @@ class CandidateObserver:
     MIN_SUCCESS_RATE = 0.5
     MAX_AVG_LATENCY = 3000
     MAX_OBSERVE_PER_RUN = 3000
-    OBSERVE_TIMEOUT = 120  # 整体超时秒数
     
     def __init__(self, db_path: Path = None):
         self.db_path = db_path or Path("data/candidate_pool.json")
@@ -110,7 +109,7 @@ class CandidateObserver:
             return False
     
     async def observe_batch_from_cache(self, batch_size: int = 3000) -> List[ObservationResult]:
-        """分批观察候选源，带整体超时"""
+        """分批观察候选源，整体超时由外部控制"""
         observing = [
             (k, v) for k, v in self._observations.items() 
             if v.status == CandidateStatus.OBSERVING
@@ -129,18 +128,14 @@ class CandidateObserver:
         processed = 0
         last_log = 0
         
-        # 整体超时控制
-        try:
-            async with asyncio.timeout(self.OBSERVE_TIMEOUT):
-                for key, obs in batch:
-                    if await self.check_candidate_from_cache(key, db):
-                        stable_results.append(obs)
-                    processed += 1
-                    if processed - last_log >= 100:
-                        logger.info(f"  📊 观察进度: {processed}/{len(batch)}，稳定 {len(stable_results)} 个")
-                        last_log = processed
-        except asyncio.TimeoutError:
-            logger.warning(f"⏱️ 观察阶段整体超时 ({self.OBSERVE_TIMEOUT}s)，已处理 {processed}/{len(batch)}")
+        # 直接遍历，单个检查已内部超时，整体超时由外部 asyncio.wait_for 控制
+        for key, obs in batch:
+            if await self.check_candidate_from_cache(key, db):
+                stable_results.append(obs)
+            processed += 1
+            if processed - last_log >= 100:
+                logger.info(f"  📊 观察进度: {processed}/{len(batch)}，稳定 {len(stable_results)} 个")
+                last_log = processed
         
         if stable_results:
             logger.info(f"✅ 本批次 {len(stable_results)} 个源达到稳定标准")
