@@ -2,11 +2,9 @@
 """Web 管理界面 REST API"""
 
 import json
-import logging
-import queue
-import threading
-import time
-import asyncio
+import subprocess
+import sys
+import os
 from pathlib import Path
 from flask import Blueprint, request, jsonify
 from src.config import (
@@ -22,90 +20,8 @@ from src.web.db import get_quality_history, get_all_channels_with_history, recor
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
 
-# ========== 采集任务管理 ==========
-collector_status = {
-    "running": False,
-    "log": [],
-    "start_time": None,
-    "end_time": None,
-    "result": None
-}
-log_queue = queue.Queue()
-
-
-class QueueHandler(logging.Handler):
-    """将日志消息放入队列"""
-    def emit(self, record):
-        log_queue.put(self.format(record))
-
-
-def collector_worker():
-    """在后台线程中运行采集任务"""
-    global collector_status
-    collector_status["running"] = True
-    collector_status["start_time"] = time.time()
-    collector_status["log"] = []
-    collector_status["result"] = None
-
-    # 配置日志重定向
-    root_logger = logging.getLogger()
-    queue_handler = QueueHandler()
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    queue_handler.setFormatter(formatter)
-    root_logger.addHandler(queue_handler)
-
-    try:
-        # 导入并运行采集主函数
-        from src.run import main as run_collector
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(run_collector())
-        collector_status["result"] = "success" if result == 0 else "failed"
-    except Exception as e:
-        collector_status["result"] = f"error: {str(e)}"
-        # 将异常信息也写入日志
-        log_queue.put(f"❌ 采集异常: {e}")
-    finally:
-        collector_status["running"] = False
-        collector_status["end_time"] = time.time()
-        root_logger.removeHandler(queue_handler)
-
-
-@api_bp.route('/collect/start', methods=['POST'])
-def start_collection():
-    """启动采集任务"""
-    if collector_status["running"]:
-        return jsonify({"success": False, "message": "采集任务正在运行中，请稍候"})
-
-    thread = threading.Thread(target=collector_worker, daemon=True)
-    thread.start()
-    return jsonify({"success": True, "message": "采集任务已启动，请查看日志"})
-
-
-@api_bp.route('/collect/status', methods=['GET'])
-def get_collector_status():
-    """获取采集任务状态和最新日志"""
-    # 从队列中取出所有日志
-    logs = []
-    while not log_queue.empty():
-        try:
-            logs.append(log_queue.get_nowait())
-        except queue.Empty:
-            break
-    # 保留最近200条
-    collector_status["log"] = (collector_status["log"] + logs)[-200:]
-
-    return jsonify({
-        "running": collector_status["running"],
-        "log": collector_status["log"],
-        "start_time": collector_status["start_time"],
-        "end_time": collector_status["end_time"],
-        "result": collector_status["result"]
-    })
-
-
-# ========== 原有 API ==========
 def get_channel_category(name: str) -> str:
+    """根据频道名判断分类"""
     if name.startswith('CCTV') or '央视' in name:
         return '央视'
     if '卫视' in name:
@@ -172,7 +88,9 @@ def get_channels():
 @api_bp.route('/fixed_sources', methods=['GET'])
 def get_fixed_sources():
     stable_mgr = StableManager()
-    fixed = {name: src.url for name, src in stable_mgr.stable_sources.items() if src.is_fixed}
+    # 返回格式：{ 'name': {'url': '...', 'auto_optimize': True/False} }
+    fixed = {name: {'url': src.url, 'auto_optimize': getattr(src, 'auto_optimize', False)} 
+             for name, src in stable_mgr.stable_sources.items() if src.is_fixed}
     return jsonify(fixed)
 
 
@@ -181,10 +99,11 @@ def add_fixed_source():
     data = request.get_json()
     name = data.get('name')
     url = data.get('url')
+    auto_optimize = data.get('auto_optimize', False)
     if not name or not url:
         return jsonify({'error': '缺少频道名或URL'}), 400
     stable_mgr = StableManager()
-    if stable_mgr.set_fixed_source(name, url):
+    if stable_mgr.set_fixed_source(name, url, auto_optimize):
         return jsonify({'success': True, 'message': f'已添加固定源 {name}'})
     else:
         return jsonify({'error': '添加失败'}), 500
@@ -198,6 +117,18 @@ def delete_fixed_source(name):
         stable_mgr.stable_sources[name].status = 'active'
         stable_mgr._save()
         return jsonify({'success': True, 'message': f'已移除固定源 {name}'})
+    return jsonify({'error': '固定源不存在'}), 404
+
+
+@api_bp.route('/fixed_sources/<name>/optimize', methods=['PUT'])
+def update_fixed_optimize(name):
+    data = request.get_json()
+    auto_optimize = data.get('auto_optimize', False)
+    stable_mgr = StableManager()
+    if name in stable_mgr.stable_sources and stable_mgr.stable_sources[name].is_fixed:
+        stable_mgr.stable_sources[name].auto_optimize = auto_optimize
+        stable_mgr._save()
+        return jsonify({'success': True, 'message': f'已更新 {name} 的自动优化状态'})
     return jsonify({'error': '固定源不存在'}), 404
 
 
@@ -217,38 +148,68 @@ def get_config():
 @api_bp.route('/config', methods=['POST'])
 def update_config():
     data = request.get_json()
-    env_path = Path('.env')
-    if env_path.exists():
-        with open(env_path, 'r') as f:
-            lines = f.readlines()
-    else:
-        lines = []
-    key_map = {
-        'max_workers': 'MAX_WORKERS',
-        'timeout': 'TIMEOUT',
-        'ffmpeg_enable': 'FFMPEG_ENABLE',
-        'max_sources_per_channel': 'MAX_SOURCES_PER_CHANNEL',
-        'demo_match_mode': 'DEMO_MATCH_MODE',
-    }
-    new_lines = []
-    updated_keys = set()
-    for line in lines:
-        line_stripped = line.strip()
-        if line_stripped and not line_stripped.startswith('#'):
-            key = line_stripped.split('=')[0].strip()
-            if key in key_map.values():
-                updated_keys.add(key)
-                new_value = data.get(key_map[key], None)
-                if new_value is not None:
-                    new_lines.append(f"{key}={new_value}\n")
-                    continue
-        new_lines.append(line)
-    for k, env_key in key_map.items():
-        if env_key not in updated_keys and data.get(k) is not None:
-            new_lines.append(f"{env_key}={data[k]}\n")
-    with open(env_path, 'w') as f:
-        f.writelines(new_lines)
-    return jsonify({'success': True, 'message': '配置已更新，请重启服务生效。'})
+    from src.config_manager import ConfigManager
+    cm = ConfigManager()
+    for key, value in data.items():
+        cm.set(key.upper(), value)
+    return jsonify({'success': True, 'message': '配置已更新，无需重启生效。'})
+
+
+@api_bp.route('/config/reload', methods=['POST'])
+def reload_config():
+    from src.config_manager import ConfigManager
+    ConfigManager().reload()
+    return jsonify({'success': True, 'message': '配置已重新加载'})
+
+
+@api_bp.route('/collection/start', methods=['POST'])
+def start_collection():
+    """启动采集任务（子进程）"""
+    # 检查是否已有任务在运行（通过 pid 文件，这里简化）
+    pid_file = Path('/tmp/iptv_collector.pid')
+    if pid_file.exists():
+        try:
+            with open(pid_file, 'r') as f:
+                old_pid = int(f.read().strip())
+            # 检查进程是否存活
+            if os.path.exists(f'/proc/{old_pid}'):
+                return jsonify({'success': False, 'error': '采集任务已在运行中'}), 409
+        except:
+            pass
+    try:
+        python_path = sys.executable
+        run_script = os.path.join(os.path.dirname(__file__), '..', 'run.py')
+        env = os.environ.copy()
+        env['COLLECTION_MODE'] = 'subprocess'
+        proc = subprocess.Popen([python_path, run_script], env=env)
+        with open(pid_file, 'w') as f:
+            f.write(str(proc.pid))
+        return jsonify({'success': True, 'pid': proc.pid, 'message': '采集任务已启动'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@api_bp.route('/collection/progress')
+def get_progress():
+    """返回当前采集进度"""
+    try:
+        from src.run import progress
+        return jsonify(progress)
+    except ImportError:
+        return jsonify({'percent': 0, 'current': 0, 'total': 0, 'valid': 0, 'invalid': 0, 'finished': False, 'phase': 'idle'})
+
+
+@api_bp.route('/logs')
+def get_logs():
+    """返回最近日志"""
+    log_file = OUTPUT_DIR / 'run.log'
+    if not log_file.exists():
+        return jsonify({'logs': '暂无日志'})
+    lines = request.args.get('lines', 500, type=int)
+    with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
+        all_lines = f.readlines()
+        last_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
+    return jsonify({'logs': ''.join(last_lines)})
 
 
 @api_bp.route('/quality/<channel_name>')
@@ -263,60 +224,3 @@ def get_all_quality():
     days = request.args.get('days', 7, type=int)
     data = get_all_channels_with_history(days)
     return jsonify(data)
-
-@api_bp.route('/collection/progress')
-def get_progress():
-    """返回当前采集进度（需在 run.py 中实时更新）"""
-    from src.run import progress
-    return jsonify(progress)
-
-@api_bp.route('/health/predict/<channel_name>')
-async def predict(channel_name):
-    # 获取该频道最新源的 channel_key
-    stable = StableManager()
-    if channel_name in stable.stable_sources:
-        src = stable.stable_sources[channel_name]
-        key = channel_key(channel_name, src.url)
-        db = await get_db_cache()
-        prob = await orchestrator.predict_failure_probability(key)
-        return jsonify({'channel': channel_name, 'probability': prob})
-    return jsonify({'error': '频道不存在'}), 404
-
-# 获取固定源列表（包含 auto_optimize）
-@api_bp.route('/fixed_sources', methods=['GET'])
-def get_fixed_sources():
-    stable_mgr = StableManager()
-    fixed = {}
-    for name, src in stable_mgr.stable_sources.items():
-        if src.is_fixed:
-            fixed[name] = {
-                'url': src.url,
-                'auto_optimize': src.auto_optimize
-            }
-    return jsonify(fixed)
-
-# 添加固定源（支持 auto_optimize）
-@api_bp.route('/fixed_sources', methods=['POST'])
-def add_fixed_source():
-    data = request.get_json()
-    name = data.get('name')
-    url = data.get('url')
-    auto_optimize = data.get('auto_optimize', False)
-    if not name or not url:
-        return jsonify({'error': '缺少频道名或URL'}), 400
-    stable_mgr = StableManager()
-    if stable_mgr.set_fixed_source(name, url, auto_optimize):
-        return jsonify({'success': True, 'message': f'已添加固定源 {name}'})
-    else:
-        return jsonify({'error': '添加失败'}), 500
-
-# 切换固定源的自动优化开关
-@api_bp.route('/fixed_sources/<name>/auto_optimize', methods=['PUT'])
-def toggle_auto_optimize(name):
-    data = request.get_json()
-    enabled = data.get('enabled', False)
-    stable_mgr = StableManager()
-    if stable_mgr.set_auto_optimize(name, enabled):
-        return jsonify({'success': True, 'message': f'{name} 自动优化已切换至 {enabled}'})
-    else:
-        return jsonify({'error': '更新失败'}), 400
