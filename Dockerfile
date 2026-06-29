@@ -1,38 +1,33 @@
 # Dockerfile
-FROM python:3.11-slim-bookworm AS builder
+# 阶段1：构建依赖
+FROM python:3.11-alpine AS builder
 
 WORKDIR /app
 
-# 设置 Debian 镜像源为阿里云
-RUN echo "deb http://mirrors.aliyun.com/debian bookworm main contrib non-free" > /etc/apt/sources.list && \
-    echo "deb http://mirrors.aliyun.com/debian bookworm-updates main contrib non-free" >> /etc/apt/sources.list && \
-    echo "deb http://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free" >> /etc/apt/sources.list
-
-# 安装编译依赖（gcc 用于某些 pip 包编译）
-RUN apt-get update && apt-get install -y --no-install-recommends gcc && apt-get clean && rm -rf /var/lib/apt/lists/*
+# 安装编译依赖
+RUN apk add --no-cache gcc musl-dev libffi-dev
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/ --trusted-host pypi.tuna.tsinghua.edu.cn
+RUN pip install --no-cache-dir -r requirements.txt
 
-# 最终镜像
-FROM python:3.11-slim-bookworm
+# 阶段2：运行时镜像
+FROM python:3.11-alpine
 
 WORKDIR /app
 
-# 设置 Debian 镜像源为阿里云
-RUN echo "deb http://mirrors.aliyun.com/debian bookworm main contrib non-free" > /etc/apt/sources.list && \
-    echo "deb http://mirrors.aliyun.com/debian bookworm-updates main contrib non-free" >> /etc/apt/sources.list && \
-    echo "deb http://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free" >> /etc/apt/sources.list
+# 安装运行时依赖（ffmpeg）
+RUN apk add --no-cache ffmpeg curl
 
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl && apt-get clean && rm -rf /var/lib/apt/lists/* && ffprobe -version
-
+# 复制已安装的包
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
+# 复制项目文件
 COPY . .
 
+# 创建数据目录
 RUN mkdir -p /app/data /app/output
 
 EXPOSE 8080
 
-ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh"]
