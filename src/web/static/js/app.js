@@ -3,6 +3,7 @@
 
 const API_BASE = '/api';
 let qualityChartInstance = null;
+let progressInterval = null;
 
 // ========== 页面导航 ==========
 document.addEventListener('DOMContentLoaded', function() {
@@ -50,9 +51,59 @@ async function renderDashboard(container) {
             <div class="col-md-3 mb-3"><div class="card"><div class="card-body text-center"><h6 class="text-muted">源池总量</h6><div class="stat-number">${data.pool_total || 0}</div></div></div></div>
             <div class="col-md-3 mb-3"><div class="card"><div class="card-body text-center"><h6 class="text-muted">候选观察中</h6><div class="stat-number">${data.candidate_observing || 0}</div></div></div></div>
         </div>
-        <div class="card"><div class="card-header">系统信息</div><div class="card-body"><p><strong>最后运行时间：</strong>${data.last_run || '暂无'}</p><p><strong>系统状态：</strong><span class="badge bg-success">运行中</span></p></div></div>
+        <div class="card"><div class="card-header">系统信息</div><div class="card-body"><p><strong>最后运行时间：</strong>${data.last_run || '暂无'}</p><p><strong>系统状态：</strong><span class="badge bg-success">运行中</span></p>
+        <button class="btn btn-primary mt-2" id="run-collection-btn"><i class="fas fa-play"></i> 立即运行采集</button>
+        </div></div>
+        <div class="card"><div class="card-header">采集进度</div><div class="card-body">
+            <div class="progress" style="height:25px;">
+                <div id="progress-bar" class="progress-bar" role="progressbar" style="width:0%;">0%</div>
+            </div>
+            <div id="progress-info" class="mt-2 text-muted">就绪</div>
+        </div></div>
     `;
+    document.getElementById('run-collection-btn').addEventListener('click', startCollection);
     document.getElementById('last-update').textContent = '更新于: ' + new Date().toLocaleString();
+    // 自动轮询进度
+    startProgressPolling();
+}
+
+// ===== 采集控制 =====
+async function startCollection() {
+    try {
+        const resp = await fetch(`${API_BASE}/collection/start`, { method: 'POST' });
+        const data = await resp.json();
+        if (data.success) {
+            alert('采集任务已启动，请查看进度');
+        } else {
+            alert('启动失败: ' + data.error);
+        }
+    } catch(e) {
+        alert('请求失败: ' + e.message);
+    }
+}
+
+function startProgressPolling() {
+    if (progressInterval) clearInterval(progressInterval);
+    progressInterval = setInterval(async function() {
+        try {
+            const resp = await fetch(`${API_BASE}/collection/progress`);
+            const data = await resp.json();
+            const bar = document.getElementById('progress-bar');
+            const info = document.getElementById('progress-info');
+            if (bar) {
+                bar.style.width = data.percent + '%';
+                bar.textContent = data.percent + '%';
+            }
+            if (info) {
+                info.textContent = `阶段: ${data.phase} | 已处理 ${data.current}/${data.total}，有效 ${data.valid}，无效 ${data.invalid}`;
+            }
+            if (data.finished) {
+                clearInterval(progressInterval);
+                // 刷新仪表盘数据
+                setTimeout(() => loadPage('dashboard'), 1000);
+            }
+        } catch(e) {}
+    }, 2000);
 }
 
 // ===== 频道列表 =====
@@ -191,11 +242,8 @@ async function renderFixed(container) {
             const resp = await fetch(`${API_BASE}/fixed_sources`);
             const data = await resp.json();
             const tbody = document.getElementById('fixed-tbody');
-            // data 格式: { "CCTV-1": {"url": "...", "auto_optimize": true}, ... }
-            // 兼容旧格式: 若返回的是字符串URL，则转换为对象
             let entries = Object.entries(data);
             if (entries.length && typeof entries[0][1] === 'string') {
-                // 旧格式，转换为新格式
                 const newData = {};
                 for (const [name, url] of entries) {
                     newData[name] = { url, auto_optimize: false };
@@ -226,13 +274,11 @@ async function renderFixed(container) {
                 </tr>
             `}).join('');
 
-            // 绑定自动优化切换事件
             document.querySelectorAll('.toggle-optimize').forEach(cb => {
                 cb.addEventListener('change', async function() {
                     const name = this.dataset.name;
                     const auto_optimize = this.checked;
                     try {
-                        // 使用 PUT 或 POST 更新 auto_optimize
                         const resp = await fetch(`${API_BASE}/fixed_sources/${encodeURIComponent(name)}/optimize`, {
                             method: 'PUT',
                             headers: {'Content-Type': 'application/json'},
@@ -242,7 +288,6 @@ async function renderFixed(container) {
                         if(data.success) {
                             document.getElementById('fixed-message').innerHTML = `<div class="alert alert-success">${data.message}</div>`;
                         } else {
-                            // 回退
                             this.checked = !auto_optimize;
                             document.getElementById('fixed-message').innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
                         }
@@ -253,7 +298,6 @@ async function renderFixed(container) {
                 });
             });
 
-            // 删除固定源
             document.querySelectorAll('.delete-fixed').forEach(btn => {
                 btn.addEventListener('click', async function() {
                     const name = this.dataset.name;
@@ -315,6 +359,7 @@ async function renderConfig(container) {
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary">保存配置</button>
+                    <button type="button" class="btn btn-secondary" id="reload-config-btn">重新加载配置</button>
                     <div id="config-message" class="mt-3"></div>
                 </form>
             </div>
@@ -351,6 +396,15 @@ async function renderConfig(container) {
                 `<div class="alert alert-${result.success ? 'success' : 'danger'}">${result.message}</div>`;
         } catch(e) {
             document.getElementById('config-message').innerHTML = '<div class="alert alert-danger">保存失败</div>';
+        }
+    });
+    document.getElementById('reload-config-btn').addEventListener('click', async function() {
+        try {
+            const resp = await fetch(`${API_BASE}/config/reload`, { method: 'POST' });
+            const result = await resp.json();
+            document.getElementById('config-message').innerHTML = `<div class="alert alert-success">${result.message}</div>`;
+        } catch(e) {
+            document.getElementById('config-message').innerHTML = '<div class="alert alert-danger">重新加载失败</div>';
         }
     });
 }
