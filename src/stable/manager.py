@@ -44,17 +44,12 @@ class StableManager:
     def promote_candidate(self, channel_name: str, url: str, latency: int, video_codec: str) -> bool:
         """将候选源提升为稳定源"""
         current = self.stable_sources.get(channel_name)
-        
-        # 如果是固定源，不允许自动替换
         if current and current.is_fixed:
             logger.warning(f"⚠️ {channel_name} 是固定源，不允许自动替换")
             return False
-        
-        # 如果 URL 相同，不需要更新
         if current and current.url == url:
             logger.debug(f"{channel_name} URL 未变化，跳过更新")
             return False
-        
         self.stable_sources[channel_name] = StableSource(
             channel_name=channel_name,
             url=url,
@@ -62,17 +57,17 @@ class StableManager:
             video_codec=video_codec,
             promoted_at=datetime.now(),
             is_fixed=False,
+            auto_optimize=False,
             status=StableStatus.ACTIVE
         )
         self._save()
         logger.info(f"✅ {channel_name} 已提升为稳定源: {url[:80]}...")
         return True
     
-    def set_fixed_source(self, channel_name: str, url: str) -> bool:
+    def set_fixed_source(self, channel_name: str, url: str, auto_optimize: bool = False) -> bool:
         """设置固定源（用户明确保留，不会被自动替换）"""
         if not url:
             return False
-        
         self.stable_sources[channel_name] = StableSource(
             channel_name=channel_name,
             url=url,
@@ -80,39 +75,32 @@ class StableManager:
             video_codec="",
             promoted_at=datetime.now(),
             is_fixed=True,
+            auto_optimize=auto_optimize,
             status=StableStatus.ACTIVE
         )
         self._save()
-        logger.info(f"📌 {channel_name} 已设为固定源: {url[:80]}...")
+        logger.info(f"📌 {channel_name} 已设为固定源 (自动优化: {auto_optimize})")
         return True
-
-    def remove_fixed_source(self, channel_name: str) -> bool:
-        """删除固定源（取消固定标记，但保留源）"""
+    
+    def set_auto_optimize(self, channel_name: str, enabled: bool) -> bool:
+        """切换固定源的自动优化开关"""
         if channel_name not in self.stable_sources:
-            logger.warning(f"⚠️ {channel_name} 不存在，无法取消固定")
             return False
-        
         src = self.stable_sources[channel_name]
         if not src.is_fixed:
-            logger.warning(f"⚠️ {channel_name} 不是固定源")
             return False
-        
-        # 取消固定标记，但保留源（状态改为 active）
-        src.is_fixed = False
+        src.auto_optimize = enabled
         self._save()
-        logger.info(f"🗑️ 已取消固定源: {channel_name}")
+        logger.info(f"🔄 {channel_name} 自动优化开关: {enabled}")
         return True
     
     def get_stable_sources(self) -> Dict[str, StableSource]:
-        """获取所有稳定源"""
         return self.stable_sources
     
     def get_active_sources(self) -> Dict[str, StableSource]:
-        """获取活跃的稳定源"""
-        return {n: s for n, s in self.stable_sources.items() if s.status == StableStatus.ACTIVE}
+        return {n: s for n, s in self.stable_sources.items() if s.status == StableStatus.ACTIVE and s.url}
     
     def get_output_channels(self) -> List[dict]:
-        """生成输出用的频道列表"""
         channels = []
         for name, src in self.stable_sources.items():
             if src.status == StableStatus.ACTIVE and src.url:
@@ -121,12 +109,12 @@ class StableManager:
                     "url": src.url,
                     "latency": src.latency,
                     "video_codec": src.video_codec,
-                    "is_fixed": src.is_fixed
+                    "is_fixed": src.is_fixed,
+                    "auto_optimize": src.auto_optimize
                 })
         return channels
     
     def record_failure(self, channel_name: str):
-        """记录失败"""
         if channel_name in self.stable_sources:
             src = self.stable_sources[channel_name]
             src.fail_count += 1
@@ -137,7 +125,6 @@ class StableManager:
             self._save()
     
     def record_success(self, channel_name: str):
-        """记录成功"""
         if channel_name in self.stable_sources:
             src = self.stable_sources[channel_name]
             src.fail_count = 0
@@ -148,20 +135,24 @@ class StableManager:
             self._save()
     
     def replace_source(self, channel_name: str, new_url: str, latency: int, video_codec: str) -> bool:
-        """替换失效源"""
+        """替换失效源（保留原有的 is_fixed 和 auto_optimize）"""
         current = self.stable_sources.get(channel_name)
-        if current and current.is_fixed:
-            logger.warning(f"⚠️ {channel_name} 是固定源，不允许自动替换")
+        # 如果是固定源且不允许自动优化，则拒绝替换
+        if current and current.is_fixed and not current.auto_optimize:
+            logger.warning(f"⚠️ {channel_name} 是固定源且不允许自动优化，拒绝替换")
             return False
-        
         old_url = current.url if current else "None"
+        # 保留原有的固定标记和自动优化开关
+        is_fixed = current.is_fixed if current else False
+        auto_optimize = current.auto_optimize if current else False
         self.stable_sources[channel_name] = StableSource(
             channel_name=channel_name,
             url=new_url,
             latency=latency,
             video_codec=video_codec,
             promoted_at=datetime.now(),
-            is_fixed=False,
+            is_fixed=is_fixed,
+            auto_optimize=auto_optimize,
             status=StableStatus.ACTIVE
         )
         self._save()
