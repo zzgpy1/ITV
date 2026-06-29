@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
 # src/run.py
 
+progress = {
+    'percent': 0,
+    'current': 0,
+    'total': 0,
+    'valid': 0,
+    'invalid': 0,
+    'finished': False
+}
+
 import asyncio
 import sys
 import json
