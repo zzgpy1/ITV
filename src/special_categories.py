@@ -1,5 +1,5 @@
 # src/special_categories.py
-"""特定分类采集模块 - 从 abc123 和 iptv-org 源采集指定类别：音乐、广播、韩国女团、电影、电视剧、动漫、体育竞赛"""
+"""特定分类采集模块 - 从 abc123 和 iptv-org 体育专源采集指定类别"""
 
 import re
 from typing import List, Dict, Tuple
@@ -27,7 +27,7 @@ def parse_abc123_for_targets(content: str) -> Dict[str, List[Tuple[str, str]]]:
     """解析 abc123 源内容，提取目标分类下的频道"""
     if not content:
         return {}
-    
+
     result = {cat: [] for cat in TARGET_CATEGORIES}
     lines = content.splitlines()
     current_category = None
@@ -65,9 +65,34 @@ def parse_abc123_for_targets(content: str) -> Dict[str, List[Tuple[str, str]]]:
     return {k: v for k, v in result.items() if v}
 
 
-def parse_iptvorg_for_sports(content: str) -> List[Tuple[str, str]]:
+def parse_iptvorg_sports(content: str) -> List[Tuple[str, str]]:
     """
-    解析 iptv-org M3U 内容，提取体育类频道（group-title 含 Sport/Sports/体育）
+    解析 iptv-org 体育专类 M3U 内容，提取所有体育频道
+    返回 [(频道名, URL), ...]
+    """
+    if not content:
+        return []
+    sports_channels = []
+    lines = content.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        if line.startswith("#EXTINF"):
+            # 提取频道名（逗号之后）
+            name = line.split(",")[-1].strip()
+            if i + 1 < len(lines) and not lines[i + 1].startswith("#"):
+                url = lines[i + 1].strip()
+                if url.startswith(('http://', 'https://')):
+                    sports_channels.append((name, url))
+            i += 2
+        else:
+            i += 1
+    return sports_channels
+
+
+def parse_iptvorg_jp_sports(content: str) -> List[Tuple[str, str]]:
+    """
+    解析 iptv-org 日本频道 M3U 内容，提取体育类频道（group-title 含 Sport/Sports/体育）
     返回 [(频道名, URL), ...]
     """
     if not content:
@@ -119,9 +144,9 @@ async def fetch_abc123_source() -> Dict[str, List[Tuple[str, str]]]:
 
 
 async def fetch_iptvorg_sports() -> List[Tuple[str, str]]:
-    """直接拉取 iptv-org 主列表并提取体育频道"""
+    """拉取 iptv-org 体育专类 M3U 并提取体育频道"""
     import aiohttp
-    source_url = "https://iptv-org.github.io/iptv/index.m3u"
+    source_url = "https://iptv-org.github.io/iptv/categories/sports.m3u"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
     }
@@ -130,14 +155,13 @@ async def fetch_iptvorg_sports() -> List[Tuple[str, str]]:
         async with aiohttp.ClientSession() as session:
             async with session.get(source_url, timeout=15, headers=headers) as resp:
                 if resp.status != 200:
-                    logger.warning(f"⚠️ iptv-org 源返回 HTTP {resp.status}")
+                    logger.warning(f"⚠️ iptv-org 体育源返回 HTTP {resp.status}")
                     return []
                 content = await resp.text()
-                return parse_iptvorg_for_sports(content)
+                return parse_iptvorg_sports(content)
     except Exception as e:
         logger.error(f"❌ 获取 iptv-org 体育频道失败: {e}")
         return []
-
 
 def append_special_to_output(
     special_data: Dict[str, List[Tuple[str, str]]],
@@ -179,23 +203,33 @@ def append_special_to_output(
 
 async def collect_and_append_special_categories(output_dir: Path, db=None) -> Dict[str, int]:
     """
-    主函数：从 abc123 和 iptv-org 采集指定分类并追加到输出文件
+    主函数：从 abc123 和 iptv-org 体育专类采集指定分类并追加到输出文件
     """
-    logger.info("🧠 开始智能补充采集（从 abc123 + iptv-org 源）...")
+    logger.info("🧠 开始智能补充采集（从 abc123 + iptv-org 体育专类 + 日本体育频道）...")
 
     # 1. 从 abc123 获取所有目标分类
     abc123_data = await fetch_abc123_source()
-    
-    # 2. 从 iptv-org 获取体育频道
+
+    # 2. 从 iptv-org 体育专类获取体育频道
     iptv_sports = await fetch_iptvorg_sports()
-    
-    # 3. 合并到 sports_channels
+
+    # 3. 从 iptv-org 日本源获取体育频道
+    jp_sports = await fetch_iptvorg_jp_sports()
+
+    # 4. 合并到 sports_channels
     combined_data = abc123_data.copy()  # 包含所有分类
     if "体育竞赛" not in combined_data:
         combined_data["体育竞赛"] = []
-    # 合并 iptv-org 的体育频道（去重）
+
+    # 合并 iptv-org 体育专类的频道（去重）
     existing_urls = {url for _, url in combined_data["体育竞赛"]}
     for name, url in iptv_sports:
+        if url not in existing_urls:
+            combined_data["体育竞赛"].append((name, url))
+            existing_urls.add(url)
+
+    # 合并日本源的体育频道（去重）
+    for name, url in jp_sports:
         if url not in existing_urls:
             combined_data["体育竞赛"].append((name, url))
             existing_urls.add(url)
