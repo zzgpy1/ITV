@@ -177,6 +177,7 @@ async def run_legacy_mode():
     )
 
     # 智能补充采集
+    special_stats = {}  # 确保变量始终存在
     try:
         special_stats = await collect_and_append_special_categories(OUTPUT_DIR, db)
         if special_stats:
