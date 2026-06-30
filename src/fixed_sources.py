@@ -4,48 +4,38 @@
 # 固定央视频道源（用户提供），每个频道可以指定多个备选源
 CCTV_FIXED_SOURCES = {
     "CCTV-1": [
-        "http://45.192.97.170:8880/play/1.m3u8",
-        "http://69.30.245.50/live/cctv1.m3u8"
+         "http://69.30.245.50/live/cctv1.m3u8"
     ],
     "CCTV-2": [
-        "http://45.192.97.170:8880/play/2.m3u8",
-        "http://69.30.245.50/live/cctv2.m3u8"
+         "http://69.30.245.50/live/cctv2.m3u8"
     ],
     "CCTV-3": [
-        "http://45.192.97.170:8880/play/3.m3u8",
-        "http://69.30.245.50/live/cctv3.m3u8"
+         "http://69.30.245.50/live/cctv3.m3u8"
     ],
     "CCTV-4": [
-        "http://45.192.97.170:8880/play/4.m3u8",
-        "http://69.30.245.50/live/cctv4.m3u8"
+         "http://69.30.245.50/live/cctv4.m3u8"
     ],
     "CCTV-5": [
-        "http://45.192.97.170:8880/play/5.m3u8",
-        "http://69.30.245.50/live/cctv5.m3u8"
+         "http://69.30.245.50/live/cctv5.m3u8"
     ],
     "CCTV-5+": [
         "http://45.192.97.170:8880/play/6.m3u8"
         # 新源可能没有 cctv5+ 对应，暂不添加
     ],
     "CCTV-6": [
-        "http://45.192.97.170:8880/play/7.m3u8",
         "http://69.30.245.50/live/cctv6.m3u8"
     ],
     "CCTV-7": [
-        "http://45.192.97.170:8880/play/8.m3u8",
         "http://69.30.245.50/live/cctv7.m3u8"
     ],
     "CCTV-8": [
-        "http://45.192.97.170:8880/play/9.m3u8",
         "http://69.30.245.50/live/cctv8.m3u8"
     ],
     "CCTV-9": [
-        "http://45.192.97.170:8880/play/10.m3u8",
-        "http://69.30.245.50/live/cctv9.m3u8"
+         "http://69.30.245.50/live/cctv9.m3u8"
     ],
     "CCTV-10": [
-        "http://45.192.97.170:8880/play/11.m3u8",
-        "http://69.30.245.50/live/cctv10.m3u8"
+         "http://69.30.245.50/live/cctv10.m3u8"
     ],
     "CCTV-11": ["http://45.192.97.170:8880/play/12.m3u8"],
     "CCTV-12": ["http://45.192.97.170:8880/play/13.m3u8"],
