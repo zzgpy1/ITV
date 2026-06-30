@@ -168,6 +168,14 @@ PREDICT_THRESHOLD = 0.6
 
 PROGRESS_UPDATE_INTERVAL = 1.0
 
+    # ========== GitHub 代理配置（兼容旧模块） ==========
+ENABLE_GITHUB_PROXY = False
+GITHUB_RAW_PROXIES = []
+GITHUB_PROXY_TIMEOUT = 10
+    print(f"   - 慢速阈值: {SLOW_SPEED_THRESHOLD}ms")
+    print(f"   - 黑名单阈值: {MAX_RETRY_BEFORE_BLACKLIST}次失败")
+    print(f"   - 健康度预测阈值: {PREDICT_THRESHOLD}")
+
 # 打印自治模式状态
 if AUTONOMOUS_MODE:
     print("🤖 自治模式已启用")
@@ -178,6 +186,4 @@ if AUTONOMOUS_MODE:
     print(f"   - 最少成功次数: {CANDIDATE_MIN_SUCCESS}")
     print(f"   - 最低成功率: {CANDIDATE_MIN_SUCCESS_RATE}")
     print(f"   - 最大延迟: {CANDIDATE_MAX_LATENCY}ms")
-    print(f"   - 慢速阈值: {SLOW_SPEED_THRESHOLD}ms")
-    print(f"   - 黑名单阈值: {MAX_RETRY_BEFORE_BLACKLIST}次失败")
-    print(f"   - 健康度预测阈值: {PREDICT_THRESHOLD}")
+
