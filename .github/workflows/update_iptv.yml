@@ -36,7 +36,7 @@ jobs:
         else
           echo "✅ 未发现冲突的 'main' 标签。"
         fi
-        
+
     - name: 设置 Python
       uses: actions/setup-python@v5
       with:
@@ -75,23 +75,36 @@ jobs:
         CANDIDATE_MIN_SUCCESS_RATE: 0.5
         CANDIDATE_MAX_LATENCY: 3000
 
-    - name: 提交并推送更改
+    - name: 准备提交（忽略动态文件的冲突）
       run: |
-        # 强制刷新远程引用，避免 stale info
-        echo "🔄 获取远程最新引用..."
-        git fetch origin main --force
+        # 从索引中移除动态文件（但保留本地工作区）
+        git rm -r --cached data/ 2>/dev/null || true
+        git rm --cached iptv_cache.db 2>/dev/null || true
+        git rm -r --cached output/ 2>/dev/null || true
+        git rm -r --cached */__pycache__/ 2>/dev/null || true
+        git rm -r --cached src/__pycache__/ 2>/dev/null || true
 
-        echo "📝 检查并添加更改..."
-        git add -A
-
+    - name: 提交并推送更改到 main 分支
+      run: |
+        echo "🔄 拉取远程最新更改..."
+        git pull origin main --rebase --autostash || echo "拉取失败或无更新，继续..."
+        
+        echo "📝 检查并添加更改（仅添加必要的文件）..."
+        # 只添加源码文件和配置文件
+        git add src/*.py
+        git add src/*/*.py
+        git add alias.txt blacklist.txt demo.txt
+        git add .gitignore
+        git add requirements.txt Dockerfile docker-compose.yml entrypoint.sh
+        
         if git diff --cached --quiet; then
-          echo "✅ 没有检测到新更改"
+          echo "✅ 没有检测到新更改（源码部分）"
           exit 0
         fi
-
+        
         echo "📦 提交更改..."
         git commit -m "自动更新 IPTV 列表 - $(date '+%Y-%m-%d %H:%M:%S')"
-
+        
         echo "🚀 推送到 main 分支（带重试）..."
         for i in 1 2 3; do
           echo "尝试第 $i 次推送..."
@@ -101,18 +114,11 @@ jobs:
           else
             echo "⚠️ 推送失败，拉取最新更改后重试..."
             git pull origin main --rebase --autostash
-            # 再次尝试推送
-            if git push origin main; then
-              echo "✅ Rebase 后推送成功"
-              exit 0
-            fi
             sleep 2
           fi
         done
-
+        
         echo "⚠️ 重试后仍失败，尝试安全强制推送..."
-        # 先刷新远程引用再强制推送
-        git fetch origin main --force
         git push --force-with-lease origin main
         echo "✅ 安全强制推送成功"
 
