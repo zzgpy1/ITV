@@ -8,34 +8,52 @@ from typing import List, Dict, Tuple
 from pathlib import Path
 from src.logger import logger
 
-# ========== 需要采集的分类及关键词映射 ==========
-CATEGORY_KEYWORDS = {
-    "音乐": ["音乐", "歌曲", "金曲", "流行", "经典"],
-    "广播": ["广播", "电台", "FM", "AM", "网络电台", "audio"],
-    "韩国女团": ["韩国女团", "女团", "kpop", "歌团"],  # 歌团特殊处理已在解析中实现
-    "电影": ["电影", "影院", "影片", "CHC", "经典电影", "动作电影", "家庭影院"],
-    "电视剧": ["电视剧", "剧集", "剧场", "热播"],
-    "动漫": ["动漫", "动画", "卡通", "少儿", "儿童"],
-    "体育竞赛": ["体育", "竞赛", "赛事", "运动", "NBA", "英超", "中超"],
-    "戏曲": ["戏曲", "京剧", "越剧", "黄梅戏", "豫剧", "评剧", "秦腔", "昆曲", "梨园"],
-    "美食": ["美食", "烹饪", "吃货", "厨房", "美味"],
-    "动感舞曲": ["动感舞曲", "舞曲", "DJ", "电音", "蹦迪"],
-    "广场舞": ["广场舞", "健身舞", "排舞"],
-}
+# ========== 需要采集的分类关键词及匹配规则 ==========
+TARGET_CATEGORIES = [
+    "广播",
+    "韩国女团",
+    "电影",
+    "电视剧",
+    "动漫",
+    "体育竞赛",
+    "音乐吧",          # 匹配“经典”关键词
+    "热门歌曲",        # 匹配“音乐”、“歌曲”、“流行”等
+    "戏曲",
+    "美食",
+    "动感舞曲",
+    "广场舞"
+]
 
 # ========== 分类显示名称映射 ==========
 CATEGORY_DISPLAY_NAME = {
-    "音乐": "🎵 音乐频道",
     "广播": "📻 网络电台",
     "韩国女团": "🎤 韩国女团",
     "电影": "🎬 电影频道",
     "电视剧": "📺 电视剧频道",
     "动漫": "🎬 动漫频道",
     "体育竞赛": "🏀 体育竞赛频道",
+    "音乐吧": "🎵 音乐吧",
+    "热门歌曲": "🔥 热门歌曲",
     "戏曲": "🎭 戏曲频道",
     "美食": "🍜 美食频道",
-    "动感舞曲": "💃 动感舞曲",
+    "动感舞曲": "🎧 动感舞曲",
     "广场舞": "💃 广场舞",
+}
+
+# 每个分类对应的关键词列表（小写，用于匹配分类名）
+CATEGORY_KEYWORDS = {
+    "广播": ["广播", "电台", "fm", "am", "动听"],
+    "韩国女团": ["歌团", "女团", "kpop"],
+    "电影": ["电影", "影院", "影片", "chc", "动作电影", "家庭影院", "影迷电影", "经典电影", "华语影院", "峨眉电影", "第一剧场", "怀旧剧场", "风云剧场"],
+    "电视剧": ["电视剧", "剧集", "剧场", "连续剧"],
+    "动漫": ["动漫", "动画", "卡通", "二次元"],
+    "体育竞赛": ["体育", "竞赛", "赛事", "竞技"],
+    "音乐吧": ["经典"],  # 只匹配“经典”
+    "热门歌曲": ["音乐", "歌曲", "热门歌曲", "流行", "金曲", "热歌", "动听", "好歌"],
+    "戏曲": ["戏曲", "京剧", "越剧", "黄梅戏", "豫剧", "评剧", "秦腔", "昆曲", "粤剧", "河北梆子", "梨园"],
+    "美食": ["美食", "烹饪", "吃播", "厨房", "菜谱"],
+    "动感舞曲": ["动感", "舞曲", "dj", "迪斯科", "劲舞"],
+    "广场舞": ["广场舞", "健身舞", "排舞"],
 }
 
 # ========== 验证配置 ==========
@@ -45,17 +63,12 @@ PROBE_CONCURRENCY = 20     # 并发探测数
 
 def parse_abc123_for_targets(content: str) -> Dict[str, List[Tuple[str, str]]]:
     """
-    解析 abc123 源内容，只提取目标分类下的频道
-    
-    特殊处理：
-      - 源中"歌团★"分类归入"韩国女团"
-      - 包含"体育"或"竞赛"的分类归入"体育竞赛"
+    解析 abc123 源内容，提取目标分类下的频道
     """
     if not content:
         return {}
     
-    target_categories = list(CATEGORY_KEYWORDS.keys())
-    result = {cat: [] for cat in target_categories}
+    result = {cat: [] for cat in TARGET_CATEGORIES}
     lines = content.splitlines()
     current_category = None
 
@@ -64,22 +77,18 @@ def parse_abc123_for_targets(content: str) -> Dict[str, List[Tuple[str, str]]]:
         if not line:
             continue
 
-        # 检测分类行（格式：分类名,#genre#）
+        # 检测分类行
         if line.endswith(",#genre#") or line.endswith(", #genre#"):
             cat_name = line.replace(",#genre#", "").replace(", #genre#", "").strip()
             current_category = None
             
-            # 遍历目标分类，检查是否匹配
+            # 遍历目标分类，检查是否匹配关键词
             for target, keywords in CATEGORY_KEYWORDS.items():
-                # 韩国女团特殊匹配
+                # 特殊处理韩国女团（也匹配“歌团”）
                 if target == "韩国女团" and ("歌团" in cat_name or "女团" in cat_name):
                     current_category = target
                     break
-                # 体育竞赛特殊匹配
-                if target == "体育竞赛" and ("体育" in cat_name or "竞赛" in cat_name or "赛事" in cat_name):
-                    current_category = target
-                    break
-                # 通用关键词匹配
+                # 其他分类：检查 cat_name 是否包含任一关键词
                 if any(kw in cat_name for kw in keywords):
                     current_category = target
                     break
@@ -96,7 +105,6 @@ def parse_abc123_for_targets(content: str) -> Dict[str, List[Tuple[str, str]]]:
                 name = parts[0].strip()
                 url = parts[1].strip()
                 if url.startswith(('http://', 'https://')):
-                    # 去重（基于URL）
                     existing_urls = [u for _, u in result[current_category]]
                     if url not in existing_urls:
                         result[current_category].append((name, url))
@@ -106,10 +114,7 @@ def parse_abc123_for_targets(content: str) -> Dict[str, List[Tuple[str, str]]]:
 
 
 async def probe_channel_quick(url: str, session: aiohttp.ClientSession) -> bool:
-    """
-    快速探测频道是否可用（HEAD请求 + Content-Type检查）
-    返回 True 表示可播放
-    """
+    """快速探测频道是否可用（HEAD请求 + Content-Type检查）"""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "Accept": "*/*",
@@ -128,12 +133,8 @@ async def probe_channel_quick(url: str, session: aiohttp.ClientSession) -> bool:
         return False
 
 
-async def validate_channels(
-    channels: List[Tuple[str, str]]
-) -> List[Tuple[str, str]]:
-    """
-    对频道列表进行可用性验证，只保留有效的
-    """
+async def validate_channels(channels: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
+    """对频道列表进行可用性验证，只保留有效的"""
     if not channels:
         return []
     
@@ -156,7 +157,7 @@ async def validate_channels(
 
 
 async def fetch_abc123_source() -> Dict[str, List[Tuple[str, str]]]:
-    """直接拉取 abc123 源内容并解析目标分类，然后验证可用性"""
+    """拉取 abc123 源并解析分类，然后验证可用性"""
     source_url = "https://tv.19860519.xyz/abc123"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
@@ -180,7 +181,7 @@ async def fetch_abc123_source() -> Dict[str, List[Tuple[str, str]]]:
                 if not parsed:
                     return {}
                 
-                # ===== 验证频道可用性 =====
+                # 验证可用性
                 logger.info("🔍 开始验证智能补充频道的可用性...")
                 validated = {}
                 total_before = 0
@@ -193,7 +194,8 @@ async def fetch_abc123_source() -> Dict[str, List[Tuple[str, str]]]:
                     if valid:
                         validated[cat] = valid
                         total_after += len(valid)
-                    logger.info(f"   {CATEGORY_DISPLAY_NAME.get(cat, cat)}: {len(valid)}/{len(channels)} 可用")
+                    display = CATEGORY_DISPLAY_NAME.get(cat, cat)
+                    logger.info(f"   {display}: {len(valid)}/{len(channels)} 可用")
                 
                 if total_before > 0:
                     logger.info(f"📊 验证完成: {total_after}/{total_before} 个频道可用")
@@ -207,7 +209,7 @@ def append_special_to_output(
     special_data: Dict[str, List[Tuple[str, str]]],
     output_dir: Path
 ) -> int:
-    """将特殊分类追加到输出文件（仅追加到 tv.m3u 和 tv.txt）"""
+    """追加到输出文件"""
     if not special_data:
         return 0
 
@@ -215,7 +217,6 @@ def append_special_to_output(
     m3u_path = output_dir / "tv.m3u"
     txt_path = output_dir / "tv.txt"
 
-    # 追加到 M3U
     with open(m3u_path, 'a', encoding='utf-8') as f:
         f.write(f"\n# ========== 智能补充分类 ==========\n")
         for cat, channels in special_data.items():
@@ -227,7 +228,6 @@ def append_special_to_output(
                 f.write(f'#EXTINF:-1 group-title="{display_name}",{name}\n{url}\n')
                 total_appended += 1
 
-    # 追加到 TXT
     with open(txt_path, 'a', encoding='utf-8') as f:
         f.write(f"\n# ========== 智能补充分类 ==========\n")
         for cat, channels in special_data.items():
@@ -242,7 +242,7 @@ def append_special_to_output(
 
 
 async def collect_and_append_special_categories(output_dir: Path, db=None) -> Dict[str, int]:
-    """主函数：采集指定分类、验证可用性并追加到输出文件"""
+    """主函数：采集、验证并追加"""
     logger.info("🧠 开始智能补充采集（从 abc123 源）...")
 
     special_data = await fetch_abc123_source()
