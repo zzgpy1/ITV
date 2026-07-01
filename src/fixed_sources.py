@@ -106,6 +106,8 @@ CCTV_FIXED_SOURCES = {
         "http://45.192.97.170:8880/play/17.m3u8",
         "http://222.169.85.8:9901/tsfile/live/0007_1.m3u8"
     ],
+    "CCTV4欧洲": ["http://45.192.97.170:8880/play/18.m3u8"],
+    "CCTV4美洲": ["http://45.192.97.170:8880/play/19.m3u8"],
     "CCTV-4K": [],
     "CCTV-8K": [],
 }
