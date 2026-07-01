@@ -73,72 +73,53 @@ def detect_province_from_category(cat_name: str) -> Optional[str]:
 
 
 async def probe_channel_quick(url: str, session: aiohttp.ClientSession) -> bool:
-    """
-    增强版探测：GET 前16KB数据，检查是否为视频流，并排除HTML错误页
-    """
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "Accept": "*/*",
         "Accept-Encoding": "gzip, deflate",
         "Connection": "keep-alive",
-        "Range": "bytes=0-16384",  # 只请求前16KB
+        "Range": "bytes=0-16384",
     }
     try:
         async with session.get(url, timeout=PROBE_TIMEOUT, allow_redirects=True, headers=headers) as resp:
-            # 状态码检查：200 或 206（部分内容）视为可接受，其他视为无效
             if resp.status not in (200, 206):
-                logger.debug(f"❌ 状态码异常 {resp.status}: {url[:80]}")
                 return False
 
             content_type = resp.headers.get("content-type", "").lower()
-            # 如果Content-Type明确是视频/M3U8，直接通过
             if any(ct in content_type for ct in ["video", "mpegurl", "x-mpegurl", "application/vnd.apple.mpegurl"]):
                 return True
 
-            # 读取数据
             data = await resp.content.read(16384)
             if not data:
                 return False
 
-            # 检查是否为HTML错误页（含403、Access Denied等）
-            data_lower = data.lower()
+            # 转为字符串进行错误检测（避免 bytes 中的非 ASCII）
+            data_str = data.decode('utf-8', errors='ignore').lower()
             error_keywords = [
-                b"<html", b"<!doctype", b"403", b"forbidden",
-                b"access denied", b"404", b"not found",
-                b"请勿滥用", b"该资源暂不可用"
+                "<html", "<!doctype", "403", "forbidden",
+                "access denied", "404", "not found",
+                "请勿滥用", "该资源暂不可用"
             ]
             for kw in error_keywords:
-                if kw in data_lower:
-                    logger.debug(f"❌ 错误页检测: {url[:80]}")
+                if kw in data_str:
                     return False
 
-            # 检查是否为视频文件头或M3U8
+            # 视频头检测
             if data.startswith(b'#EXTM3U') or b'#EXTINF' in data:
                 return True
-            # 视频文件头
             video_signatures = [
-                b'\x00\x00\x00\x18ftyp', b'\x00\x00\x00\x1cftyp',  # MP4
-                b'\x1a\x45\xdf\xa3',  # MKV
-                b'\x47\x40\x00',      # TS
-                b'FLV',              # FLV
-                b'RIFF',             # AVI
+                b'\x00\x00\x00\x18ftyp', b'\x00\x00\x00\x1cftyp',
+                b'\x1a\x45\xdf\xa3', b'\x47\x40\x00', b'FLV', b'RIFF'
             ]
             for sig in video_signatures:
                 if data.startswith(sig):
                     return True
 
-            # 如果前面都没匹配，但Content-Type是文本，可能无效
             if "text" in content_type:
                 return False
 
-            # 兜底：如果数据长度>0且不是明显错误，宽松通过（但最好还是上述检查）
-            # 这里决定保守，若未识别则视为无效
             return False
-    except asyncio.TimeoutError:
-        logger.debug(f"⏱️ 超时: {url[:80]}")
-        return False
-    except Exception as e:
-        logger.debug(f"⚠️ 探测异常 {url[:80]}: {e}")
+    except Exception:
         return False
 
 
