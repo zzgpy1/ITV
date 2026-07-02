@@ -46,7 +46,7 @@ RAW_SOURCES = [
 # 直接访问的源（特殊处理）
 DIRECT_SOURCES = [
     "https://tv.19860519.xyz/abc123",
-    "http://1080p.19860519.de5.net/live.m3u",
+    "https://1080p.19860519.de5.net/live.m3u",
     ]
 
 # ========== 日本频道源（新增，保留不被过滤） ==========
