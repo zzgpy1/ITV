@@ -1,46 +1,51 @@
-# Dockerfile
+# ===================== 构建阶段 =====================
 FROM python:3.11-slim-bookworm AS builder
 
 WORKDIR /app
 
-# 安装编译依赖（仅构建阶段）
-RUN apt-get update && apt-get install -y --no-install-recommends gcc && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+# 仅安装编译依赖
+RUN apt-get update && apt-get install -y --no-install-recommends gcc \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-# 使用国内镜像源加速（可选）
-RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn
 
-# ===== 运行时镜像 =====
+# 安装依赖 + 清理所有无用文件（关键瘦身）
+RUN pip install --no-cache-dir --root-user=1 -r requirements.txt \
+    -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn \
+    # 删除所有无用文件：文档、测试、缓存、字节码、dist-info
+    && find /usr/local/lib/python3.11/site-packages -type d -name "__pycache__" -o -name "*.pyc" -o -name "*.pyo" -o -name "*.dist-info" -o -name "*.egg-info" -o -name "tests" -o -name "docs" | xargs rm -rf
+
+# ===================== 运行阶段（超精简） =====================
 FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
-# 安装运行时依赖（ffmpeg 用于验证）
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* && \
-    ffprobe -version
+# 只装必须的 ffmpeg，不装任何多余工具
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /usr/share/doc /usr/share/man /usr/share/locale \
+    && ffprobe -version
 
-# 复制已安装的 Python 包
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+# 完整复制 Python 运行环境（只复制有效文件）
+COPY --from=builder /usr/local /usr/local
 
-# 复制项目文件（排除 gui/ 等无需在容器内运行的文件）
+# 复制项目代码
 COPY src/ ./src/
 COPY demo.txt alias.txt blacklist.txt ./
 COPY entrypoint.sh ./
 
-# 创建数据目录
-RUN mkdir -p /app/data /app/output
+# 目录
+RUN mkdir -p /app/data /app/output && chmod +x /app/entrypoint.sh
 
-# 设置默认环境变量（可被 docker-compose 覆盖）
+# 环境变量（不变）
 ENV AUTONOMOUS_MODE=true \
     FFMPEG_ENABLE=true \
     MAX_WORKERS=20 \
     TIMEOUT=8 \
     CACHE_HOURS=24 \
     CACHE_RAW_HOURS=48 \
-    CACHE_SPEED_HOURS=24 \
     ENABLE_INCREMENTAL_FETCH=true \
     ENABLE_DEMO_FILTER=true \
     ENABLE_ALIAS=true \
