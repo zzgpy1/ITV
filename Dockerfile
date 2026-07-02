@@ -11,24 +11,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends gcc \
 COPY requirements.txt .
 
 # 安装依赖 + 清理所有无用文件（关键瘦身）
-RUN pip install --no-cache-dir --root-user=1 -r requirements.txt \
+RUN pip install --no-cache-dir -r requirements.txt \
     -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn \
-    # 删除所有无用文件：文档、测试、缓存、字节码、dist-info
-    && find /usr/local/lib/python3.11/site-packages -type d -name "__pycache__" -o -name "*.pyc" -o -name "*.pyo" -o -name "*.dist-info" -o -name "*.egg-info" -o -name "tests" -o -name "docs" | xargs rm -rf
+    && find /usr/local/lib/python3.11/site-packages \
+    \( -name "__pycache__" -o -name "*.pyc" -o -name "*.pyo" -o -name "*.dist-info" -o -name "*.egg-info" -o -name "tests" -o -name "docs" \) \
+    -exec rm -rf {} + || true
 
 # ===================== 运行阶段（超精简） =====================
 FROM python:3.11-slim-bookworm
 
 WORKDIR /app
 
-# 只装必须的 ffmpeg，不装任何多余工具
+# 只装必须的 ffmpeg，移除无用curl，清理系统文档/语言包
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /usr/share/doc /usr/share/man /usr/share/locale \
+    && rm -rf /usr/share/doc /usr/share/man /usr/share/locale /usr/share/info \
     && ffprobe -version
 
-# 完整复制 Python 运行环境（只复制有效文件）
+# 整体复制构建好的python环境
 COPY --from=builder /usr/local /usr/local
 
 # 复制项目代码
@@ -36,10 +37,10 @@ COPY src/ ./src/
 COPY demo.txt alias.txt blacklist.txt ./
 COPY entrypoint.sh ./
 
-# 目录
+# 创建目录并赋予执行权限
 RUN mkdir -p /app/data /app/output && chmod +x /app/entrypoint.sh
 
-# 环境变量（不变）
+# 环境变量保持不变
 ENV AUTONOMOUS_MODE=true \
     FFMPEG_ENABLE=true \
     MAX_WORKERS=20 \
