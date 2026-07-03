@@ -43,27 +43,19 @@ from src.demo_filter import (
 from src.database import get_db_cache
 from src.logger import logger
 
-# 新增导入
-from src.generator_enhanced import EnhancedOutputGenerator
-from src.special_categories import collect_and_append_special_categories
+# 新增：新源集成
+from src.hmtj_source import integrate_hmtj_source
 
-# ===== 全局进度共享变量 =====
-progress = {
-    'percent': 0,
-    'current': 0,
-    'total': 0,
-    'valid': 0,
-    'invalid': 0,
-    'finished': False,
-    'phase': 'idle'  # idle, fetching, parsing, testing, verifying, merging, output
-}
+# 原有导入
+from src.iptv_org_adapter import get_iptv_org_adapter
+from src.global_channels import get_global_selector
+from src.generator_enhanced import EnhancedOutputGenerator
+from src.overseas_filter import process_overseas_channels
+from src.special_categories import collect_and_append_special_categories
 
 
 # ========== 传统模式（完整采集） ==========
 async def run_legacy_mode():
-    """
-    原有模式 - 完整的采集、测速、验证、输出流程
-    """
     logger.info("🚀 IPTV 智能整理平台启动 (传统模式)")
     logger.info(f"📡 配置：超时={TIMEOUT}s, 并发={MAX_WORKERS}, ffmpeg={FFMPEG_ENABLE}")
     logger.info(
@@ -80,7 +72,6 @@ async def run_legacy_mode():
     last_update = await db.get_last_update_time() if DATABASE_ENABLE else None
     is_fresh = last_update and (datetime.datetime.now().timestamp() - last_update) < CACHE_RAW_HOURS * 3600
     
-    progress['phase'] = 'fetching'
     if is_fresh and ENABLE_INCREMENTAL_FETCH:
         logger.info("⚡ 启用增量更新模式（缓存有效）")
         for url in IPTV_SOURCES:
@@ -103,32 +94,23 @@ async def run_legacy_mode():
         logger.error("❌ 未获取到任何频道")
         return 1
 
-    total_channels = len(channels_dict)
-    progress['total'] = total_channels
-    progress['phase'] = 'testing'
-    logger.info(f"📊 原始频道数（去重后）: {total_channels}")
+    logger.info(f"📊 原始频道数（去重后）: {len(channels_dict)}")
 
     # HTTP 测速
     logger.info("🔍 开始 HTTP 测速...")
     valid_channels = await test_channels_concurrent(channels_dict)
-    progress['valid'] = len(valid_channels)
-    progress['current'] = len(valid_channels)
     logger.info(f"📊 通过HTTP测速的频道数: {len(valid_channels)}")
 
     # ffmpeg 验证
-    progress['phase'] = 'verifying'
     if FFMPEG_ENABLE and valid_channels:
         logger.info("🎬 开始 ffmpeg 深度验证...")
         valid_channels = await validate_batch(valid_channels)
-        progress['valid'] = len(valid_channels)
-        progress['current'] = len(valid_channels)
         logger.info(f"📊 通过ffmpeg验证的频道数: {len(valid_channels)}")
 
     if DATABASE_ENABLE and valid_channels:
         await db.save_speed_results(valid_channels)
         await db.set_last_update_time()
 
-    progress['phase'] = 'merging'
     merged_channels = merge_channels_by_name(valid_channels)
     logger.info(f"📊 合并后的频道数: {len(merged_channels)}")
 
@@ -138,16 +120,14 @@ async def run_legacy_mode():
         merged_channels = blacklist_filter.filter_channels(merged_channels)
         logger.info(f"📊 黑名单过滤后: {len(merged_channels)} (减少 {before - len(merged_channels)})")
 
-    progress['phase'] = 'output'
+    # Demo 筛选
     unmatched_channels = []
     if ENABLE_DEMO_FILTER:
         before = len(merged_channels)
         ordered_channels, unmatched_channels = filter_and_order_by_demo(merged_channels)
         logger.info(f"📊 Demo筛选后: {len(ordered_channels)} (减少 {before - len(ordered_channels)})")
-
         if unmatched_channels:
             write_shai_file(unmatched_channels, len(ordered_channels), before)
-
         if not ordered_channels:
             logger.warning("❌ Demo 筛选后无频道，尝试不筛选")
             ordered_channels = merged_channels
@@ -158,26 +138,52 @@ async def run_legacy_mode():
         logger.error("❌ 过滤后无有效频道")
         return 1
 
+    # ===== 新增：集成新源（http://1080p.19860519.de5.net/live.m3u） =====
+    try:
+        hmtj_classified = await integrate_hmtj_source()
+        # hmtj_classified 格式: {'央视': [...], '卫视': [...], '地方': [...], '体育赛事': [...]}
+        if hmtj_classified:
+            # 将分类后的频道追加到 ordered_channels
+            for cat, channels in hmtj_classified.items():
+                for ch in channels:
+                    # 确保频道对象包含 demo_category 属性，用于输出分类
+                    ch["demo_category"] = cat
+                    ordered_channels.append(ch)
+                logger.info(f"🌐 从新源追加 {len(channels)} 个频道到分类 [{cat}]")
+    except Exception as e:
+        logger.warning(f"⚠️ 集成新源失败: {e}")
+
+    # 全球频道扩展（原有）
+    if ENABLE_GLOBAL_CHANNELS:
+        logger.info("🌍 正在合并全球频道...")
+        global_selector = get_global_selector()
+        ordered_channels = await global_selector.merge_with_domestic(ordered_channels)
+
     # 最终分类统计
     cat_counter = Counter(ch.get("demo_category", "其他") for ch in ordered_channels)
     logger.info("\n🎉 最终有效频道分类统计：")
     for cat, cnt in cat_counter.items():
         logger.info(f"  {cat}: {cnt} 个频道")
 
+    # 生成输出文件（标准 + 增强）
     generate_outputs_from_demo(ordered_channels, demo_order)
 
-    # 增强版输出（取消精简版和EPG版）
     output_gen = EnhancedOutputGenerator()
     output_gen.generate_all_outputs(
         ordered_channels, 
         demo_order,
         enable_json=ENABLE_JSON_OUTPUT,
-        enable_lite=False,
-        enable_epg=False
+        enable_lite=ENABLE_LITE_VERSION,
+        enable_epg=ENABLE_EPG_OUTPUT
     )
 
-    # 智能补充采集
-    special_stats = {}  # 确保变量始终存在
+    # 处理国外频道（原有）
+    if ENABLE_DEMO_FILTER and unmatched_channels:
+        logger.info(f"🌍 正在处理 {len(unmatched_channels)} 个未匹配频道...")
+        process_overseas_channels(unmatched_channels, OUTPUT_DIR)
+
+    # 智能补充采集（abc123 源）
+    special_stats = {}
     try:
         special_stats = await collect_and_append_special_categories(OUTPUT_DIR, db)
         if special_stats:
@@ -186,8 +192,6 @@ async def run_legacy_mode():
         logger.warning(f"⚠️ 智能补充采集失败: {e}")
 
     total = len(ordered_channels)
-    progress['finished'] = True
-    progress['percent'] = 100
     logger.info(f"🎉 完成！有效频道总数: {total}")
 
     # 保存统计信息
@@ -197,11 +201,10 @@ async def run_legacy_mode():
         "category_stats": dict(cat_counter),
         "unmatched_count": len(unmatched_channels) if unmatched_channels else 0,
         "features": {
-            "epg_injection_enabled": False,
+            "epg_injection_enabled": ENABLE_EPG_OUTPUT,
             "incremental_mode": is_fresh and ENABLE_INCREMENTAL_FETCH
         }
     }
-    
     if special_stats:
         stats["special_categories"] = special_stats
     
@@ -216,25 +219,17 @@ async def run_legacy_mode():
 
 # ========== 自治模式 ==========
 async def run_autonomous_mode():
-    """
-    自治模式 - 发现新源并更新候选池（不生成输出）
-    """
     logger.info("=" * 60)
     logger.info("🤖 IPTV 自治系统启动 (发现新源)")
     logger.info("=" * 60)
-    
     try:
         from src.orchestrator import IPTVOrchestrator
-        
         orchestrator = IPTVOrchestrator()
         stats = await orchestrator.run_once()
-        
         new_stable_count = stats.get("new_stable_count", 0)
-        
         logger.info("=" * 60)
         logger.info(f"📊 自治模式完成: 新提升 {new_stable_count} 个稳定源")
         return stats
-        
     except ImportError as e:
         logger.warning(f"⚠️ 自治模式模块未找到: {e}")
         return {}
@@ -245,15 +240,10 @@ async def run_autonomous_mode():
 
 # ========== 主入口 ==========
 async def main():
-    """
-    主入口 - 根据 AUTONOMOUS_MODE 环境变量选择运行模式
-    """
     if AUTONOMOUS_MODE:
         logger.info("🔀 根据 AUTONOMOUS_MODE=true 启用自治模式")
         logger.info("📌 自治模式将先发现新源，然后执行传统模式完整采集")
-        
         await run_autonomous_mode()
-        
         logger.info("=" * 60)
         logger.info("🔄 执行传统模式完整采集...")
         logger.info("=" * 60)
