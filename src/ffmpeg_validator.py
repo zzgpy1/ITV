@@ -3,8 +3,10 @@ import asyncio
 import subprocess
 import json
 import time
+import atexit
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+
 from src.config import FFMPEG_ENABLE, TIMEOUT, FFMPEG_WORKERS, FFMPEG_MODE, FFPROBE_CACHE_HOURS
 from src.database import get_db_cache, channel_key
 from src.logger import logger
@@ -17,7 +19,7 @@ def get_thread_pool():
     global _thread_pool
     if _thread_pool is None:
         _thread_pool = ThreadPoolExecutor(max_workers=FFMPEG_WORKERS)
-        atexit.register(cleanup)  # 注册清理
+        atexit.register(cleanup)
     return _thread_pool
 
 def check_ffprobe_sync():
@@ -84,12 +86,6 @@ async def get_cached_probe_result(db, url: str) -> dict:
         pass
     return None
 
-def cleanup():
-    global _thread_pool
-    if _thread_pool:
-        _thread_pool.shutdown(wait=False)
-        _thread_pool = None
-
 async def save_probe_result(db, url: str, result: dict):
     try:
         await db._conn.execute(
@@ -126,7 +122,6 @@ async def validate_batch(channels: list) -> list:
     db = await get_db_cache()
     await ensure_ffprobe_table(db)
 
-    # 获取稳定源列表
     stable_mgr = StableManager()
     stable_names = set(stable_mgr.get_active_sources().keys())
 
@@ -141,14 +136,11 @@ async def validate_batch(channels: list) -> list:
                 ch["video_codec"] = cached.get("video_codec", "")
                 cached_valid.append(ch)
             continue
-        # 检查是否在稳定池中
-        if ch['name'] in stable_names and ch['name']:  # 确保有名字
-            # 稳定源，仅做HTTP快速检查
+        if ch['name'] in stable_names and ch['name']:
             if await quick_http_check(ch['url'], timeout=2):
-                ch['video_codec'] = 'h264'  # 标记为通过
+                ch['video_codec'] = 'h264'
                 http_only.append(ch)
             else:
-                # 快速检查失败，加入需验证列表
                 need_validate.append(ch)
         else:
             need_validate.append(ch)
