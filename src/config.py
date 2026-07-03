@@ -24,9 +24,15 @@ RAW_SOURCES = [
 DIRECT_SOURCES = [
     "https://tv.19860519.xyz/abc123",
 ]
-JP_SOURCES = [
-    "https://iptv-org.github.io/iptv/countries/jp.m3u",
+
+# ========== GitHub 代理配置（用于拉取 raw.githubusercontent.com 源） ==========
+ENABLE_GITHUB_PROXY = os.getenv("ENABLE_GITHUB_PROXY", "false").lower() == "true"
+GITHUB_RAW_PROXIES = [
+    "https://ghproxy.net/",
+    "https://gh-proxy.19860519.xyz/",
+    "https://raw.kkgithub.com/",
 ]
+GITHUB_PROXY_TIMEOUT = 15
 
 # 简单的代理支持（可在 GitHub Actions 中禁用）
 PROXY = os.getenv("GITHUB_ACTIONS", "false") == "true" and "" or "https://gh-proxy.19860519.xyz/"
