@@ -10,7 +10,7 @@ CCTV-7,http://74.91.26.218:82/live/cctv7hd.m3u8
 CCTV-8,http://198.204.240.250:82/live/cctv8k.m3u8
 CCTV-9,http://112.27.235.94:8000/hls/10/index.m3u8
 CCTV-10,http://74.91.26.218:82/live/cctv10hd.m3u8
-CCTV-11,http://112.27.235.94:8000/hls/12/index.m3u8
+CCTV-11,http://74.91.26.218:82/live/cctv11hd.m3u8
 CCTV-12,http://74.91.26.218:82/live/cctv12hd.m3u8
 CCTV-13,http://74.91.26.218:82/live/cctv13hd.m3u8
 CCTV-14,http://74.91.26.218:82/live/cctv14hd.m3u8
@@ -67,7 +67,7 @@ Bread TV面包台,https://video.bread-tv.com:8091/hls-live24/online/index.m3u8
 ☘️北京频道,#genre#
 耀才财经,https://v3.mediacast.hk/webcast/bshdlive-pc/chunklist_w99771165.m3u8
 ☘️上海频道,#genre#
-舒兰新闻综合,http://stream8.jlntv.cn/shulan/sd/live.m3u8?_upt=332db6421699196585
+铜陵新闻综合,https://ls.qingting.fm/live/21303/64k.m3u8
 普陀山,https://gcalic.v.myalicdn.com/gc/pts01_1/index.m3u8
 ☘️天津频道,#genre#
 天津卫视,http://112.27.235.94:8000/hls/42/index.m3u8
@@ -91,10 +91,10 @@ Bread TV面包台,https://video.bread-tv.com:8091/hls-live24/online/index.m3u8
 浙江民生,https://ali-m-l.cztv.com/channels/lantian/channel006/1080p.m3u8
 浙江新闻,https://ali-m-l.cztv.com/channels/lantian/channel007/1080p.m3u8
 浙江少儿,https://ali-m-l.cztv.com/channels/lantian/channel008/1080p.m3u8
-浙江教科,https://ali-m-l.cztv.com/channels/lantian/channel004/1080p.m3u8
+浙江教科,http://ali-m-l.cztv.com/channels/lantian/channel004/1080p.m3u8
 浙江经视,http://ali-m-l.cztv.com/channels/lantian/channel003/720p.m3u8
 浙江国际,https://ali-m-l.cztv.com/channels/lantian/channel010/1080p.m3u8
-之江纪录,https://ali-m-l.cztv.com/channels/lantian/channel12/720p.m3u8
+之江纪录,https://ali-m-l.cztv.com/channels/lantian/channel012/1080p.m3u8
 浙江数码时代,http://ali-m-l.cztv.com/channels/lantian/channel12/720p.m3u8
 浙江公共新闻,http://ali-m-l.cztv.com/channels/lantian/channel07/1080p.m3u8
 浙江休闲台,http://ali-m-l.cztv.com/channels/lantian/channel006/720p.m3u8
@@ -121,6 +121,7 @@ Bread TV面包台,https://video.bread-tv.com:8091/hls-live24/online/index.m3u8
 固镇新闻,http://www.guzhenm.com:7001/hls/hd-live.m3u8?%E5%85%B3%E6%B3%A8%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7[%E6%99%B4%E5%9B%AD]
 黄山,https://gcalic.v.myalicdn.com/gc/ahhs01_1/index.m3u8
 铜陵新闻综合,https://ls.qingting.fm/live/21303/64k.m3u8
+祁门综合,http://zbbf2.ahbztv.com/live/416.m3u8?zanhd
 七台河新闻综合,http://live.qthnews.org.cn:1935/live/live1/800k/tzwj_video.m3u8
 亳州农村,http://zbbf2.ahbztv.com/live/418.m3u8
 RT News,https://rt-glb.rttv.com/dvr/rtnews/playlist_4500Kb.m3u8
@@ -131,7 +132,6 @@ RT News,https://rt-glb.rttv.com/dvr/rtnews/playlist_4500Kb.m3u8
 ☘️江西频道,#genre#
 ☘️山东频道,#genre#
 ☘️河南频道,#genre#
-河南公共,http://1.94.31.214/php/hntv.php?id=hngg
 河南法治,http://1.94.31.214/php/hntv.php?id=hmfz
 河南乡村,http://1.94.31.214/php/hntv.php?id=hnxc
 ☘️湖北频道,#genre#
@@ -221,7 +221,7 @@ CHC电影,http://183.237.95.108:9901/tsfile/live/1008_1.m3u8?key=txiptv&playlive
 珲春新闻,http://stream8.jlntv.cn/hctv/sd/live.m3u8?zjild
 白山公共,http://stream8.jlntv.cn/baishan2/playlist.m3u8?zjild
 磐石,http://stream5.jlntv.cn/ps/sd/live.m3u8?zjild
-舒兰新闻,http://stream8.jlntv.cn/shulan/sd/live.m3u8?zjild
+舒兰新闻综合,http://stream8.jlntv.cn/shulan/sd/live.m3u8?_upt=332db6421699196585
 辉南新闻综合,http://stream5.jlntv.cn/hn/sd/live.m3u8
 通化县,http://stream5.jlntv.cn/thx/sd/live.m3u8?zjild
 长白山电视台,http://stream8.jlntv.cn/cbstv/sd/live.m3u8?zjild
@@ -249,7 +249,6 @@ CHC电影,http://183.237.95.108:9901/tsfile/live/1008_1.m3u8?key=txiptv&playlive
 河公共,http://tmpstream.hyrtv.cn/hygg/sd/live.m3u8
 ☘️河北频道,#genre#
 河北,https://event.pull.hebtv.com:443/live/live101.m3u8
-河北公共,http://1.94.31.214/php/hebei.php?id=hbgg
 河北农民,https://ls.qingting.fm/live/1650/64k.m3u8
 河北卫视,http://61.136.172.236:9901/tsfile/live/0117_1.m3u8
 河北少儿,http://1.94.31.214/php/hebei.php?id=sekj
@@ -258,6 +257,7 @@ CHC电影,http://183.237.95.108:9901/tsfile/live/1008_1.m3u8?key=txiptv&playlive
 河北都市,http://1.94.31.214/php/hebei.php?id=hbds
 滦平新闻,http://jwplay.hebyun.com.cn/live/LPTV001/1500k/tzwj_video.m3u8
 邢台综合,https://jwplay.hebyun.com.cn:443/live/xtsrmtzs/1500k/tzwj_video.m3u8
+邯郸科技教育,https://jwcdnqx.hebyun.com.cn/live/hdkj/1500k/tzwj_video.m3u8
 🌊港·澳·台,#genre#
 环球电视,http://utv1.hqtvzb.com:9999/hls/world.m3u8
 台视新闻,http://38.64.72.148/hls/modn/list/4013/chunklist1.m3u8
@@ -2106,6 +2106,7 @@ CGTN Radio,http://45.192.97.170:8880/play/5813.m3u8
 湖南交通广播,http://45.192.97.170:8880/play/5839.m3u8
 湖南金鹰之声,http://45.192.97.170:8880/play/5840.m3u8
 湖南综合广播,http://45.192.97.170:8880/play/5841.m3u8
+江苏故事广播,http://45.192.97.170:8880/play/5842.m3u8
 江苏新闻综合广播,http://45.192.97.170:8880/play/5843.m3u8
 江苏新闻广播,http://45.192.97.170:8880/play/5844.m3u8
 江苏文艺广播,http://45.192.97.170:8880/play/5845.m3u8
@@ -2131,6 +2132,7 @@ CGTN Radio,http://45.192.97.170:8880/play/5813.m3u8
 福建交通广播,http://45.192.97.170:8880/play/5869.m3u8
 福建经济广播,http://45.192.97.170:8880/play/5870.m3u8
 福建东南广播,http://45.192.97.170:8880/play/5871.m3u8
+江西综合新闻广播,http://45.192.97.170:8880/play/5872.m3u8
 江西信息交通广播,http://45.192.97.170:8880/play/5874.m3u8
 山东交通广播,http://45.192.97.170:8880/play/5877.m3u8
 山东体育休闲广播,http://45.192.97.170:8880/play/5878.m3u8
@@ -2147,6 +2149,7 @@ CGTN Radio,http://45.192.97.170:8880/play/5813.m3u8
 浙江城市之声,http://45.192.97.170:8880/play/5891.m3u8
 浙江旅游之声,http://45.192.97.170:8880/play/5892.m3u8
 重庆都市广播·私家车938,http://45.192.97.170:8880/play/5893.m3u8
+广东新闻广播,http://45.192.97.170:8880/play/5894.m3u8
 广东股市广播,http://45.192.97.170:8880/play/5895.m3u8
 广东文体广播,http://45.192.97.170:8880/play/5896.m3u8
 广东城市之声,http://45.192.97.170:8880/play/5897.m3u8
@@ -2155,6 +2158,7 @@ CGTN Radio,http://45.192.97.170:8880/play/5813.m3u8
 南方生活广播,http://45.192.97.170:8880/play/5900.m3u8
 羊城交通广播,http://45.192.97.170:8880/play/5901.m3u8
 深圳交通广播,http://45.192.97.170:8880/play/5902.m3u8
+海南新闻广播,http://45.192.97.170:8880/play/5903.m3u8
 海南交通广播,http://45.192.97.170:8880/play/5904.m3u8
 四川交通广播,http://45.192.97.170:8880/play/5907.m3u8
 四川综合广播四川之声,http://45.192.97.170:8880/play/5908.m3u8
@@ -2171,6 +2175,7 @@ CGTN Radio,http://45.192.97.170:8880/play/5813.m3u8
 吉林新闻综合广播,http://45.192.97.170:8880/play/5919.m3u8
 吉林交通广播,http://45.192.97.170:8880/play/5920.m3u8
 吉林乡村广播,http://45.192.97.170:8880/play/5921.m3u8
+延边新闻广播,http://45.192.97.170:8880/play/5922.m3u8
 辽宁之声,http://45.192.97.170:8880/play/5923.m3u8
 辽宁乡村广播,http://45.192.97.170:8880/play/5924.m3u8
 辽宁经济广播,http://45.192.97.170:8880/play/5925.m3u8
@@ -2196,6 +2201,7 @@ CGTN Radio,http://45.192.97.170:8880/play/5813.m3u8
 新疆交通广播,http://45.192.97.170:8880/play/5947.m3u8
 新疆私家车广播,http://45.192.97.170:8880/play/5948.m3u8
 新疆绿色广播,http://45.192.97.170:8880/play/5949.m3u8
+西藏都市生活广播,http://45.192.97.170:8880/play/5950.m3u8
 西藏对外交通广播,http://45.192.97.170:8880/play/5951.m3u8
 西藏汉语广播,http://45.192.97.170:8880/play/5952.m3u8
 西藏藏语广播,http://45.192.97.170:8880/play/5953.m3u8
