@@ -57,8 +57,10 @@ class SourceDiscoverer:
                 with open(self.pool_db_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     for key, value in data.items():
-                        value["discovered_at"] = datetime.fromisoformat(value["discovered_at"])
-                        if value.get("last_check"):
+                        # 兼容旧数据：如果日期是字符串，直接转 datetime
+                        if isinstance(value.get("discovered_at"), str):
+                            value["discovered_at"] = datetime.fromisoformat(value["discovered_at"])
+                        if value.get("last_check") and isinstance(value["last_check"], str):
                             value["last_check"] = datetime.fromisoformat(value["last_check"])
                         self.pool[key] = RawSource.from_dict(value)
                 logger.info(f"📦 加载源池: {len(self.pool)} 个源")
@@ -66,21 +68,21 @@ class SourceDiscoverer:
                 logger.warning(f"加载源池失败: {e}")
                 self.pool = {}
     
-def _save_pool(self):
-    try:
-        data = {}
-        for key, value in self.pool.items():
-            item = value.to_dict()
-            # 确保日期字段是 datetime 对象，如果是字符串则跳过
-            if isinstance(item.get("discovered_at"), datetime):
-                item["discovered_at"] = item["discovered_at"].isoformat()
-            if item.get("last_check") and isinstance(item["last_check"], datetime):
-                item["last_check"] = item["last_check"].isoformat()
-            data[key] = item
-        with open(self.pool_db_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-    except Exception as e:
-        logger.error(f"保存源池失败: {e}")
+    def _save_pool(self):
+        try:
+            data = {}
+            for key, value in self.pool.items():
+                item = value.to_dict()
+                # 确保日期字段是 datetime 对象再转换
+                if isinstance(item.get("discovered_at"), datetime):
+                    item["discovered_at"] = item["discovered_at"].isoformat()
+                if item.get("last_check") and isinstance(item["last_check"], datetime):
+                    item["last_check"] = item["last_check"].isoformat()
+                data[key] = item
+            with open(self.pool_db_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            logger.error(f"保存源池失败: {e}")
     
     async def discover(self, db=None, filter_domestic: bool = True, force_refresh: bool = False) -> Dict[str, List[RawSource]]:
         """发现新源，按频道名分组"""
