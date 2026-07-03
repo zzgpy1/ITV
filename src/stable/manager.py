@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from src.logger import logger
-from src.config import OUTPUT_DIR
+from src.config import OUTPUT_DIR, ENABLE_FIXED_OPTIMIZATION, FIXED_OPTIMIZATION_THRESHOLD
 from src.stable.models import StableSource, StableStatus
 
 
@@ -64,8 +64,11 @@ class StableManager:
         logger.info(f"✅ {channel_name} 已提升为稳定源: {url[:80]}...")
         return True
     
-    def set_fixed_source(self, channel_name: str, url: str, auto_optimize: bool = False) -> bool:
-        """设置固定源（用户明确保留，不会被自动替换）"""
+    def set_fixed_source(self, channel_name: str, url: str, auto_optimize: bool = True) -> bool:
+        """
+        设置固定源（用户明确保留，不会被自动替换）
+        auto_optimize: 是否允许自动优化（默认 True，即允许系统在找到更优源时替换）
+        """
         if not url:
             return False
         self.stable_sources[channel_name] = StableSource(
@@ -81,6 +84,78 @@ class StableManager:
         self._save()
         logger.info(f"📌 {channel_name} 已设为固定源 (自动优化: {auto_optimize})")
         return True
+
+    def optimize_fixed_sources(self, all_sources_by_channel: Dict[str, List[Dict]], 
+                               candidate_observer=None) -> int:
+        """
+        对固定源进行动态优化，选择当前延迟最低的源作为固定源。
+        all_sources_by_channel: {channel_name: [{'url': str, 'latency': int, 'success_count': int, 'fail_count': int}, ...]}
+        candidate_observer: 可选，用于将被替换的旧源加入候选池
+        返回被替换的固定源数量
+        """
+        if not ENABLE_FIXED_OPTIMIZATION:
+            return 0
+
+        fixed_sources = {name: src for name, src in self.stable_sources.items() if src.is_fixed}
+        if not fixed_sources:
+            return 0
+
+        optimized_count = 0
+
+        for channel_name, current_src in fixed_sources.items():
+            if not current_src.auto_optimize:
+                continue
+
+            candidates = all_sources_by_channel.get(channel_name, [])
+            if not candidates:
+                continue
+
+            # 过滤掉无效数据
+            valid_candidates = []
+            for c in candidates:
+                lat = c.get('latency', 0)
+                if lat <= 0:
+                    continue
+                # 要求至少成功 2 次，失败不超过 3 次
+                if c.get('success_count', 0) < 2:
+                    continue
+                if c.get('fail_count', 0) > 3:
+                    continue
+                valid_candidates.append(c)
+
+            if not valid_candidates:
+                continue
+
+            # 按延迟排序，选最低的
+            best = min(valid_candidates, key=lambda x: x['latency'])
+
+            # 如果最佳源就是当前固定源，跳过
+            if best['url'] == current_src.url:
+                continue
+
+            # 检查延迟改进是否显著（差值大于阈值）
+            improvement = current_src.latency - best['latency']
+            if improvement <= FIXED_OPTIMIZATION_THRESHOLD:
+                continue
+
+            # 执行替换
+            old_url = current_src.url
+            new_url = best['url']
+            new_latency = best['latency']
+
+            logger.info(f"🔄 固定源优化: {channel_name} 延迟 {current_src.latency}ms -> {new_latency}ms (改进 {improvement}ms)")
+            # 替换
+            self.replace_source(channel_name, new_url, new_latency, best.get('video_codec', ''))
+            optimized_count += 1
+
+            # 将旧源加入候选池（如果提供了observer）
+            if candidate_observer:
+                from src.database import channel_key
+                old_key = channel_key(channel_name, old_url)
+                candidate_observer.add_candidate(old_key, channel_name, old_url)
+                logger.debug(f"📥 旧源已加入候选池: {old_url[:50]}...")
+
+        return optimized_count
     
     def set_auto_optimize(self, channel_name: str, enabled: bool) -> bool:
         """切换固定源的自动优化开关"""
