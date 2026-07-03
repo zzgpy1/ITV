@@ -4,9 +4,8 @@
 所有配置项从 settings 模块导入，保持原有变量名不变
 """
 
-from src.config.settings import settings
+from src.settings import settings
 
-# 导出 settings 中的变量，保持旧代码的 `from src.config import XXX` 正常工作
 ROOT_DIR = settings.ROOT_DIR
 DATA_DIR = settings.DATA_DIR
 OUTPUT_DIR = settings.OUTPUT_DIR
@@ -59,15 +58,14 @@ FIXED_OPTIMIZATION_THRESHOLD = settings.FIXED_OPTIMIZATION_THRESHOLD
 IPTV_SOURCES = settings.IPTV_SOURCES
 HEADERS = settings.HEADERS
 
-# 以下变量原有，保持不变
 RAW_SOURCES = settings.RAW_SOURCES
 DIRECT_SOURCES = settings.DIRECT_SOURCES
 ENABLE_GITHUB_PROXY = settings.ENABLE_GITHUB_PROXY
 GITHUB_RAW_PROXIES = settings.GITHUB_RAW_PROXIES
 GITHUB_PROXY_TIMEOUT = settings.GITHUB_PROXY_TIMEOUT
-PROXY = ""  # 旧代码中可能有，但已由 settings 管理
+PROXY = ""
 
-# EPG 相关（已废弃，但保留变量以免报错）
+# 以下为原有常量，保持不变
 M3U_FILE = "tv.m3u"
 TXT_FILE = "tv.txt"
 OUTPUT_CATEGORY_ORDER = ["央视", "卫视", "地方", "港澳台"]
@@ -80,19 +78,17 @@ CCTV_ORDER = [
     "CGTN法语", "CGTN纪录", "CGTN西语", "CGTN阿语"
 ]
 
-# 重试配置
 ENABLE_RETRY = True
 RETRY_MAX_ATTEMPTS = 3
 RETRY_BACKOFF_FACTOR = 2
 RETRY_MAX_WAIT = 60
 
-# 缓存相关
 DEMO_FILE = ROOT_DIR / "demo.txt"
 ALIAS_FILE = ROOT_DIR / "alias.txt"
 BLACKLIST_FILE = ROOT_DIR / "blacklist.txt"
 DATABASE_PATH = DATA_DIR / "iptv_cache.db"
 
-# 补充常量（来自 constants 模块，但为避免循环，直接导入）
+# 从 constants 导入省份等（避免重复定义）
 from src.constants import PROVINCES, CCTV_ORDER as CCTVSORT, HK_MACAU_TAIWAN_KEYWORDS
 PROVINCES = PROVINCES
 HK_MACAU_TAIWAN_KEYWORDS = HK_MACAU_TAIWAN_KEYWORDS
