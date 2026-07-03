@@ -50,7 +50,6 @@ class IPTVOrchestrator:
         CandidateObserver.MAX_AVG_LATENCY = CANDIDATE_MAX_LATENCY
 
     async def predict_failure_probability(self, channel_key: str) -> float:
-        """基于历史速度数据预测未来7天失效概率"""
         if not self.db:
             self.db = await get_db_cache()
         history = await self.db.get_speed_history(channel_key, days=HEALTH_HISTORY_DAYS)
@@ -67,7 +66,6 @@ class IPTVOrchestrator:
         return 0.0
 
     async def auto_replace_if_risky(self):
-        """检查所有稳定源，如果预测失效概率高于阈值，则从候选池提拔替补"""
         if not self.db:
             self.db = await get_db_cache()
         stable = self.stable_manager.get_active_sources()
@@ -75,7 +73,7 @@ class IPTVOrchestrator:
         replaced = 0
         for name, src in stable.items():
             if src.is_fixed and not src.auto_optimize:
-                continue
+               continue
             key = channel_key(name, src.url)
             prob = await self.predict_failure_probability(key)
             if prob > PREDICT_THRESHOLD:
@@ -157,6 +155,7 @@ class IPTVOrchestrator:
         logger.info("阶段3: 提升稳定源")
         logger.info("=" * 50)
         try:
+            # 如果没有传入稳定候选，则从观察者获取所有已稳定的
             if stable_candidates is None:
                 stable_candidates = self.candidate_observer.get_stable_candidates()
             if not stable_candidates:
@@ -199,10 +198,13 @@ class IPTVOrchestrator:
             self.db = await get_db_cache()
             if not skip_discover:
                 await self.discover_phase()
+                # 有发现才需要观察
+                stable_candidates = await self.observe_phase()
+                await self.promote_phase(stable_candidates)
             else:
                 logger.info("⏭️ 跳过发现阶段")
-            stable_candidates = await self.observe_phase()
-            await self.promote_phase(stable_candidates)
+                # 直接提升所有已稳定的候选源（无需再次观察）
+                await self.promote_phase(None)  # 提升所有稳定候选
             replaced = await self.auto_replace_if_risky()
             if replaced:
                 logger.info(f"🔄 已预替换 {replaced} 个高风险源")
