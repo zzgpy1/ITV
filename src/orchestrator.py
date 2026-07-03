@@ -2,7 +2,7 @@
 import asyncio
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from src.logger import logger
 from src.database import get_db_cache, channel_key
@@ -15,7 +15,8 @@ from src.config import (
     CANDIDATE_OBSERVATION_HOURS, CANDIDATE_MIN_SUCCESS,
     CANDIDATE_MIN_SUCCESS_RATE, CANDIDATE_MAX_LATENCY,
     HEALTH_HISTORY_DAYS, PREDICT_THRESHOLD,
-    AUTO_PROMOTE_THRESHOLD, SLOW_SPEED_THRESHOLD
+    AUTO_PROMOTE_THRESHOLD, SLOW_SPEED_THRESHOLD,
+    MAX_WORKERS, TIMEOUT
 )
 from src.demo_filter import parse_demo_order_with_categories
 from src.generator import generate_outputs_from_demo
@@ -69,7 +70,17 @@ class IPTVOrchestrator:
         if not self.db:
             self.db = await get_db_cache()
         stable = self.stable_manager.get_active_sources()
-        candidates = await self.db.get_candidates_for_promotion()
+        # 分批获取候选
+        candidates = []
+        offset = 0
+        limit = 500
+        while True:
+            batch = await self.db.get_candidates_for_promotion(limit=limit)
+            if not batch:
+                break
+            candidates.extend(batch)
+            if len(batch) < limit:
+                break
         replaced = 0
         for name, src in stable.items():
             if src.is_fixed and not src.auto_optimize:
@@ -155,26 +166,43 @@ class IPTVOrchestrator:
         logger.info("阶段3: 提升稳定源")
         logger.info("=" * 50)
         try:
-            # 如果没有传入稳定候选，则从观察者获取所有已稳定的
             if stable_candidates is None:
-                stable_candidates = self.candidate_observer.get_stable_candidates()
+                # 分批获取所有稳定候选
+                all_candidates = []
+                offset = 0
+                limit = 500
+                while True:
+                    # 直接从 candidate_observer 获取稳定候选列表（内存中）
+                    # 但为了分页，我们使用数据库查询
+                    if not self.db:
+                        self.db = await get_db_cache()
+                    batch = await self.db.get_candidates_for_promotion(limit=limit)
+                    if not batch:
+                        break
+                    all_candidates.extend(batch)
+                    if len(batch) < limit:
+                        break
+                stable_candidates = all_candidates
             if not stable_candidates:
                 logger.info("📭 没有稳定的候选源需要提升")
                 return 0
             before_count = len(self.stable_manager.get_active_sources())
             promoted_count = 0
             for obs in stable_candidates[:50]:
-                existing = self.stable_manager.stable_sources.get(obs.channel_name)
+                # obs 是字典，包含 name, url, latency 等
+                existing = self.stable_manager.stable_sources.get(obs['name'])
                 if existing and existing.is_fixed:
                     continue
-                if existing and existing.latency < obs.avg_latency:
+                if existing and existing.latency < obs['latency']:
                     continue
                 if self.stable_manager.promote_candidate(
-                    obs.channel_name, obs.url, obs.avg_latency, ""
+                    obs['name'], obs['url'], obs['latency'], ""
                 ):
                     promoted_count += 1
-                    self.candidate_observer.mark_promoted(obs.source_key)
-                    logger.info(f"📌 已提升: {obs.channel_name}")
+                    # 标记候选为已提升
+                    source_key = obs.get('key') or channel_key(obs['name'], obs['url'])
+                    self.candidate_observer.mark_promoted(source_key)
+                    logger.info(f"📌 已提升: {obs['name']}")
             self.stats["total_promoted"] += promoted_count
             self.stats["new_stable_count"] = promoted_count
             after_count = len(self.stable_manager.get_active_sources())
@@ -198,13 +226,11 @@ class IPTVOrchestrator:
             self.db = await get_db_cache()
             if not skip_discover:
                 await self.discover_phase()
-                # 有发现才需要观察
                 stable_candidates = await self.observe_phase()
                 await self.promote_phase(stable_candidates)
             else:
                 logger.info("⏭️ 跳过发现阶段")
-                # 直接提升所有已稳定的候选源（无需再次观察）
-                await self.promote_phase(None)  # 提升所有稳定候选
+                await self.promote_phase(None)
             replaced = await self.auto_replace_if_risky()
             if replaced:
                 logger.info(f"🔄 已预替换 {replaced} 个高风险源")
