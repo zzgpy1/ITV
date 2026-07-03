@@ -4,10 +4,13 @@ import aiohttp
 import time
 import re
 from tqdm.asyncio import tqdm
-from src.config import HEADERS, HTTP_TIMEOUT, DOWNLOAD_CHUNK_SIZE, MAX_RETRY_BEFORE_BLACKLIST, SLOW_SPEED_THRESHOLD
+
+from src.config import (
+    HEADERS, HTTP_TIMEOUT, DOWNLOAD_CHUNK_SIZE, MAX_RETRY_BEFORE_BLACKLIST,
+    SLOW_SPEED_THRESHOLD, CACHE_SPEED_HOURS
+)
 from src.database import get_db_cache, channel_key
 from src.logger import logger
-from src.config import settings
 
 AD_PATTERNS = [
     r'ads?\.', r'adserver', r'doubleclick', r'googlead', r'googlesyndication',
@@ -28,33 +31,24 @@ def is_suspicious_url(url: str) -> bool:
     return False
 
 def get_channel_quality_score(channel: dict) -> tuple:
-    # 固定源优先级最高
     if channel.get("is_fixed"):
         return (0, 0, 0, 0)
-    
     latency = channel.get("latency", 9999)
-    speed = channel.get("speed", 0)  # KB/s
-    # 速度越高越好，但延迟更重要，所以组合: 延迟优先，速度次之
-    # 将速度转换为负数，使得高速度排在前面
+    speed = channel.get("speed", 0)
     return (1 if latency < 2000 else 2, latency, -speed)
-    
+
 async def probe_channel_advanced(session: aiohttp.ClientSession, channel: dict, db) -> tuple:
+    """
+    返回 (channel, latency, is_valid, speed, is_slow)
+    """
     url = channel["url"]
     if await db.is_blacklisted(url):
         logger.debug(f"⛔ 黑名单跳过: {url[:80]}")
         return channel, 0, False, 0, False
-    
+
     key = channel_key(channel["name"], url)
-    # 检查缓存，使用配置的 CACHE_SPEED_HOURS
-    cached = await db.get_speed_result(key, max_age_hours=settings.CACHE_SPEED_HOURS)
-    if cached and cached.get("latency", 9999) < SLOW_SPEED_THRESHOLD:
-        channel["latency"] = cached["latency"]
-        channel["video_codec"] = cached.get("video_codec", "")
-        return channel, cached["latency"], True, 0, False
-    
-    # 缓存检查
-    key = channel_key(channel["name"], url)
-    cached = await db.get_speed_result(key)
+    # 检查缓存，使用 CACHE_SPEED_HOURS
+    cached = await db.get_speed_result(key, max_age_hours=CACHE_SPEED_HOURS)
     if cached and cached.get("latency", 9999) < SLOW_SPEED_THRESHOLD:
         channel["latency"] = cached["latency"]
         channel["video_codec"] = cached.get("video_codec", "")
@@ -62,7 +56,6 @@ async def probe_channel_advanced(session: aiohttp.ClientSession, channel: dict, 
 
     try:
         start = time.time()
-        # HEAD 请求
         async with session.head(url, timeout=5, allow_redirects=True, headers=HEADERS) as resp:
             if resp.status != 200:
                 await db.increment_fail_count(url)
@@ -71,24 +64,21 @@ async def probe_channel_advanced(session: aiohttp.ClientSession, channel: dict, 
             if "video" not in content_type and "mpegurl" not in content_type and "x-mpegurl" not in content_type:
                 await db.increment_fail_count(url)
                 return channel, 0, False, 0, False
-        
+
         head_latency = int((time.time() - start) * 1000)
         start_download = time.time()
-        # 分段下载
         async with session.get(url, timeout=HTTP_TIMEOUT, headers={**HEADERS, "Range": f"bytes=0-{DOWNLOAD_CHUNK_SIZE-1}"}) as resp:
             if resp.status not in [200, 206]:
                 await db.increment_fail_count(url)
                 return channel, head_latency, False, 0, False
-            
+
             data = await resp.content.read(DOWNLOAD_CHUNK_SIZE)
-            # 检查无效内容
             data_lower = data.lower()
             for pattern in INVALID_CONTENT_PATTERNS:
                 if re.search(pattern.encode(), data_lower):
                     await db.increment_fail_count(url)
                     return channel, head_latency, False, 0, False
-            
-            # 视频格式检测
+
             is_valid = False
             if data.startswith(b'#EXTM3U') or b'#EXTINF' in data:
                 is_valid = True
@@ -97,11 +87,11 @@ async def probe_channel_advanced(session: aiohttp.ClientSession, channel: dict, 
                     if data.startswith(sig):
                         is_valid = True
                         break
-            
+
             if not is_valid:
                 await db.increment_fail_count(url)
                 return channel, head_latency, False, 0, False
-            
+
             download_time = time.time() - start_download
             speed = len(data) / download_time / 1024  # KB/s
             final_latency = head_latency + int(download_time * 1000)
@@ -118,24 +108,21 @@ async def test_channels_concurrent(channels_dict: dict) -> list:
     channels = list(channels_dict.values())
     valid = []
     semaphore = asyncio.Semaphore(20)
-    
+
     connector = aiohttp.TCPConnector(limit=20, limit_per_host=3)
     timeout_config = aiohttp.ClientTimeout(total=HTTP_TIMEOUT + 5)
     async with aiohttp.ClientSession(connector=connector, timeout=timeout_config) as session:
         tasks = []
         for ch in channels:
-            # 先查黑名单
             if await db.is_blacklisted(ch["url"]):
                 logger.debug(f"⛔ 黑名单跳过: {ch['url'][:80]}")
                 continue
             tasks.append(probe_channel_advanced(session, ch, db))
-        
-        # 使用信号量限制并发
+
         async def probe_with_semaphore(task):
             async with semaphore:
                 return await task
-        
-        # 进度条
+
         for coro in tqdm.as_completed([probe_with_semaphore(t) for t in tasks], desc="🔍 测速+过滤", unit="频道"):
             ch, latency, ok, speed, is_slow = await coro
             if ok:
@@ -145,7 +132,6 @@ async def test_channels_concurrent(channels_dict: dict) -> list:
                 await db.update_candidate_latency(key, latency, True)
                 await db.save_speed_history(key, ch["url"], latency, True)
                 if is_slow:
-                    # 慢速源放入候选池，暂不加入有效列表
                     await db.add_to_candidate(key, ch["name"], ch["url"], latency)
                     logger.debug(f"🐢 慢速源: {ch['name']} {latency}ms")
                 else:
