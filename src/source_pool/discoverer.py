@@ -52,16 +52,31 @@ class SourceDiscoverer:
         self._load_pool()
     
     def _load_pool(self):
+        """加载源池，安全处理日期字段"""
         if self.pool_db_path.exists():
             try:
                 with open(self.pool_db_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     for key, value in data.items():
-                        # 兼容旧数据：如果日期是字符串，直接转 datetime
-                        if isinstance(value.get("discovered_at"), str):
-                            value["discovered_at"] = datetime.fromisoformat(value["discovered_at"])
-                        if value.get("last_check") and isinstance(value["last_check"], str):
-                            value["last_check"] = datetime.fromisoformat(value["last_check"])
+                        # 安全解析日期
+                        def safe_parse_date(val):
+                            if val is None or val == "":
+                                return datetime.now()
+                            if isinstance(val, str):
+                                try:
+                                    return datetime.fromisoformat(val)
+                                except ValueError:
+                                    return datetime.now()
+                            if isinstance(val, datetime):
+                                return val
+                            return datetime.now()
+                        
+                        value["discovered_at"] = safe_parse_date(value.get("discovered_at"))
+                        if value.get("last_check") is not None:
+                            value["last_check"] = safe_parse_date(value["last_check"])
+                        else:
+                            value["last_check"] = None
+                        
                         self.pool[key] = RawSource.from_dict(value)
                 logger.info(f"📦 加载源池: {len(self.pool)} 个源")
             except Exception as e:
@@ -76,8 +91,12 @@ class SourceDiscoverer:
                 # 确保日期字段是 datetime 对象再转换
                 if isinstance(item.get("discovered_at"), datetime):
                     item["discovered_at"] = item["discovered_at"].isoformat()
+                else:
+                    item["discovered_at"] = datetime.now().isoformat()
                 if item.get("last_check") and isinstance(item["last_check"], datetime):
                     item["last_check"] = item["last_check"].isoformat()
+                else:
+                    item["last_check"] = None
                 data[key] = item
             with open(self.pool_db_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
