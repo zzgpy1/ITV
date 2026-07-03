@@ -269,14 +269,16 @@ async def run_legacy_mode():
 
 
 # ========== 自治模式 ==========
-async def run_autonomous_mode():
+async def run_autonomous_mode(skip_discover: bool = False):
     logger.info("=" * 60)
-    logger.info("🤖 IPTV 自治系统启动 (发现新源)")
+    logger.info("🤖 IPTV 自治系统启动 (观察并提升候选源)")
+    if skip_discover:
+        logger.info("⏭️ 跳过发现阶段，仅执行观察和提升")
     logger.info("=" * 60)
     try:
         from src.orchestrator import IPTVOrchestrator
         orchestrator = IPTVOrchestrator()
-        stats = await orchestrator.run_once()
+        stats = await orchestrator.run_once(skip_discover=skip_discover)
         new_stable_count = stats.get("new_stable_count", 0)
         logger.info("=" * 60)
         logger.info(f"📊 自治模式完成: 新提升 {new_stable_count} 个稳定源")
@@ -287,6 +289,18 @@ async def run_autonomous_mode():
     except Exception as e:
         logger.warning(f"⚠️ 自治模式运行失败: {e}")
         return {}
+
+async def main():
+    if AUTONOMOUS_MODE:
+        logger.info("🔀 根据 AUTONOMOUS_MODE=true 启用自治模式（先采集测速，再自治优化）")
+        # 1. 传统采集（含测速，更新候选池数据库）
+        await run_legacy_mode()
+        # 2. 自治模式（跳过发现，直接观察和提升）
+        await run_autonomous_mode(skip_discover=True)
+        return 0
+    else:
+        logger.info("🔀 根据 AUTONOMOUS_MODE=false 使用传统模式")
+        return await run_legacy_mode()
 
 
 # ========== 主入口 ==========
