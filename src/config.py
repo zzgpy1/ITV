@@ -1,67 +1,75 @@
 # src/config.py
-import os
-from pathlib import Path
+"""
+配置文件 - 向后兼容层
+所有配置项从 settings 模块导入，保持原有变量名不变
+"""
 
-ROOT_DIR = Path(__file__).parent.parent
-DATA_DIR = ROOT_DIR / "data"
-OUTPUT_DIR = ROOT_DIR / "output"
-DEMO_FILE = ROOT_DIR / "demo.txt"
-ALIAS_FILE = ROOT_DIR / "alias.txt"
-BLACKLIST_FILE = ROOT_DIR / "blacklist.txt"
-DATABASE_PATH = ROOT_DIR / "iptv_cache.db"
+from src.config.settings import settings
 
-# ========== IPTV 源地址配置 ==========
-RAW_SOURCES = [
-    "https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/cn.m3u",
-    "https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.txt",
-    "https://raw.githubusercontent.com/zzgpy1/iptv-api/master/output/result.txt",
-    "https://raw.githubusercontent.com/dogwalkerg/IPTV-collect-tv-txt/main/live.txt",
-    "https://raw.githubusercontent.com/zzgpy1/Collect-IPTV/main/best_sorted.m3u",
-    "https://raw.githubusercontent.com/YueChan/Live/main/IPTV.m3u",
-    "https://raw.githubusercontent.com/fanmingming/live/main/tv/m3u/ipv6.m3u",
-    "https://raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u",
-]
-DIRECT_SOURCES = [
-    "https://tv.19860519.xyz/abc123",
-]
+# 导出 settings 中的变量，保持旧代码的 `from src.config import XXX` 正常工作
+ROOT_DIR = settings.ROOT_DIR
+DATA_DIR = settings.DATA_DIR
+OUTPUT_DIR = settings.OUTPUT_DIR
 
-# ========== GitHub 代理配置（用于拉取 raw.githubusercontent.com 源） ==========
-ENABLE_GITHUB_PROXY = os.getenv("ENABLE_GITHUB_PROXY", "false").lower() == "true"
-GITHUB_RAW_PROXIES = [
-    "https://ghproxy.net/",
-    "https://gh-proxy.19860519.xyz/",
-    "https://raw.kkgithub.com/",
-]
-GITHUB_PROXY_TIMEOUT = 15
+MAX_WORKERS = settings.MAX_WORKERS
+TIMEOUT = settings.TIMEOUT
+HTTP_TIMEOUT = settings.HTTP_TIMEOUT
 
-# 简单的代理支持（可在 GitHub Actions 中禁用）
-PROXY = os.getenv("GITHUB_ACTIONS", "false") == "true" and "" or "https://gh-proxy.19860519.xyz/"
-IPTV_SOURCES = []
-for src in RAW_SOURCES:
-    IPTV_SOURCES.append(PROXY + src if PROXY else src)
-IPTV_SOURCES.extend(DIRECT_SOURCES)
+FFMPEG_ENABLE = settings.FFMPEG_ENABLE
+FFMPEG_MODE = settings.FFMPEG_MODE
+FFPROBE_CACHE_HOURS = settings.FFPROBE_CACHE_HOURS
+FFMPEG_WORKERS = settings.FFMPEG_WORKERS
 
-# ========== 性能配置 ==========
-MAX_WORKERS = int(os.getenv("MAX_WORKERS", 20))
-TIMEOUT = int(os.getenv("TIMEOUT", 8))
+CACHE_HOURS = settings.CACHE_HOURS
+CACHE_RAW_HOURS = settings.CACHE_RAW_HOURS
+CACHE_SPEED_HOURS = settings.CACHE_SPEED_HOURS
 
-# ffmpeg 配置
-FFMPEG_ENABLE = os.getenv("FFMPEG_ENABLE", "true").lower() == "true"
-FFMPEG_MODE = os.getenv("FFMPEG_MODE", "deep")
-FFPROBE_CACHE_HOURS = int(os.getenv("FFPROBE_CACHE_HOURS", 168))
-FFMPEG_WORKERS = min(MAX_WORKERS, 5)
+ENABLE_DEMO_FILTER = settings.ENABLE_DEMO_FILTER
+ENABLE_ALIAS = settings.ENABLE_ALIAS
+ENABLE_BLACKLIST = settings.ENABLE_BLACKLIST
+DATABASE_ENABLE = settings.DATABASE_ENABLE
+ENABLE_INCREMENTAL_FETCH = settings.ENABLE_INCREMENTAL_FETCH
+ENABLE_JSON_OUTPUT = settings.ENABLE_JSON_OUTPUT
+ENABLE_LITE_VERSION = settings.ENABLE_LITE_VERSION
+ENABLE_EPG_OUTPUT = settings.ENABLE_EPG_OUTPUT
+DEMO_MATCH_MODE = settings.DEMO_MATCH_MODE
 
-# 重试配置
-ENABLE_RETRY = True
-RETRY_MAX_ATTEMPTS = 3
-RETRY_BACKOFF_FACTOR = 2
-RETRY_MAX_WAIT = 60
+MAX_SOURCES_PER_CHANNEL = settings.MAX_SOURCES_PER_CHANNEL
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-}
+MAX_RETRY_BEFORE_BLACKLIST = settings.MAX_RETRY_BEFORE_BLACKLIST
+SLOW_SPEED_THRESHOLD = settings.SLOW_SPEED_THRESHOLD
+DOWNLOAD_CHUNK_SIZE = settings.DOWNLOAD_CHUNK_SIZE
 
-# 输出分类顺序
+AUTONOMOUS_MODE = settings.AUTONOMOUS_MODE
+AUTO_UPDATE_STABLE = settings.AUTO_UPDATE_STABLE
+AUTO_REPLACE_FAILED = settings.AUTO_REPLACE_FAILED
+QUALITY_CHECK_INTERVAL = settings.QUALITY_CHECK_INTERVAL
+CANDIDATE_OBSERVATION_HOURS = settings.CANDIDATE_OBSERVATION_HOURS
+CANDIDATE_MIN_SUCCESS = settings.CANDIDATE_MIN_SUCCESS
+CANDIDATE_MIN_SUCCESS_RATE = settings.CANDIDATE_MIN_SUCCESS_RATE
+CANDIDATE_MAX_LATENCY = settings.CANDIDATE_MAX_LATENCY
+AUTO_PROMOTE_THRESHOLD = settings.AUTO_PROMOTE_THRESHOLD
+
+HEALTH_HISTORY_DAYS = settings.HEALTH_HISTORY_DAYS
+PREDICT_THRESHOLD = settings.PREDICT_THRESHOLD
+
+ENABLE_FIXED_OPTIMIZATION = settings.ENABLE_FIXED_OPTIMIZATION
+FIXED_OPTIMIZATION_THRESHOLD = settings.FIXED_OPTIMIZATION_THRESHOLD
+
+IPTV_SOURCES = settings.IPTV_SOURCES
+HEADERS = settings.HEADERS
+
+# 以下变量原有，保持不变
+RAW_SOURCES = settings.RAW_SOURCES
+DIRECT_SOURCES = settings.DIRECT_SOURCES
+ENABLE_GITHUB_PROXY = settings.ENABLE_GITHUB_PROXY
+GITHUB_RAW_PROXIES = settings.GITHUB_RAW_PROXIES
+GITHUB_PROXY_TIMEOUT = settings.GITHUB_PROXY_TIMEOUT
+PROXY = ""  # 旧代码中可能有，但已由 settings 管理
+
+# EPG 相关（已废弃，但保留变量以免报错）
+M3U_FILE = "tv.m3u"
+TXT_FILE = "tv.txt"
 OUTPUT_CATEGORY_ORDER = ["央视", "卫视", "地方", "港澳台"]
 CCTV_ORDER = [
     "CCTV-1", "CCTV-2", "CCTV-3", "CCTV-4", "CCTV-5", "CCTV-5+", "CCTV-6",
@@ -72,76 +80,20 @@ CCTV_ORDER = [
     "CGTN法语", "CGTN纪录", "CGTN西语", "CGTN阿语"
 ]
 
-M3U_FILE = "tv.m3u"
-TXT_FILE = "tv.txt"
+# 重试配置
+ENABLE_RETRY = True
+RETRY_MAX_ATTEMPTS = 3
+RETRY_BACKOFF_FACTOR = 2
+RETRY_MAX_WAIT = 60
 
-CACHE_HOURS = int(os.getenv("CACHE_HOURS", 24))
-MAX_SOURCES_PER_CHANNEL = int(os.getenv("MAX_SOURCES_PER_CHANNEL", 3))
+# 缓存相关
+DEMO_FILE = ROOT_DIR / "demo.txt"
+ALIAS_FILE = ROOT_DIR / "alias.txt"
+BLACKLIST_FILE = ROOT_DIR / "blacklist.txt"
+DATABASE_PATH = DATA_DIR / "iptv_cache.db"
 
-ENABLE_DEMO_FILTER = os.getenv("ENABLE_DEMO_FILTER", "true").lower() == "true"
-ENABLE_ALIAS = os.getenv("ENABLE_ALIAS", "true").lower() == "true"
-ENABLE_BLACKLIST = os.getenv("ENABLE_BLACKLIST", "true").lower() == "true"
-DATABASE_ENABLE = os.getenv("DATABASE_ENABLE", "true").lower() == "true"
-DEMO_MATCH_MODE = os.getenv("DEMO_MATCH_MODE", "contains")
-
-CACHE_RAW_HOURS = int(os.getenv("CACHE_RAW_HOURS", 48))
-CACHE_SPEED_HOURS = int(os.getenv("CACHE_SPEED_HOURS", 24))
-ENABLE_INCREMENTAL_FETCH = os.getenv("ENABLE_INCREMENTAL_FETCH", "true").lower() == "true"
-
-ENABLE_JSON_OUTPUT = os.getenv("ENABLE_JSON_OUTPUT", "true").lower() == "true"
-ENABLE_LITE_VERSION = os.getenv("ENABLE_LITE_VERSION", "true").lower() == "true"
-ENABLE_EPG_OUTPUT = os.getenv("ENABLE_EPG_OUTPUT", "true").lower() == "true"
-
-ENABLE_FIXED_OPTIMIZATION = os.getenv("ENABLE_FIXED_OPTIMIZATION", "true").lower() == "true"
-FIXED_OPTIMIZATION_THRESHOLD = int(os.getenv("FIXED_OPTIMIZATION_THRESHOLD", 200))  # 延迟差值阈值（ms）
-
-# 自治模式
-AUTONOMOUS_MODE = os.getenv("AUTONOMOUS_MODE", "false").lower() == "true"
-AUTO_UPDATE_STABLE = os.getenv("AUTO_UPDATE_STABLE", "true").lower() == "true"
-AUTO_REPLACE_FAILED = os.getenv("AUTO_REPLACE_FAILED", "true").lower() == "true"
-QUALITY_CHECK_INTERVAL = int(os.getenv("QUALITY_CHECK_INTERVAL", 24))
-CANDIDATE_OBSERVATION_HOURS = int(os.getenv("CANDIDATE_OBSERVATION_HOURS", 24))
-CANDIDATE_MIN_SUCCESS = int(os.getenv("CANDIDATE_MIN_SUCCESS", 10))
-CANDIDATE_MIN_SUCCESS_RATE = float(os.getenv("CANDIDATE_MIN_SUCCESS_RATE", 0.8))
-CANDIDATE_MAX_LATENCY = int(os.getenv("CANDIDATE_MAX_LATENCY", 2000))
-
-# ========== 测速与黑名单 ==========
-HTTP_TIMEOUT = int(os.getenv("HTTP_TIMEOUT", 8))
-MAX_RETRY_BEFORE_BLACKLIST = 2
-SLOW_SPEED_THRESHOLD = 3000
-
-# ========== 自治模式 ==========
-AUTONOMOUS_MODE = os.getenv("AUTONOMOUS_MODE", "false").lower() == "true"
-AUTO_UPDATE_STABLE = os.getenv("AUTO_UPDATE_STABLE", "true").lower() == "true"
-AUTO_REPLACE_FAILED = os.getenv("AUTO_REPLACE_FAILED", "true").lower() == "true"
-QUALITY_CHECK_INTERVAL = int(os.getenv("QUALITY_CHECK_INTERVAL", 24))
-CANDIDATE_OBSERVATION_HOURS = int(os.getenv("CANDIDATE_OBSERVATION_HOURS", 24))
-CANDIDATE_MIN_SUCCESS = int(os.getenv("CANDIDATE_MIN_SUCCESS", 10))
-CANDIDATE_MIN_SUCCESS_RATE = float(os.getenv("CANDIDATE_MIN_SUCCESS_RATE", 0.8))
-CANDIDATE_MAX_LATENCY = int(os.getenv("CANDIDATE_MAX_LATENCY", 2000))
-
-# ========== 补充自治及数据库参数 ==========
-AUTO_PROMOTE_THRESHOLD = int(os.getenv("AUTO_PROMOTE_THRESHOLD", 3))
-CANDIDATE_MAX_AGE_HOURS = int(os.getenv("CANDIDATE_MAX_AGE_HOURS", 72))
-ENABLE_BLOOM_FILTER = os.getenv("ENABLE_BLOOM_FILTER", "true").lower() == "true"
-BLOOM_FILTER_CAPACITY = int(os.getenv("BLOOM_FILTER_CAPACITY", 100000))
-
-# ========== 健康度预测 ==========
-HEALTH_HISTORY_DAYS = int(os.getenv("HEALTH_HISTORY_DAYS", 30))
-PREDICT_THRESHOLD = float(os.getenv("PREDICT_THRESHOLD", 0.6))
-
-# ========== 下载与测速配置 ==========
-DOWNLOAD_CHUNK_SIZE = 262144  # 256KB，用于快速探测流内容
-PROGRESS_UPDATE_INTERVAL = 1.0  # 进度更新间隔（秒）
-
-# ========== 候选池与自动提升 ==========
-CANDIDATE_MAX_AGE_HOURS = 72
-AUTO_PROMOTE_THRESHOLD = 3
-
-# 测速与黑名单
-HTTP_TIMEOUT = int(os.getenv("HTTP_TIMEOUT", 8))
-MAX_RETRY_BEFORE_BLACKLIST = 2
-SLOW_SPEED_THRESHOLD = 3000
-
-HEALTH_HISTORY_DAYS = 30
-PREDICT_THRESHOLD = 0.6
+# 补充常量（来自 constants 模块，但为避免循环，直接导入）
+from src.constants import PROVINCES, CCTV_ORDER as CCTVSORT, HK_MACAU_TAIWAN_KEYWORDS
+PROVINCES = PROVINCES
+HK_MACAU_TAIWAN_KEYWORDS = HK_MACAU_TAIWAN_KEYWORDS
+CCTV_ORDER = CCTVSORT
