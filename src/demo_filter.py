@@ -271,9 +271,9 @@ def get_demo_category_for_province(province: str, demo_order: List[Tuple[str, st
 
 def filter_and_order_by_demo(channels: list) -> tuple:
     """
-    增强筛选：
+    增强筛选 + 智能追加：
     1. 匹配 demo 中的频道（支持拼音）
-    2. 未匹配的根据省份/城市自动归类到对应省份分类（包括地级市映射）
+    2. 未匹配的但测速有效的频道，按省份/城市自动追加到对应分类
     3. 港澳台统一归入 🌊港·澳·台
     4. 日本归入 日本频道
     5. 如果 demo_order 为空，则使用 classify_and_filter 按分类输出所有频道（仅保留四大类）
@@ -334,8 +334,12 @@ def filter_and_order_by_demo(channels: list) -> tuple:
     # 第二遍：未匹配频道自动归类到省份分类（港澳台统一归入 🌊港·澳·台，日本归入 日本频道）
     remaining = []
     province_appended = {}
+    appended_names = set()
     
     for ch in unmatched:
+        # 如果该频道已经在 matched 中（通过名字），跳过
+        if ch["name"] in matched_names:
+            continue
         province = detect_province(ch["name"])
         if province:
             cat = get_demo_category_for_province(province, demo_order)
@@ -344,13 +348,14 @@ def filter_and_order_by_demo(channels: list) -> tuple:
             ch_copy["demo_name"] = ch["name"]
             matched.append(ch_copy)
             matched_names.add(ch["name"])
+            appended_names.add(ch["name"])
             province_appended[province] = province_appended.get(province, 0) + 1
-            logger.info(f"🌏 自动归类: {ch['name']} -> {cat}")
+            logger.info(f"🌏 自动追加: {ch['name']} -> {cat}")
         else:
             remaining.append(ch)
     
     if province_appended:
-        logger.info(f"📊 自动归类统计: {dict(province_appended)}")
+        logger.info(f"📊 自动追加统计: {dict(province_appended)}")
     
     logger.info(f"🎯 Demo 筛选：原始 {len(channels)} -> 匹配 {len(matched)}，未匹配 {len(remaining)}")
     return matched, remaining
