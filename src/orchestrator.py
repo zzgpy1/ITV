@@ -187,30 +187,39 @@ class IPTVOrchestrator:
             logger.error(f"❌ 提升稳定源阶段失败: {e}")
             return 0
 
-    async def run_once(self) -> Dict:
-        logger.info("🚀 IPTV 自治系统启动")
-        logger.info(f"📊 配置: 每批发现 {self.MAX_NEW_SOURCES_PER_RUN} 个，每批观察 {self.MAX_OBSERVE_PER_RUN} 个")
-        logger.info("📌 只处理国内频道，国外频道自动过滤")
+async def run_once(self, skip_discover: bool = False) -> Dict:
+    logger.info("🚀 IPTV 自治系统启动")
+    logger.info(f"📊 配置: 每批发现 {self.MAX_NEW_SOURCES_PER_RUN} 个，每批观察 {self.MAX_OBSERVE_PER_RUN} 个")
+    logger.info("📌 只处理国内频道，国外频道自动过滤")
+    if skip_discover:
+        logger.info("⏭️ 跳过发现阶段（使用已有源池）")
+    else:
         logger.info("⚡ 强制刷新模式：重新拉取所有源")
-        try:
-            self.db = await get_db_cache()
+    try:
+        self.db = await get_db_cache()
+        if not skip_discover:
             await self.discover_phase()
-            stable_candidates = await self.observe_phase()
-            await self.promote_phase(stable_candidates)
-            replaced = await self.auto_replace_if_risky()
-            if replaced:
-                logger.info(f"🔄 已预替换 {replaced} 个高风险源")
-            logger.info("=" * 50)
-            logger.info("📊 自治模式统计")
-            logger.info("=" * 50)
-            logger.info(f"  源池总数: {self.discoverer.get_statistics()['total']}")
-            logger.info(f"  候选池总数: {self.candidate_observer.get_statistics()['total']}")
-            logger.info(f"  候选池观察中: {self.candidate_observer.get_statistics()['observing']}")
-            logger.info(f"  本次新提升: {self.stats.get('new_stable_count', 0)}")
-            logger.info(f"  累计提升: {self.stats['total_promoted']}")
-        except Exception as e:
-            logger.exception(f"❌ 自治流程执行失败: {e}")
-        return self.stats
+        else:
+            logger.info("⏭️ 跳过发现阶段")
+        stable_candidates = await self.observe_phase()
+        await self.promote_phase(stable_candidates)
+        replaced = await self.auto_replace_if_risky()
+        if replaced:
+            logger.info(f"🔄 已预替换 {replaced} 个高风险源")
+        logger.info("=" * 50)
+        logger.info("📊 自治模式统计")
+        logger.info("=" * 50)
+        logger.info(f"  源池总数: {self.discoverer.get_statistics()['total']}")
+        logger.info(f"  候选池总数: {self.candidate_observer.get_statistics()['total']}")
+        logger.info(f"  候选池观察中: {self.candidate_observer.get_statistics()['observing']}")
+        logger.info(f"  本次新提升: {self.stats.get('new_stable_count', 0)}")
+        logger.info(f"  累计提升: {self.stats['total_promoted']}")
+    except Exception as e:
+        logger.exception(f"❌ 自治流程执行失败: {e}")
+    finally:
+        if self.db:
+            await self.db.close()
+    return self.stats
 
 
 # 全局实例
