@@ -2,7 +2,7 @@
 import asyncio
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from src.logger import logger
 from src.database import get_db_cache, channel_key
@@ -11,7 +11,10 @@ from src.candidate.observer import CandidateObserver
 from src.stable.manager import StableManager
 from src.quality.monitor import QualityMonitor
 from src.config import (
-    CANDIDATE_MIN_SUCCESS, CANDIDATE_MIN_SUCCESS_RATE, CANDIDATE_MAX_LATENCY,
+    ENABLE_DEMO_FILTER, OUTPUT_DIR,
+    CANDIDATE_OBSERVATION_HOURS, CANDIDATE_MIN_SUCCESS,
+    CANDIDATE_MIN_SUCCESS_RATE, CANDIDATE_MAX_LATENCY,
+    HEALTH_HISTORY_DAYS, PREDICT_THRESHOLD,
     AUTO_PROMOTE_THRESHOLD, SLOW_SPEED_THRESHOLD
 )
 from src.demo_filter import parse_demo_order_with_categories
@@ -66,21 +69,11 @@ class IPTVOrchestrator:
         if not self.db:
             self.db = await get_db_cache()
         stable = self.stable_manager.get_active_sources()
-        # 分批获取候选
-        candidates = []
-        offset = 0
-        limit = 500
-        while True:
-            batch = await self.db.get_candidates_for_promotion(limit=limit)
-            if not batch:
-                break
-            candidates.extend(batch)
-            if len(batch) < limit:
-                break
+        candidates = await self.db.get_candidates_for_promotion(limit=500)
         replaced = 0
         for name, src in stable.items():
             if src.is_fixed and not src.auto_optimize:
-               continue
+                continue
             key = channel_key(name, src.url)
             prob = await self.predict_failure_probability(key)
             if prob > PREDICT_THRESHOLD:
@@ -157,40 +150,61 @@ class IPTVOrchestrator:
             logger.error(f"❌ 观察候选源阶段失败: {e}")
             return []
 
-async def promote_phase(self, stable_candidates: List = None) -> int:
-    ...
-    if stable_candidates is None:
-        all_candidates = []
-        offset = 0
-        limit = 500
-        while True:
-            batch = await self.db.get_candidates_for_promotion(limit=limit)
-            if not batch:
-                break
-            all_candidates.extend(batch)
-            if len(batch) < limit:
-                break
-        stable_candidates = all_candidates
+    async def promote_phase(self, stable_candidates: List = None) -> int:
+        logger.info("=" * 50)
+        logger.info("阶段3: 提升稳定源")
+        logger.info("=" * 50)
+        try:
+            # 确保数据库连接存在
+            if not self.db:
+                self.db = await get_db_cache()
+
+            # 如果没有传入稳定候选，则从数据库分批获取
+            if stable_candidates is None:
+                all_candidates = []
+                limit = 500
+                while True:
+                    batch = await self.db.get_candidates_for_promotion(limit=limit)
+                    if not batch:
+                        break
+                    all_candidates.extend(batch)
+                    if len(batch) < limit:
+                        break
+                stable_candidates = all_candidates
+
             if not stable_candidates:
                 logger.info("📭 没有稳定的候选源需要提升")
                 return 0
+
             before_count = len(self.stable_manager.get_active_sources())
             promoted_count = 0
-            for obs in stable_candidates[:50]:
-                # obs 是字典，包含 name, url, latency 等
-                existing = self.stable_manager.stable_sources.get(obs['name'])
+            for obs in stable_candidates[:50]:  # 最多提升50个
+                # 如果 obs 是字典（从数据库来的），构造对象
+                if isinstance(obs, dict):
+                    from src.candidate.models import ObservationResult
+                    obs_obj = ObservationResult(
+                        source_key=obs.get('key', ''),
+                        channel_name=obs.get('name', ''),
+                        url=obs.get('url', ''),
+                        avg_latency=obs.get('latency', 0),
+                        success_count=obs.get('success', 0),
+                        fail_count=obs.get('fail', 0)
+                    )
+                else:
+                    obs_obj = obs
+
+                existing = self.stable_manager.stable_sources.get(obs_obj.channel_name)
                 if existing and existing.is_fixed:
                     continue
-                if existing and existing.latency < obs['latency']:
+                if existing and existing.latency < obs_obj.avg_latency:
                     continue
                 if self.stable_manager.promote_candidate(
-                    obs['name'], obs['url'], obs['latency'], ""
+                    obs_obj.channel_name, obs_obj.url, obs_obj.avg_latency, ""
                 ):
                     promoted_count += 1
-                    # 标记候选为已提升
-                    source_key = obs.get('key') or channel_key(obs['name'], obs['url'])
-                    self.candidate_observer.mark_promoted(source_key)
-                    logger.info(f"📌 已提升: {obs['name']}")
+                    self.candidate_observer.mark_promoted(obs_obj.source_key)
+                    logger.info(f"📌 已提升: {obs_obj.channel_name}")
+
             self.stats["total_promoted"] += promoted_count
             self.stats["new_stable_count"] = promoted_count
             after_count = len(self.stable_manager.get_active_sources())
@@ -218,7 +232,7 @@ async def promote_phase(self, stable_candidates: List = None) -> int:
                 await self.promote_phase(stable_candidates)
             else:
                 logger.info("⏭️ 跳过发现阶段")
-                await self.promote_phase(None)
+                await self.promote_phase(None)  # 提升所有稳定候选
             replaced = await self.auto_replace_if_risky()
             if replaced:
                 logger.info(f"🔄 已预替换 {replaced} 个高风险源")
