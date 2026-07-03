@@ -27,9 +27,8 @@ CCTV_FIXED_SOURCES = {
         "http://69.30.245.50/live/cctv4.m3u8",
         "http://45.192.97.170:8880/play/4.m3u8",
         "http://112.27.235.94:8000/hls/4/index.m3u8",
-        "http://182.150.23.74:808/hls/4/index.m3u8",
-        "https://global.cgtn.cicc.media.caton.cloud/master/cgtn-america.m3u8"
-    ],
+        "http://182.150.23.74:808/hls/4/index.m3u8"
+       ],
     "CCTV-5": [
         "http://69.30.245.50/live/cctv5.m3u8",
         "http://45.192.97.170:8880/play/5.m3u8",
@@ -40,7 +39,6 @@ CCTV_FIXED_SOURCES = {
     "CCTV-5+": [
         "http://45.192.97.170:8880/play/6.m3u8",
         "http://112.27.235.94:8000/hls/6/index.m3u8",
-        "http://cssbyd.imwork.net:8082/hls/6/index.m3u8",
         "http://182.150.23.74:808/hls/16/index.m3u8"
     ],
     "CCTV-6": [
@@ -87,7 +85,6 @@ CCTV_FIXED_SOURCES = {
     ],
     "CCTV-13": [
         "http://45.192.97.170:8880/play/14.m3u8",
-        "http://ali-m-l.cztv.com/channels/lantian/channel21/1080p.m3u8",
         "http://182.150.23.74:808/hls/3/index.m3u8"
     ],
     "CCTV-14": [
