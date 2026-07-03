@@ -19,6 +19,7 @@ class StableManager:
     def __init__(self):
         self.stable_sources: Dict[str, StableSource] = {}
         self._load()
+        self._sync_fixed_sources()   # 每次启动时同步固定源配置
     
     def _load(self):
         """加载稳定源配置"""
@@ -40,6 +41,57 @@ class StableManager:
                 json.dump(data, f, indent=2, ensure_ascii=False)
         except Exception as e:
             logger.error(f"保存稳定源失败: {e}")
+    
+    def _sync_fixed_sources(self):
+        """从 fixed_sources.py 同步固定源配置，删除配置中不存在的固定源"""
+        try:
+            from src.fixed_sources import CCTV_FIXED_SOURCES, ENABLE_FIXED_SOURCES
+            if not ENABLE_FIXED_SOURCES:
+                return
+            # 获取当前所有固定源的名称
+            current_fixed_names = set()
+            for name, src in self.stable_sources.items():
+                if src.is_fixed:
+                    current_fixed_names.add(name)
+            # 配置中的固定源名称
+            config_fixed_names = set(CCTV_FIXED_SOURCES.keys())
+            # 1. 添加或更新配置中的固定源
+            for name, url in CCTV_FIXED_SOURCES.items():
+                if not url:
+                    continue
+                # 如果 url 是列表，取第一个
+                if isinstance(url, list):
+                    url = url[0] if url else None
+                if not url:
+                    continue
+                if name in self.stable_sources:
+                    src = self.stable_sources[name]
+                    if src.url != url:
+                        src.url = url
+                        src.is_fixed = True
+                        src.auto_optimize = True
+                        src.promoted_at = datetime.now()
+                        logger.info(f"📌 更新固定源: {name} -> {url}")
+                else:
+                    self.set_fixed_source(name, url, auto_optimize=True)
+                    logger.info(f"📌 添加固定源: {name} -> {url}")
+            # 2. 移除不再在配置中的固定源（降级为普通稳定源）
+            for name in current_fixed_names:
+                if name not in config_fixed_names:
+                    src = self.stable_sources.get(name)
+                    if src and src.is_fixed:
+                        src.is_fixed = False
+                        src.auto_optimize = True
+                        logger.info(f"📌 固定源已移除固定标记: {name}（不再在配置中）")
+            self._save()
+        except ImportError:
+            logger.warning("⚠️ fixed_sources.py 不存在，跳过固定源同步")
+        except Exception as e:
+            logger.warning(f"⚠️ 固定源同步失败: {e}")
+    
+    def sync_fixed_sources(self):
+        """公共方法，供外部调用以手动同步固定源"""
+        self._sync_fixed_sources()
     
     def promote_candidate(self, channel_name: str, url: str, latency: int, video_codec: str) -> bool:
         """将候选源提升为稳定源"""
