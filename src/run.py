@@ -187,6 +187,30 @@ async def run_legacy_mode():
     else:
         ordered_channels = merged_channels
 
+        # ===== 将未匹配频道按省份归类并追加 =====
+    if unmatched_channels and ENABLE_DEMO_FILTER:
+        from src.demo_filter import detect_province, get_demo_category_for_province
+        demo_categories = {cat for cat, _ in demo_order}
+        added_count = 0
+        # 获取已有的频道名集合，避免重复
+        existing_names = {ch["name"] for ch in ordered_channels}
+        for ch in unmatched_channels:
+            name = ch.get("name")
+            if not name or name in existing_names:
+                continue
+            province = detect_province(name)
+            if province:
+                cat = get_demo_category_for_province(province, demo_order)
+                ch["demo_category"] = cat
+                # 确保有 urls 字段
+                if "urls" not in ch:
+                    ch["urls"] = [ch["url"]] if ch.get("url") else []
+                ordered_channels.append(ch)
+                existing_names.add(name)
+                added_count += 1
+        if added_count > 0:
+            logger.info(f"📊 将 {added_count} 个未匹配频道按省份归类追加")
+            
     if not ordered_channels:
         logger.error("❌ 过滤后无有效频道")
         return 1
