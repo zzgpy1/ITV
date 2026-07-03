@@ -1,15 +1,12 @@
 # src/candidate/observer.py
 import asyncio
 import json
-import aiohttp
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional
 
 from src.logger import logger
-from src.speed_tester import probe_channel_advanced
 from src.database import get_db_cache, channel_key
-from src.config import TIMEOUT
 from src.candidate.models import ObservationResult, CandidateStatus
 
 
@@ -79,8 +76,12 @@ class CandidateObserver:
         if obs.status in [CandidateStatus.STABLE, CandidateStatus.PROMOTED]:
             return obs.status == CandidateStatus.STABLE
         
+        # 检查数据库连接是否有效
+        if db is None or db._conn is None:
+            logger.debug(f"数据库连接无效，跳过候选源 {obs.channel_name}")
+            return False
+        
         try:
-            # 从 candidate_pool 表获取累计统计
             cursor = await db._conn.execute(
                 "SELECT success_count, fail_count, avg_latency FROM candidate_pool WHERE channel_key = ?",
                 (source_key,)
@@ -90,29 +91,25 @@ class CandidateObserver:
             
             if row:
                 sc, fc, avg = row
-                # 更新内存中的统计（仅用于判断，不保存到 JSON，因为 JSON 只存状态）
                 obs.success_count = sc
                 obs.fail_count = fc
                 obs.avg_latency = avg
                 obs.check_count = sc + fc
                 obs.last_check = datetime.now()
                 
-                # 判断是否达到稳定标准
                 if obs.check_count >= self.MIN_SUCCESS_COUNT and \
                    obs.success_rate >= self.MIN_SUCCESS_RATE and \
                    obs.avg_latency <= self.MAX_AVG_LATENCY:
                     obs.status = CandidateStatus.STABLE
-                    self._save()  # 更新 JSON 中的状态
+                    self._save()
                     logger.info(f"✅ 候选源稳定: {obs.channel_name} (成功率 {obs.success_rate:.2%}, 延迟 {obs.avg_latency}ms, 检查 {obs.check_count} 次)")
                     return True
                 else:
-                    # 未达标，但记录一下日志（调试用）
                     if obs.check_count % 10 == 0:
                         logger.debug(f"候选源 {obs.channel_name} 未达标: 成功率 {obs.success_rate:.2%}, 延迟 {obs.avg_latency}ms, 检查 {obs.check_count} 次")
             else:
-                # 数据库中没有该候选源的记录，可能是刚添加的，等待测速
+                # 数据库中无记录，可能是新源，等待测速
                 pass
-                
             return False
         except Exception as e:
             logger.warning(f"检查候选源 {obs.channel_name} 异常: {e}")
@@ -127,13 +124,17 @@ class CandidateObserver:
         if not observing:
             return []
         
-        # 按检查次数升序排序（先检查次数少的优先，加快发现稳定源）
-        observing.sort(key=lambda x: x[1].check_count)
+        # 按添加时间排序（先添加的先观察）
+        observing.sort(key=lambda x: x[1].discovered_at)
         batch = observing[:batch_size]
         
         logger.info(f"🔍 本次观察 {len(batch)} 个候选源（共 {len(observing)} 个待观察）...")
         
         db = await get_db_cache()
+        if db is None or db._conn is None:
+            logger.error("❌ 数据库连接无效，无法观察候选源")
+            return []
+        
         stable_results = []
         processed = 0
         last_log = 0
