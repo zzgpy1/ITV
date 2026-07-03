@@ -12,7 +12,7 @@ from src.candidate.models import ObservationResult, CandidateStatus
 
 class CandidateObserver:
     """
-    候选版观察者 - 优化版，带超时和异常恢复
+    候选版观察者 - 优化版，批量加载候选池数据到内存，避免大量数据库查询
     """
     
     MIN_SUCCESS_COUNT = 3
@@ -68,55 +68,27 @@ class CandidateObserver:
             self._save()
             logger.info(f"📝 批量添加 {added} 个候选源")
     
-    async def check_candidate_from_cache(self, source_key: str, db) -> bool:
-        """从数据库候选池表检查单个候选源，判断是否达到稳定标准"""
-        obs = self._observations.get(source_key)
-        if not obs:
-            return False
-        if obs.status in [CandidateStatus.STABLE, CandidateStatus.PROMOTED]:
-            return obs.status == CandidateStatus.STABLE
-        
-        # 检查数据库连接是否有效
+    async def _load_candidate_stats(self, db) -> Dict[str, Dict]:
+        """批量加载所有候选池统计数据"""
+        stats = {}
         if db is None or db._conn is None:
-            logger.debug(f"数据库连接无效，跳过候选源 {obs.channel_name}")
-            return False
-        
+            return stats
         try:
             cursor = await db._conn.execute(
-                "SELECT success_count, fail_count, avg_latency FROM candidate_pool WHERE channel_key = ?",
-                (source_key,)
+                "SELECT channel_key, success_count, fail_count, avg_latency FROM candidate_pool"
             )
-            row = await cursor.fetchone()
+            rows = await cursor.fetchall()
             await cursor.close()
-            
-            if row:
-                sc, fc, avg = row
-                obs.success_count = sc
-                obs.fail_count = fc
-                obs.avg_latency = avg
-                obs.check_count = sc + fc
-                obs.last_check = datetime.now()
-                
-                if obs.check_count >= self.MIN_SUCCESS_COUNT and \
-                   obs.success_rate >= self.MIN_SUCCESS_RATE and \
-                   obs.avg_latency <= self.MAX_AVG_LATENCY:
-                    obs.status = CandidateStatus.STABLE
-                    self._save()
-                    logger.info(f"✅ 候选源稳定: {obs.channel_name} (成功率 {obs.success_rate:.2%}, 延迟 {obs.avg_latency}ms, 检查 {obs.check_count} 次)")
-                    return True
-                else:
-                    if obs.check_count % 10 == 0:
-                        logger.debug(f"候选源 {obs.channel_name} 未达标: 成功率 {obs.success_rate:.2%}, 延迟 {obs.avg_latency}ms, 检查 {obs.check_count} 次")
-            else:
-                # 数据库中无记录，可能是新源，等待测速
-                pass
-            return False
+            for row in rows:
+                key, sc, fc, avg = row
+                stats[key] = {"success": sc, "fail": fc, "avg": avg}
+            logger.debug(f"批量加载候选池统计: {len(stats)} 条记录")
         except Exception as e:
-            logger.warning(f"检查候选源 {obs.channel_name} 异常: {e}")
-            return False
+            logger.warning(f"批量加载候选池统计失败: {e}")
+        return stats
     
     async def observe_batch_from_cache(self, batch_size: int = 3000) -> List[ObservationResult]:
-        """分批观察候选源，整体超时由外部控制"""
+        """分批观察候选源，批量加载统计数据到内存，避免大量数据库查询"""
         observing = [
             (k, v) for k, v in self._observations.items() 
             if v.status == CandidateStatus.OBSERVING
@@ -135,13 +107,36 @@ class CandidateObserver:
             logger.error("❌ 数据库连接无效，无法观察候选源")
             return []
         
+        # 批量加载候选池统计数据
+        stats_map = await self._load_candidate_stats(db)
+        
         stable_results = []
         processed = 0
         last_log = 0
         
         for key, obs in batch:
-            if await self.check_candidate_from_cache(key, db):
-                stable_results.append(obs)
+            # 从内存中获取统计数据
+            stat = stats_map.get(key)
+            if stat:
+                # 直接更新内存中的统计
+                obs.success_count = stat["success"]
+                obs.fail_count = stat["fail"]
+                obs.avg_latency = stat["avg"]
+                obs.check_count = stat["success"] + stat["fail"]
+                obs.last_check = datetime.now()
+                
+                # 判断是否达到稳定标准
+                if obs.check_count >= self.MIN_SUCCESS_COUNT and \
+                   obs.success_rate >= self.MIN_SUCCESS_RATE and \
+                   obs.avg_latency <= self.MAX_AVG_LATENCY:
+                    obs.status = CandidateStatus.STABLE
+                    self._save()
+                    stable_results.append(obs)
+                    logger.info(f"✅ 候选源稳定: {obs.channel_name} (成功率 {obs.success_rate:.2%}, 延迟 {obs.avg_latency}ms, 检查 {obs.check_count} 次)")
+            else:
+                # 数据库中无记录，可能是新添加的，跳过（等待测速）
+                pass
+            
             processed += 1
             if processed - last_log >= 100:
                 logger.info(f"  📊 观察进度: {processed}/{len(batch)}，稳定 {len(stable_results)} 个")
