@@ -6,7 +6,10 @@ from typing import Optional, Dict, List
 from pathlib import Path
 import hashlib
 
-from src.config import settings, DATABASE_ENABLE, DATABASE_PATH, SLOW_SPEED_THRESHOLD, MAX_RETRY_BEFORE_BLACKLIST, AUTO_PROMOTE_THRESHOLD
+from src.config import (
+    DATABASE_ENABLE, DATABASE_PATH, CACHE_RAW_HOURS, CACHE_SPEED_HOURS,
+    SLOW_SPEED_THRESHOLD, MAX_RETRY_BEFORE_BLACKLIST, AUTO_PROMOTE_THRESHOLD
+)
 from src.logger import logger
 
 
@@ -102,7 +105,7 @@ class DatabaseCache:
         await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_candidate_lastcheck ON candidate_pool(last_check)')
         await self._conn.commit()
 
-    # ---------- 原有方法（增加过期检查） ----------
+    # ---------- 原有方法 ----------
     async def get_raw_source(self, url: str) -> Optional[str]:
         if not self._conn:
             return None
@@ -114,7 +117,7 @@ class DatabaseCache:
             await cursor.close()
             if row:
                 content, updated_at = row
-                if datetime.now() - datetime.fromisoformat(updated_at) < timedelta(hours=settings.CACHE_RAW_HOURS):
+                if datetime.now() - datetime.fromisoformat(updated_at) < timedelta(hours=CACHE_RAW_HOURS):
                     return content
         except Exception:
             pass
@@ -144,7 +147,7 @@ class DatabaseCache:
             await cursor.close()
             if row:
                 name, url, latency, video_codec, updated_at = row
-                age_limit = max_age_hours if max_age_hours is not None else settings.CACHE_SPEED_HOURS
+                age_limit = max_age_hours if max_age_hours is not None else CACHE_SPEED_HOURS
                 if datetime.now() - datetime.fromisoformat(updated_at) < timedelta(hours=age_limit):
                     return {
                         "name": name,
@@ -178,7 +181,6 @@ class DatabaseCache:
             pass
 
     async def save_speed_results(self, channels: List[Dict]):
-        """批量插入，提高性能"""
         if not self._conn or not channels:
             return
         try:
