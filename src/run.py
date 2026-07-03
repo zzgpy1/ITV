@@ -139,37 +139,37 @@ async def run_legacy_mode():
         logger.error("❌ 过滤后无有效频道")
         return 1
 
-    # ===== 集成新源：央视/卫视/地方存入稳定源，体育赛事追加输出 =====
+       # ===== 集成新源：央视/卫视/地方存入固定源，体育赛事追加输出 =====
     try:
         from src.hmtj_source import integrate_hmtj_source
         from src.stable.manager import StableManager
         hmtj_classified = await integrate_hmtj_source()
         if hmtj_classified:
             stable_mgr = StableManager()
+            total_fixed = 0
+            sports_count = 0
             for cat, channels in hmtj_classified.items():
                 if cat in ["央视", "卫视", "地方"]:
-                    # 将这些频道作为固定源存入稳定源
                     fixed_count = 0
                     for ch in channels:
                         name = ch.get("name")
                         url = ch.get("url")
                         if name and url:
-                            # 检查是否已存在固定源（防止覆盖用户手动添加的）
                             existing = stable_mgr.stable_sources.get(name)
                             if existing and existing.is_fixed:
-                                logger.debug(f"⏭️ {name} 已是固定源，跳过")
                                 continue
-                            # 设置为固定源
                             if stable_mgr.set_fixed_source(name, url):
                                 fixed_count += 1
                                 logger.info(f"📌 从新源固定: {name}")
-                    logger.info(f"📌 新源贡献固定源: {fixed_count} 个")
+                    total_fixed += fixed_count
+                    logger.info(f"📌 新源分类 {cat} 固定 {fixed_count} 个")
                 elif cat == "体育赛事":
-                    # 体育赛事追加到输出
                     for ch in channels:
-                        ch["demo_category"] = cat
+                        ch["demo_category"] = "体育赛事"
                         ordered_channels.append(ch)
-                    logger.info(f"🌐 从新源追加 {len(channels)} 个体育赛事频道")
+                        sports_count += 1
+                    logger.info(f"🌐 从新源追加 {sports_count} 个体育赛事频道")
+            logger.info(f"📊 新源入库统计: 共新增 {total_fixed} 个固定源，体育赛事 {sports_count} 个")
     except Exception as e:
         logger.warning(f"⚠️ 集成新源失败: {e}")
 
