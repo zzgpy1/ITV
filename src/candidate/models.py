@@ -21,7 +21,7 @@ class ObservationResult:
     total_latency: int = 0
     avg_latency: int = 0
     last_check: Optional[datetime] = None
-    discovered_at: datetime = field(default_factory=datetime.now)  # 添加此字段
+    discovered_at: datetime = field(default_factory=datetime.now)
     promoted_at: Optional[datetime] = None
     
     @property
