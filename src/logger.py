@@ -2,7 +2,9 @@
 import logging
 import sys
 from pathlib import Path
-from src.config import OUTPUT_DIR
+from logging.handlers import RotatingFileHandler
+
+from src.config import settings
 
 def setup_logger(name: str = "IPTVCollector", level: int = logging.INFO, log_file: Path = None) -> logging.Logger:
     logger = logging.getLogger(name)
@@ -16,10 +18,13 @@ def setup_logger(name: str = "IPTVCollector", level: int = logging.INFO, log_fil
     logger.addHandler(console)
 
     if log_file is None:
-        log_file = OUTPUT_DIR / "run.log"
+        log_file = settings.OUTPUT_DIR / "run.log"
     try:
-        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        settings.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        # 使用 RotatingFileHandler，最大 10MB，保留 3 个备份
+        file_handler = RotatingFileHandler(
+            log_file, maxBytes=10*1024*1024, backupCount=3, encoding='utf-8'
+        )
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
     except Exception:
