@@ -92,6 +92,9 @@ ENABLE_JSON_OUTPUT = os.getenv("ENABLE_JSON_OUTPUT", "true").lower() == "true"
 ENABLE_LITE_VERSION = os.getenv("ENABLE_LITE_VERSION", "true").lower() == "true"
 ENABLE_EPG_OUTPUT = os.getenv("ENABLE_EPG_OUTPUT", "true").lower() == "true"
 
+ENABLE_FIXED_OPTIMIZATION = os.getenv("ENABLE_FIXED_OPTIMIZATION", "true").lower() == "true"
+FIXED_OPTIMIZATION_THRESHOLD = int(os.getenv("FIXED_OPTIMIZATION_THRESHOLD", 200))  # 延迟差值阈值（ms）
+
 # 自治模式
 AUTONOMOUS_MODE = os.getenv("AUTONOMOUS_MODE", "false").lower() == "true"
 AUTO_UPDATE_STABLE = os.getenv("AUTO_UPDATE_STABLE", "true").lower() == "true"
