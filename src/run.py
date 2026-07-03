@@ -8,6 +8,7 @@ import datetime
 import os
 from pathlib import Path
 from collections import Counter
+import traceback
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -40,6 +41,8 @@ from src.demo_filter import (
     filter_and_order_by_demo,
     write_shai_file,
     parse_demo_order_with_categories,
+    detect_province,
+    get_demo_category_for_province,
 )
 from src.database import get_db_cache
 from src.logger import logger
@@ -47,20 +50,18 @@ from src.hmtj_source import integrate_hmtj_source
 from src.special_categories import collect_and_append_special_categories
 
 
-# ========== 传统模式 ==========
-async def run_legacy_mode():
-    logger.info("🚀 IPTV 智能整理平台启动 (传统模式)")
-    logger.info(f"📡 配置：超时={TIMEOUT}s, 并发={MAX_WORKERS}, ffmpeg={FFMPEG_ENABLE}")
-    logger.info(
-        f"📋 增强过滤: demo={ENABLE_DEMO_FILTER}, alias={ENABLE_ALIAS}, blacklist={ENABLE_BLACKLIST}"
-    )
+# ========== 全局异常钩子 ==========
+def global_exception_handler(exc_type, exc_value, exc_traceback):
+    logger.error("❌ 未捕获的异常:", exc_info=(exc_type, exc_value, exc_traceback))
+    # 可在此添加其他处理，如发送告警
 
-    demo_order = parse_demo_order_with_categories() if ENABLE_DEMO_FILTER else []
-    logger.info(f"📋 Demo 顺序: {len(demo_order)} 个频道")
+sys.excepthook = global_exception_handler
 
-    db = await get_db_cache()
 
-    # 增量更新
+# ========== 子函数拆分 ==========
+async def _collect_raw_sources(db):
+    """步骤1：采集原始数据"""
+    logger.info("📡 开始采集原始频道源...")
     raw_contents = {}
     last_update = await db.get_last_update_time() if DATABASE_ENABLE else None
     is_fresh = last_update and (datetime.datetime.now().timestamp() - last_update) < CACHE_RAW_HOURS * 3600
@@ -81,20 +82,15 @@ async def run_legacy_mode():
         else:
             logger.info("📊 首次运行，执行完整采集")
         raw_contents = await fetch_all_sources_incremental(IPTV_SOURCES, db)
+    return raw_contents
 
-    channels_dict = parse_and_dedupe(raw_contents)
-    if not channels_dict:
-        logger.error("❌ 未获取到任何频道")
-        return 1
 
-    logger.info(f"📊 原始频道数（去重后）: {len(channels_dict)}")
-
-    # HTTP 测速
+async def _speed_and_validate(channels_dict, db):
+    """步骤2：测速 + ffmpeg 验证"""
     logger.info("🔍 开始 HTTP 测速...")
     valid_channels = await test_channels_concurrent(channels_dict)
     logger.info(f"📊 通过HTTP测速的频道数: {len(valid_channels)}")
 
-    # ffmpeg 验证
     if FFMPEG_ENABLE and valid_channels:
         logger.info("🎬 开始 ffmpeg 深度验证...")
         valid_channels = await validate_batch(valid_channels)
@@ -103,11 +99,16 @@ async def run_legacy_mode():
     if DATABASE_ENABLE and valid_channels:
         await db.save_speed_results(valid_channels)
         await db.set_last_update_time()
+    return valid_channels
 
+
+def _merge_and_filter(valid_channels, db, demo_order):
+    """步骤3：合并、黑名单、固定源优化、Demo筛选"""
+    logger.info("📊 开始合并频道...")
     merged_channels = merge_channels_by_name(valid_channels)
     logger.info(f"📊 合并后的频道数: {len(merged_channels)}")
 
-    # ========== 固定源动态优化 ==========
+    # 固定源优化
     if ENABLE_FIXED_OPTIMIZATION:
         try:
             from src.stable.manager import StableManager
@@ -167,6 +168,7 @@ async def run_legacy_mode():
         except Exception as e:
             logger.warning(f"⚠️ 固定源优化失败: {e}")
 
+    # 黑名单过滤
     if ENABLE_BLACKLIST:
         blacklist_filter = get_blacklist_filter()
         before = len(merged_channels)
@@ -175,6 +177,7 @@ async def run_legacy_mode():
 
     # Demo 筛选
     unmatched_channels = []
+    ordered_channels = merged_channels
     if ENABLE_DEMO_FILTER:
         before = len(merged_channels)
         ordered_channels, unmatched_channels = filter_and_order_by_demo(merged_channels)
@@ -184,15 +187,11 @@ async def run_legacy_mode():
         if not ordered_channels:
             logger.warning("❌ Demo 筛选后无频道，尝试不筛选")
             ordered_channels = merged_channels
-    else:
-        ordered_channels = merged_channels
 
-        # ===== 将未匹配频道按省份归类并追加 =====
+    # 将未匹配频道按省份归类追加
     if unmatched_channels and ENABLE_DEMO_FILTER:
-        from src.demo_filter import detect_province, get_demo_category_for_province
         demo_categories = {cat for cat, _ in demo_order}
         added_count = 0
-        # 获取已有的频道名集合，避免重复
         existing_names = {ch["name"] for ch in ordered_channels}
         for ch in unmatched_channels:
             name = ch.get("name")
@@ -202,7 +201,6 @@ async def run_legacy_mode():
             if province:
                 cat = get_demo_category_for_province(province, demo_order)
                 ch["demo_category"] = cat
-                # 确保有 urls 字段
                 if "urls" not in ch:
                     ch["urls"] = [ch["url"]] if ch.get("url") else []
                 ordered_channels.append(ch)
@@ -210,12 +208,12 @@ async def run_legacy_mode():
                 added_count += 1
         if added_count > 0:
             logger.info(f"📊 将 {added_count} 个未匹配频道按省份归类追加")
-            
-    if not ordered_channels:
-        logger.error("❌ 过滤后无有效频道")
-        return 1
 
-    # ===== 集成新源：央视/卫视/地方存入固定源，体育赛事追加输出 =====
+    return ordered_channels, unmatched_channels
+
+
+async def _integrate_special_sources(ordered_channels):
+    """步骤4：集成新源（hmtj）和智能补充"""
     try:
         from src.stable.manager import StableManager
         hmtj_classified = await integrate_hmtj_source()
@@ -247,8 +245,11 @@ async def run_legacy_mode():
             logger.info(f"📊 新源入库统计: 共新增 {total_fixed} 个固定源，体育赛事 {sports_count} 个")
     except Exception as e:
         logger.warning(f"⚠️ 集成新源失败: {e}")
+    return ordered_channels
 
-    # ===== 用稳定源覆盖输出（确保使用最优源） =====
+
+def _apply_stable_overrides(ordered_channels):
+    """步骤5：用稳定源覆盖输出"""
     try:
         from src.stable.manager import StableManager
         stable_mgr = StableManager()
@@ -277,8 +278,12 @@ async def run_legacy_mode():
                 logger.info(f"🔄 使用稳定源覆盖了 {replaced_count} 个频道")
     except Exception as e:
         logger.warning(f"⚠️ 稳定源覆盖失败: {e}")
+    return ordered_channels
 
-    # 最终分类统计
+
+def _generate_final_outputs(ordered_channels, demo_order, unmatched_channels, stats):
+    """步骤6：生成输出文件"""
+    # 统计分类
     cat_counter = Counter(ch.get("demo_category", "其他") for ch in ordered_channels)
     logger.info("\n🎉 最终有效频道分类统计：")
     for cat, cnt in cat_counter.items():
@@ -287,10 +292,10 @@ async def run_legacy_mode():
     # 生成基础输出
     generate_outputs_from_demo(ordered_channels, demo_order)
 
-    # 智能补充采集（可选项）
+    # 智能补充采集
     special_stats = {}
     try:
-        special_stats = await collect_and_append_special_categories(OUTPUT_DIR, db)
+        special_stats = collect_and_append_special_categories(OUTPUT_DIR, None)  # db 不再需要
         if special_stats:
             logger.info("🎉 智能补充分类内容已追加到输出文件")
     except Exception as e:
@@ -300,16 +305,16 @@ async def run_legacy_mode():
     logger.info(f"🎉 完成！有效频道总数: {total}")
 
     # 保存统计
-    stats = {
+    stats.update({
         "total_channels": total,
         "timestamp": datetime.datetime.now().isoformat(),
         "category_stats": dict(cat_counter),
         "unmatched_count": len(unmatched_channels) if unmatched_channels else 0,
         "features": {
             "epg_injection_enabled": ENABLE_EPG_OUTPUT,
-            "incremental_mode": is_fresh and ENABLE_INCREMENTAL_FETCH
+            "incremental_mode": False  # 由调用者设置
         }
-    }
+    })
     if special_stats:
         stats["special_categories"] = special_stats
 
@@ -317,8 +322,52 @@ async def run_legacy_mode():
     with open(stats_path, "w", encoding="utf-8") as f:
         json.dump(stats, f, indent=2, ensure_ascii=False)
 
-    ffmpeg_cleanup()
-    await db.close()
+    return stats
+
+
+# ========== 传统模式（重构后） ==========
+async def run_legacy_mode():
+    logger.info("🚀 IPTV 智能整理平台启动 (传统模式)")
+    logger.info(f"📡 配置：超时={TIMEOUT}s, 并发={MAX_WORKERS}, ffmpeg={FFMPEG_ENABLE}")
+    logger.info(f"📋 增强过滤: demo={ENABLE_DEMO_FILTER}, alias={ENABLE_ALIAS}, blacklist={ENABLE_BLACKLIST}")
+
+    demo_order = parse_demo_order_with_categories() if ENABLE_DEMO_FILTER else []
+    logger.info(f"📋 Demo 顺序: {len(demo_order)} 个频道")
+
+    db = await get_db_cache()
+    try:
+        # 1. 采集
+        raw_contents = await _collect_raw_sources(db)
+        channels_dict = parse_and_dedupe(raw_contents)
+        if not channels_dict:
+            logger.error("❌ 未获取到任何频道")
+            return 1
+        logger.info(f"📊 原始频道数（去重后）: {len(channels_dict)}")
+
+        # 2. 测速与验证
+        valid_channels = await _speed_and_validate(channels_dict, db)
+
+        # 3. 合并、过滤
+        ordered_channels, unmatched_channels = _merge_and_filter(valid_channels, db, demo_order)
+
+        if not ordered_channels:
+            logger.error("❌ 过滤后无有效频道")
+            return 1
+
+        # 4. 集成特殊源
+        ordered_channels = await _integrate_special_sources(ordered_channels)
+
+        # 5. 稳定源覆盖
+        ordered_channels = _apply_stable_overrides(ordered_channels)
+
+        # 6. 生成输出
+        stats = {}
+        _generate_final_outputs(ordered_channels, demo_order, unmatched_channels, stats)
+
+    finally:
+        await db.close()
+        ffmpeg_cleanup()
+
     return 0
 
 
@@ -347,16 +396,18 @@ async def run_autonomous_mode(skip_discover: bool = False):
 
 # ========== 主入口 ==========
 async def main():
-    if AUTONOMOUS_MODE:
-        logger.info("🔀 根据 AUTONOMOUS_MODE=true 启用自治模式（先采集测速，再自治优化）")
-        # 1. 传统采集（含测速，更新候选池数据库）
-        await run_legacy_mode()
-        # 2. 自治模式（跳过发现，直接观察和提升）
-        await run_autonomous_mode(skip_discover=True)
-        return 0
-    else:
-        logger.info("🔀 根据 AUTONOMOUS_MODE=false 使用传统模式")
-        return await run_legacy_mode()
+    try:
+        if AUTONOMOUS_MODE:
+            logger.info("🔀 根据 AUTONOMOUS_MODE=true 启用自治模式（先采集测速，再自治优化）")
+            await run_legacy_mode()
+            await run_autonomous_mode(skip_discover=True)
+            return 0
+        else:
+            logger.info("🔀 根据 AUTONOMOUS_MODE=false 使用传统模式")
+            return await run_legacy_mode()
+    except Exception as e:
+        logger.exception("❌ 主流程发生未捕获异常")
+        return 1
 
 
 if __name__ == "__main__":
