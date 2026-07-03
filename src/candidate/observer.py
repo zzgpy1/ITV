@@ -127,8 +127,8 @@ class CandidateObserver:
         if not observing:
             return []
         
-        # 按添加时间排序（先添加的先观察）
-        observing.sort(key=lambda x: x[1].discovered_at)
+        # 按检查次数升序排序（先检查次数少的优先，加快发现稳定源）
+        observing.sort(key=lambda x: x[1].check_count)
         batch = observing[:batch_size]
         
         logger.info(f"🔍 本次观察 {len(batch)} 个候选源（共 {len(observing)} 个待观察）...")
