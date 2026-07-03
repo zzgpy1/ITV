@@ -7,7 +7,8 @@ from collections import defaultdict
 from src.config import MAX_SOURCES_PER_CHANNEL
 from src.logo_matcher import get_logo_matcher
 from src.logger import logger
-from src.fixed_sources import CCTV_FIXED_SOURCES
+from src.fixed_sources import CCTV_FIXED_SOURCES, ENABLE_FIXED_SOURCES
+from src.constants import CCTV_ORDER  # 用于排序
 
 
 def normalize_channel_name(name: str) -> str:
@@ -20,7 +21,6 @@ def normalize_channel_name(name: str) -> str:
 
 
 def is_cctv5plus(name: str) -> bool:
-    """判断是否为 CCTV-5+ 频道（必须包含加号或 plus）"""
     name_lower = name.lower()
     if '+' in name or '＋' in name:
         return True
@@ -32,7 +32,6 @@ def is_cctv5plus(name: str) -> bool:
 
 
 def is_cctv5(name: str) -> bool:
-    """判断是否为 CCTV-5 频道（排除 CCTV-5+）"""
     name_lower = name.lower()
     if '+' in name or '＋' in name:
         return False
@@ -46,10 +45,6 @@ def is_cctv5(name: str) -> bool:
 
 
 def get_cctv_standard_name(name: str) -> str:
-    """
-    将央视频道名转换为标准格式
-    优先匹配 CCTV-5+，然后 CCTV-5，最后其他数字
-    """
     name_clean = re.sub(r'\s*\([^)]*\)', '', name)
     name_lower = name_clean.lower()
     
@@ -149,101 +144,102 @@ def merge_channels_by_name(valid_channels: list) -> list:
         })
     
     # 3. 处理固定源（确保所有固定源都存在，并自动择优）
-    # 先构建现有 merged 中的频道名集合
-    merged_names = {ch["name"] for ch in merged}
-    
-    for fixed_name, fixed_urls in CCTV_FIXED_SOURCES.items():
-        # 兼容旧格式：如果 fixed_urls 是字符串，转为列表
-        if isinstance(fixed_urls, str):
-            fixed_urls = [fixed_urls]
-        # 过滤掉空 URL
-        fixed_urls = [u for u in fixed_urls if u and u.strip()]
-        if not fixed_urls:
-            continue
+    if ENABLE_FIXED_SOURCES:
+        merged_names = {ch["name"] for ch in merged}
         
-        # 如果该频道已经在 merged 中，需要将其固定源 URL 合并进去，并重新选择最佳主源
-        if fixed_name in merged_names:
-            # 找到 merged 中的对应频道
-            for ch in merged:
-                if ch["name"] == fixed_name:
-                    # 收集当前已有的 URL 列表（可能包含多个）
-                    existing_urls = ch.get("urls", [])
-                    # 合并固定源 URL（去重）
-                    for url in fixed_urls:
-                        if url not in existing_urls:
-                            existing_urls.append(url)
-                    # 从 valid_channels 中获取该频道所有源的测速数据，按延迟排序
-                    # 先收集所有属于该频道的有效源（包括之前已有的）
-                    all_sources = []
-                    # 从 valid_channels 中筛选
-                    for vch in valid_channels:
-                        if get_cctv_standard_name(vch["name"]) == fixed_name or vch["name"] == fixed_name:
-                            all_sources.append(vch)
-                    # 如果已有源，按延迟排序，选延迟最低的作为主源
-                    if all_sources:
-                        all_sources.sort(key=lambda x: x.get("latency", 9999))
-                        best = all_sources[0]
-                        ch["url"] = best["url"]
-                        ch["latency"] = best.get("latency", 50)
-                        ch["video_codec"] = best.get("video_codec", "h264")
-                        # 更新 urls 列表（合并所有有效源）
-                        all_urls = list(set([vch["url"] for vch in all_sources] + fixed_urls))
-                        # 只保留前 MAX_SOURCES_PER_CHANNEL 个（按延迟排序）
-                        # 重新排序所有源
-                        all_sources_sorted = sorted(all_sources, key=lambda x: x.get("latency", 9999))
-                        top_urls = [s["url"] for s in all_sources_sorted[:MAX_SOURCES_PER_CHANNEL]]
-                        # 如果固定源不在 top 中，但延迟可能更好，应确保固定源有位置，但这里已经按延迟排序，固定源如果有测速数据会排在前面
-                        ch["urls"] = list(dict.fromkeys(top_urls))  # 去重保留顺序
-                    else:
-                        # 没有有效源，使用第一个固定源作为主源
-                        ch["url"] = fixed_urls[0]
-                        ch["latency"] = 50
-                        ch["video_codec"] = "h264"
-                        ch["urls"] = fixed_urls
-                    # 标记为固定源
-                    ch["is_fixed"] = True
-                    break
-        else:
-            # 该频道不在 merged 中，需要新增
-            # 从 valid_channels 中查找该频道的所有源
-            all_sources = []
+        for fixed_name, fixed_urls in CCTV_FIXED_SOURCES.items():
+            if isinstance(fixed_urls, str):
+                fixed_urls = [fixed_urls]
+            fixed_urls = [u for u in fixed_urls if u and u.strip()]
+            if not fixed_urls:
+                continue
+            
+            # 查找该频道在 valid_channels 中的所有有效源
+            all_sources_for_fixed = []
             for vch in valid_channels:
-                if get_cctv_standard_name(vch["name"]) == fixed_name or vch["name"] == fixed_name:
-                    all_sources.append(vch)
-            if all_sources:
-                # 按延迟排序
-                all_sources.sort(key=lambda x: x.get("latency", 9999))
-                best = all_sources[0]
-                # 收集所有 URL（固定源 + 有效源）
-                all_urls = list(set([vch["url"] for vch in all_sources] + fixed_urls))
-                # 取前 MAX_SOURCES_PER_CHANNEL 个（按延迟排序）
-                top_urls = [s["url"] for s in all_sources[:MAX_SOURCES_PER_CHANNEL]]
-                # 如果固定源不在 top 中，但可能延迟更好，保留固定源在 urls 中
-                # 但 top_urls 已经按延迟排序，固定源如果有延迟数据会排前面
-                merged.append({
-                    "name": fixed_name,
-                    "urls": list(dict.fromkeys(top_urls)),
-                    "url": best["url"],
-                    "latency": best.get("latency", 50),
-                    "video_codec": best.get("video_codec", "h264"),
-                    "group_title": "央视",
-                    "id": "",
-                    "logo": logo_matcher.get_logo_url(fixed_name),
-                    "is_fixed": True,
-                })
+                if vch["name"] == fixed_name or get_cctv_standard_name(vch["name"]) == fixed_name:
+                    all_sources_for_fixed.append(vch)
+            
+            # 按延迟排序
+            all_sources_for_fixed.sort(key=lambda x: x.get("latency", 9999))
+            
+            if fixed_name in merged_names:
+                # 已有频道，更新其源列表
+                for ch in merged:
+                    if ch["name"] == fixed_name:
+                        # 收集所有候选 URL（包括配置的固定源和有效源）
+                        candidate_urls = fixed_urls + [s["url"] for s in all_sources_for_fixed if s["url"] not in fixed_urls]
+                        # 去重
+                        unique_urls = []
+                        seen = set()
+                        for u in candidate_urls:
+                            if u not in seen:
+                                seen.add(u)
+                                unique_urls.append(u)
+                        # 取前 MAX_SOURCES_PER_CHANNEL 个（先按有效源延迟排序）
+                        # 构建带有延迟的候选列表
+                        candidates_with_lat = []
+                        for u in unique_urls:
+                            # 查找该 URL 在 valid_channels 中的延迟
+                            lat = 9999
+                            for s in all_sources_for_fixed:
+                                if s["url"] == u:
+                                    lat = s.get("latency", 9999)
+                                    break
+                            candidates_with_lat.append((u, lat))
+                        # 按延迟排序，取前 N 个
+                        candidates_with_lat.sort(key=lambda x: x[1])
+                        best_url = candidates_with_lat[0][0] if candidates_with_lat else fixed_urls[0]
+                        ch["url"] = best_url
+                        ch["urls"] = [u for u, _ in candidates_with_lat[:MAX_SOURCES_PER_CHANNEL]]
+                        if candidates_with_lat:
+                            ch["latency"] = candidates_with_lat[0][1]
+                        else:
+                            ch["latency"] = 50
+                        ch["video_codec"] = "h264"
+                        ch["is_fixed"] = True
+                        break
             else:
-                # 没有任何有效源，仅使用固定源第一个
-                merged.append({
-                    "name": fixed_name,
-                    "urls": fixed_urls,
-                    "url": fixed_urls[0],
-                    "latency": 50,
-                    "video_codec": "h264",
-                    "group_title": "央视",
-                    "id": "",
-                    "logo": logo_matcher.get_logo_url(fixed_name),
-                    "is_fixed": True,
-                })
+                # 频道不在 merged 中，新增
+                if all_sources_for_fixed:
+                    best = all_sources_for_fixed[0]
+                    # 合并固定源和有效源 URL
+                    all_urls = list(dict.fromkeys(fixed_urls + [s["url"] for s in all_sources_for_fixed]))
+                    # 按延迟排序
+                    candidates_with_lat = []
+                    for u in all_urls:
+                        lat = 9999
+                        for s in all_sources_for_fixed:
+                            if s["url"] == u:
+                                lat = s.get("latency", 9999)
+                                break
+                        candidates_with_lat.append((u, lat))
+                    candidates_with_lat.sort(key=lambda x: x[1])
+                    best_url = candidates_with_lat[0][0]
+                    merged.append({
+                        "name": fixed_name,
+                        "urls": [u for u, _ in candidates_with_lat[:MAX_SOURCES_PER_CHANNEL]],
+                        "url": best_url,
+                        "latency": candidates_with_lat[0][1] if candidates_with_lat else 50,
+                        "video_codec": "h264",
+                        "group_title": "央视",
+                        "id": "",
+                        "logo": logo_matcher.get_logo_url(fixed_name),
+                        "is_fixed": True,
+                    })
+                else:
+                    # 没有任何有效源，仅使用固定源第一个
+                    merged.append({
+                        "name": fixed_name,
+                        "urls": fixed_urls,
+                        "url": fixed_urls[0],
+                        "latency": 50,
+                        "video_codec": "h264",
+                        "group_title": "央视",
+                        "id": "",
+                        "logo": logo_matcher.get_logo_url(fixed_name),
+                        "is_fixed": True,
+                    })
     
     # ========== 最后确保每个频道的 url 字段为字符串 ==========
     for ch in merged:
@@ -252,12 +248,10 @@ def merge_channels_by_name(valid_channels: list) -> list:
         if not isinstance(ch.get("urls"), list):
             ch["urls"] = [ch["url"]] if ch["url"] else []
     
-    # 统计固定源使用情况
     fixed_count = sum(1 for ch in merged if ch.get("is_fixed"))
     if fixed_count > 0:
         logger.info(f"📌 已使用 {fixed_count} 个固定优质源（含自动择优）")
     
-    # 统计结果
     cctv_channels = [ch for ch in merged if ch["name"].startswith("CCTV-")]
     logger.info(f"📊 合并完成: 共 {len(merged)} 个频道，其中央视 {len(cctv_channels)} 个")
     
