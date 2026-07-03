@@ -6,7 +6,7 @@ from typing import Optional, Dict, List
 from pathlib import Path
 import hashlib
 
-from src.config import DATABASE_ENABLE, DATABASE_PATH, CACHE_HOURS, SLOW_SPEED_THRESHOLD, MAX_RETRY_BEFORE_BLACKLIST, AUTO_PROMOTE_THRESHOLD
+from src.config import settings, DATABASE_ENABLE, DATABASE_PATH, SLOW_SPEED_THRESHOLD, MAX_RETRY_BEFORE_BLACKLIST, AUTO_PROMOTE_THRESHOLD
 from src.logger import logger
 
 
@@ -32,7 +32,6 @@ class DatabaseCache:
             self._conn = None
 
     async def _create_tables(self):
-        # 原有缓存表
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS channel_cache (
                 channel_key TEXT PRIMARY KEY,
@@ -56,7 +55,6 @@ class DatabaseCache:
                 value TEXT
             )
         ''')
-        # 黑名单
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS blacklist (
                 url TEXT PRIMARY KEY,
@@ -65,7 +63,6 @@ class DatabaseCache:
                 fail_count INTEGER DEFAULT 1
             )
         ''')
-        # 速度历史（健康度预测）
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS speed_history (
                 channel_key TEXT,
@@ -76,7 +73,6 @@ class DatabaseCache:
                 PRIMARY KEY (channel_key, timestamp)
             )
         ''')
-        # 候选池
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS candidate_pool (
                 channel_key TEXT PRIMARY KEY,
@@ -90,9 +86,23 @@ class DatabaseCache:
                 status TEXT DEFAULT 'observing'
             )
         ''')
+        await self._conn.execute('''
+            CREATE TABLE IF NOT EXISTS ffprobe_cache (
+                url TEXT PRIMARY KEY,
+                valid INTEGER,
+                video_codec TEXT,
+                has_video INTEGER,
+                updated_at TIMESTAMP
+            )
+        ''')
+        # 索引
+        await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_channel_cache_updated ON channel_cache(updated_at)')
+        await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_speed_history_key_time ON speed_history(channel_key, timestamp)')
+        await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_candidate_status ON candidate_pool(status)')
+        await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_candidate_lastcheck ON candidate_pool(last_check)')
         await self._conn.commit()
 
-    # ---------- 原有方法 ----------
+    # ---------- 原有方法（增加过期检查） ----------
     async def get_raw_source(self, url: str) -> Optional[str]:
         if not self._conn:
             return None
@@ -104,7 +114,7 @@ class DatabaseCache:
             await cursor.close()
             if row:
                 content, updated_at = row
-                if datetime.now() - datetime.fromisoformat(updated_at) < timedelta(hours=CACHE_HOURS):
+                if datetime.now() - datetime.fromisoformat(updated_at) < timedelta(hours=settings.CACHE_RAW_HOURS):
                     return content
         except Exception:
             pass
@@ -134,7 +144,7 @@ class DatabaseCache:
             await cursor.close()
             if row:
                 name, url, latency, video_codec, updated_at = row
-                age_limit = max_age_hours if max_age_hours is not None else CACHE_HOURS
+                age_limit = max_age_hours if max_age_hours is not None else settings.CACHE_SPEED_HOURS
                 if datetime.now() - datetime.fromisoformat(updated_at) < timedelta(hours=age_limit):
                     return {
                         "name": name,
@@ -168,9 +178,31 @@ class DatabaseCache:
             pass
 
     async def save_speed_results(self, channels: List[Dict]):
-        for ch in channels:
-            key = f"{ch['name']}|{ch['url']}"
-            await self.set_speed_result(key, ch)
+        """批量插入，提高性能"""
+        if not self._conn or not channels:
+            return
+        try:
+            data = []
+            now = datetime.now().isoformat()
+            for ch in channels:
+                key = f"{ch['name']}|{ch['url']}"
+                data.append((
+                    key,
+                    ch.get("name", ""),
+                    ch.get("url", ""),
+                    ch.get("latency", 9999),
+                    ch.get("video_codec", ""),
+                    now
+                ))
+            await self._conn.executemany(
+                '''INSERT OR REPLACE INTO channel_cache 
+                   (channel_key, name, url, latency, video_codec, updated_at) 
+                   VALUES (?, ?, ?, ?, ?, ?)''',
+                data
+            )
+            await self._conn.commit()
+        except Exception as e:
+            logger.warning(f"批量插入失败: {e}")
 
     async def get_last_update_time(self) -> Optional[int]:
         if not self._conn:
@@ -193,7 +225,7 @@ class DatabaseCache:
         )
         await self._conn.commit()
 
-    # ---------- 新增黑名单 ----------
+    # ---------- 黑名单 ----------
     async def add_to_blacklist(self, url: str, reason: str = "多次失败"):
         if not self._conn:
             return
@@ -233,7 +265,7 @@ class DatabaseCache:
             await self.add_to_blacklist(url, "首次失败")
             return 1
 
-    # ---------- 新增候选池 ----------
+    # ---------- 候选池 ----------
     async def add_to_candidate(self, channel_key: str, name: str, url: str, latency: int = 0):
         if not self._conn:
             return
@@ -270,18 +302,20 @@ class DatabaseCache:
             await self.add_to_candidate(channel_key, '', '', latency)
         await self._conn.commit()
 
-    async def get_candidates_for_promotion(self) -> List[Dict]:
+    async def get_candidates_for_promotion(self, limit: int = 500) -> List[Dict]:
         if not self._conn:
             return []
         cursor = await self._conn.execute(
             '''SELECT channel_key, name, url, avg_latency, success_count, fail_count
-               FROM candidate_pool WHERE status = 'stable' AND fail_count < 3'''
+               FROM candidate_pool WHERE status = 'stable' AND fail_count < 3
+               ORDER BY last_check ASC LIMIT ?''',
+            (limit,)
         )
         rows = await cursor.fetchall()
         await cursor.close()
         return [{'key': r[0], 'name': r[1], 'url': r[2], 'latency': r[3], 'success': r[4], 'fail': r[5]} for r in rows]
 
-    # ---------- 新增速度历史（健康度预测） ----------
+    # ---------- 速度历史 ----------
     async def save_speed_history(self, channel_key: str, url: str, latency: int, success: bool):
         if not self._conn:
             return
@@ -317,7 +351,6 @@ async def get_db_cache() -> DatabaseCache:
         _db_cache = DatabaseCache()
         await _db_cache.init()
     elif _db_cache._conn is None:
-        # 连接丢失，重新初始化
         await _db_cache.init()
     return _db_cache
 
