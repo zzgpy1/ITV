@@ -7,6 +7,7 @@ from tqdm.asyncio import tqdm
 from src.config import HEADERS, HTTP_TIMEOUT, DOWNLOAD_CHUNK_SIZE, MAX_RETRY_BEFORE_BLACKLIST, SLOW_SPEED_THRESHOLD
 from src.database import get_db_cache, channel_key
 from src.logger import logger
+from src.config import settings
 
 AD_PATTERNS = [
     r'ads?\.', r'adserver', r'doubleclick', r'googlead', r'googlesyndication',
@@ -38,14 +39,18 @@ def get_channel_quality_score(channel: dict) -> tuple:
     return (1 if latency < 2000 else 2, latency, -speed)
     
 async def probe_channel_advanced(session: aiohttp.ClientSession, channel: dict, db) -> tuple:
-    """
-    返回 (channel, latency, is_valid, speed, is_slow)
-    """
     url = channel["url"]
-    # 黑名单检查
     if await db.is_blacklisted(url):
         logger.debug(f"⛔ 黑名单跳过: {url[:80]}")
         return channel, 0, False, 0, False
+    
+    key = channel_key(channel["name"], url)
+    # 检查缓存，使用配置的 CACHE_SPEED_HOURS
+    cached = await db.get_speed_result(key, max_age_hours=settings.CACHE_SPEED_HOURS)
+    if cached and cached.get("latency", 9999) < SLOW_SPEED_THRESHOLD:
+        channel["latency"] = cached["latency"]
+        channel["video_codec"] = cached.get("video_codec", "")
+        return channel, cached["latency"], True, 0, False
     
     # 缓存检查
     key = channel_key(channel["name"], url)
