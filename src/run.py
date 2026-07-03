@@ -292,13 +292,12 @@ async def run_autonomous_mode():
 # ========== 主入口 ==========
 async def main():
     if AUTONOMOUS_MODE:
-        logger.info("🔀 根据 AUTONOMOUS_MODE=true 启用自治模式")
-        logger.info("📌 自治模式将先发现新源，然后执行传统模式完整采集")
+        logger.info("🔀 根据 AUTONOMOUS_MODE=true 启用自治模式（先采集测速，再自治优化）")
+        # 1. 传统采集（含测速，更新候选池数据库）
+        await run_legacy_mode()
+        # 2. 自治模式（从数据库读取最新候选池数据，观察并提升）
         await run_autonomous_mode()
-        logger.info("=" * 60)
-        logger.info("🔄 执行传统模式完整采集...")
-        logger.info("=" * 60)
-        return await run_legacy_mode()
+        return 0
     else:
         logger.info("🔀 根据 AUTONOMOUS_MODE=false 使用传统模式")
         return await run_legacy_mode()
