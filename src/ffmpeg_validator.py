@@ -17,6 +17,7 @@ def get_thread_pool():
     global _thread_pool
     if _thread_pool is None:
         _thread_pool = ThreadPoolExecutor(max_workers=FFMPEG_WORKERS)
+        atexit.register(cleanup)  # 注册清理
     return _thread_pool
 
 def check_ffprobe_sync():
@@ -82,6 +83,12 @@ async def get_cached_probe_result(db, url: str) -> dict:
     except Exception:
         pass
     return None
+
+def cleanup():
+    global _thread_pool
+    if _thread_pool:
+        _thread_pool.shutdown(wait=False)
+        _thread_pool = None
 
 async def save_probe_result(db, url: str, result: dict):
     try:
