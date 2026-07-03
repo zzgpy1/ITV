@@ -69,10 +69,7 @@ class SourceDiscoverer:
     def _save_pool(self):
         try:
             data = {key: value.to_dict() for key, value in self.pool.items()}
-            for key, value in data.items():
-                value["discovered_at"] = value["discovered_at"].isoformat()
-                if value["last_check"]:
-                    value["last_check"] = value["last_check"].isoformat()
+            # 注意：to_dict() 已经将 datetime 转换为 isoformat 字符串
             with open(self.pool_db_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
         except Exception as e:
