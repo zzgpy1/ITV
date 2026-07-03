@@ -11,12 +11,8 @@ from src.candidate.observer import CandidateObserver
 from src.stable.manager import StableManager
 from src.quality.monitor import QualityMonitor
 from src.config import (
-    ENABLE_DEMO_FILTER, OUTPUT_DIR,
-    CANDIDATE_OBSERVATION_HOURS, CANDIDATE_MIN_SUCCESS,
-    CANDIDATE_MIN_SUCCESS_RATE, CANDIDATE_MAX_LATENCY,
-    HEALTH_HISTORY_DAYS, PREDICT_THRESHOLD,
-    AUTO_PROMOTE_THRESHOLD, SLOW_SPEED_THRESHOLD,
-    MAX_WORKERS, TIMEOUT
+    CANDIDATE_MIN_SUCCESS, CANDIDATE_MIN_SUCCESS_RATE, CANDIDATE_MAX_LATENCY,
+    AUTO_PROMOTE_THRESHOLD, SLOW_SPEED_THRESHOLD
 )
 from src.demo_filter import parse_demo_order_with_categories
 from src.generator import generate_outputs_from_demo
@@ -161,28 +157,20 @@ class IPTVOrchestrator:
             logger.error(f"❌ 观察候选源阶段失败: {e}")
             return []
 
-    async def promote_phase(self, stable_candidates: List = None) -> int:
-        logger.info("=" * 50)
-        logger.info("阶段3: 提升稳定源")
-        logger.info("=" * 50)
-        try:
-            if stable_candidates is None:
-                # 分批获取所有稳定候选
-                all_candidates = []
-                offset = 0
-                limit = 500
-                while True:
-                    # 直接从 candidate_observer 获取稳定候选列表（内存中）
-                    # 但为了分页，我们使用数据库查询
-                    if not self.db:
-                        self.db = await get_db_cache()
-                    batch = await self.db.get_candidates_for_promotion(limit=limit)
-                    if not batch:
-                        break
-                    all_candidates.extend(batch)
-                    if len(batch) < limit:
-                        break
-                stable_candidates = all_candidates
+async def promote_phase(self, stable_candidates: List = None) -> int:
+    ...
+    if stable_candidates is None:
+        all_candidates = []
+        offset = 0
+        limit = 500
+        while True:
+            batch = await self.db.get_candidates_for_promotion(limit=limit)
+            if not batch:
+                break
+            all_candidates.extend(batch)
+            if len(batch) < limit:
+                break
+        stable_candidates = all_candidates
             if not stable_candidates:
                 logger.info("📭 没有稳定的候选源需要提升")
                 return 0
