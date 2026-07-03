@@ -316,6 +316,9 @@ async def get_db_cache() -> DatabaseCache:
     if _db_cache is None:
         _db_cache = DatabaseCache()
         await _db_cache.init()
+    elif _db_cache._conn is None:
+        # 连接丢失，重新初始化
+        await _db_cache.init()
     return _db_cache
 
 def channel_key(name: str, url: str) -> str:
