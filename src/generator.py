@@ -68,11 +68,11 @@ def generate_m3u_by_demo_order(
         
         # 2. 追加额外的频道（按分类分组）
         if extra_channels:
-            f.write("\n# ===== 以下为自动追加的港澳台日频道 =====\n")
+            f.write("\n# ===== 以下为自动追加的频道 =====\n")
             # 按分类分组
             grouped = defaultdict(list)
             for ch in extra_channels:
-                cat = ch.get("demo_category", "港澳台日")
+                cat = ch.get("demo_category", "其他")
                 grouped[cat].append(ch)
             
             for cat, channels in grouped.items():
@@ -113,10 +113,10 @@ def generate_txt_by_demo_order(
         
         # 2. 追加额外的频道（按分类分组）
         if extra_channels:
-            f.write("\n# ===== 以下为自动追加的港澳台日频道 =====\n")
+            f.write("\n# ===== 以下为自动追加的频道 =====\n")
             grouped = defaultdict(list)
             for ch in extra_channels:
-                cat = ch.get("demo_category", "港澳台日")
+                cat = ch.get("demo_category", "其他")
                 grouped[cat].append(ch)
             
             for cat, channels in grouped.items():
@@ -155,10 +155,10 @@ def generate_multi_m3u_by_demo_order(
         
         # 2. 额外频道
         if extra_channels:
-            f.write("\n# ===== 以下为自动追加的港澳台日频道 =====\n")
+            f.write("\n# ===== 以下为自动追加的频道 =====\n")
             grouped = defaultdict(list)
             for ch in extra_channels:
-                cat = ch.get("demo_category", "港澳台日")
+                cat = ch.get("demo_category", "其他")
                 grouped[cat].append(ch)
             
             for cat, channels in grouped.items():
