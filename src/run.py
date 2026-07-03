@@ -224,6 +224,36 @@ async def run_legacy_mode():
     except Exception as e:
         logger.warning(f"⚠️ 集成新源失败: {e}")
 
+    # ===== 用稳定源覆盖输出（确保使用最优源） =====
+    try:
+        from src.stable.manager import StableManager
+        stable_mgr = StableManager()
+        active_stable = stable_mgr.get_active_sources()
+        if active_stable:
+            stable_dict = {name: src for name, src in active_stable.items()}
+            replaced_count = 0
+            for ch in ordered_channels:
+                name = ch.get("name")
+                if name in stable_dict:
+                    src = stable_dict[name]
+                    if src.url != ch.get("url"):
+                        ch["url"] = src.url
+                        ch["latency"] = src.latency
+                        ch["video_codec"] = src.video_codec
+                        if "urls" in ch:
+                            if src.url not in ch["urls"]:
+                                ch["urls"] = [src.url] + [u for u in ch["urls"] if u != src.url]
+                            else:
+                                ch["urls"].remove(src.url)
+                                ch["urls"] = [src.url] + ch["urls"]
+                        else:
+                            ch["urls"] = [src.url]
+                        replaced_count += 1
+            if replaced_count > 0:
+                logger.info(f"🔄 使用稳定源覆盖了 {replaced_count} 个频道")
+    except Exception as e:
+        logger.warning(f"⚠️ 稳定源覆盖失败: {e}")
+
     # 最终分类统计
     cat_counter = Counter(ch.get("demo_category", "其他") for ch in ordered_channels)
     logger.info("\n🎉 最终有效频道分类统计：")
