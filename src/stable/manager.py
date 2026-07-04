@@ -7,22 +7,22 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from src.logger import logger
-from src.config import OUTPUT_DIR, ENABLE_FIXED_OPTIMIZATION, FIXED_OPTIMIZATION_THRESHOLD
+from src.config import OUTPUT_DIR, DATA_DIR, ENABLE_FIXED_OPTIMIZATION, FIXED_OPTIMIZATION_THRESHOLD
 from src.stable.models import StableSource, StableStatus
 
 
 class StableManager:
     """稳定版管理器"""
     
-    STABLE_FILE = OUTPUT_DIR / "stable_sources.json"
+    # 将稳定源状态文件保存在 data 目录，而不是 output
+    STABLE_FILE = DATA_DIR / "stable_sources.json"
     
     def __init__(self):
         self.stable_sources: Dict[str, StableSource] = {}
         self._load()
-        self._sync_fixed_sources()   # 每次启动时同步固定源配置
+        self._sync_fixed_sources()
     
     def _load(self):
-        """加载稳定源配置"""
         if self.STABLE_FILE.exists():
             try:
                 with open(self.STABLE_FILE, 'r', encoding='utf-8') as f:
@@ -34,7 +34,6 @@ class StableManager:
                 logger.warning(f"加载稳定源失败: {e}")
     
     def _save(self):
-        """保存稳定源配置"""
         try:
             data = {name: src.to_dict() for name, src in self.stable_sources.items()}
             with open(self.STABLE_FILE, 'w', encoding='utf-8') as f:
