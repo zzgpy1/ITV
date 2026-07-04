@@ -1,299 +1,262 @@
-# IPTV 智能整理平台 · 自治版
+IPTV 智能管理平台 · 自治版
+全自动 IPTV 直播源采集、测速、验证、分类、合并与自治管理平台。通过 GitHub Actions 定时运行，无需服务器，永久免费。
 
+📖 目录
+功能特点
 
-全自动 IPTV 直播源采集、测速、验证、分类、输出与自治管理平台。
+系统架构
 
-本项目集多源采集、双重测速、智能分类、固定源保护、质量回滚于一体。通过 GitHub Actions 或 Docker 一键部署，实现从“被动维护”到“主动自治”的升级。
+快速开始
 
----
+Fork 仓库
 
-## 功能特点
+查看输出
 
-- **多源聚合**：同时拉取 10+ 公开 IPTV 源，自动去重
-- **双重测速**：HTTP 快速探测 + ffmpeg 深度验证（支持分级模式）
-- **智能分类**：按央视、卫视、地方（省份）、港澳台自动归类
-- **固定源保护**：用户指定优质源，永不自动替换
-- **自治模式**：发现 → 候选观察 → 稳定提升 → 质量监控 → 自动回滚
-- **Web 管理面板**：仪表盘、频道列表、固定源管理、配置编辑、质量趋势图表
-- **多格式输出**：tv.m3u、tv.txt、tv_multi.m3u、channels.json
-- **Docker 部署**：一键运行，内置 Web 服务
-- **定时自动化**：GitHub Actions 每 6 小时运行
+自定义配置
 
----
+运行方式
 
-## 系统架构
+配置说明
 
-```text
-Web 管理界面 (Flask)
-├── 仪表盘
-├── 频道列表
-├── 固定源管理
-├── 配置管理
-└── 质量趋势
+输出文件
 
-自治模式 (质量回路)
-├── 源池发现
-├── 候选观察
-├── 稳定提升
-└── 质量回滚
+自治模式详解
 
-数据层
-├── 稳定版 (家中电视)
-├── 候选版 (观察期)
-├── 源池 (新源发现)
-└── 固定源 (用户指定)
+固定源管理
+
+常见问题
+
+免责声明
+
+🚀 功能特点
+多源聚合：同时拉取 10+ 公开 IPTV 源，自动去重
+
+双重测速：HTTP 快速探测 + ffmpeg 深度验证（支持 deep/quick/off 三种模式）
+
+智能分类：按央视、卫视、地方（省份）、港澳台自动归类，支持拼音匹配
+
+自治模式：候选源观察 → 自动提升 → 质量监控 → 健康预测替换，全自动闭环
+
+固定源保护：用户指定优质源，永不自动替换
+
+多格式输出：M3U、TXT、多源 M3U（# 分隔多地址）、JSON API
+
+GitHub Actions 定时运行：每 6 小时自动更新，推送至仓库，永久免费
+
+输出托管：通过 GitHub Pages 直接访问播放列表
+
+🏗️ 系统架构
+┌─────────────────────────────────────────────────────────────────┐
+│                    GitHub Actions 定时触发                      │
+│                     （每 6 小时 / 手动）                        │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                       传统模式（采集与评估）                      │
+├─────────────────────────────────────────────────────────────────┤
+│  拉取源 → 解析去重 → HTTP测速 → ffmpeg验证 → 合并 → 分类 → 输出  │
+│                    ↓                                           │
+│             写入候选池 (candidate_pool.json)                    │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                   自治模式（观察与提升）                         │
+├─────────────────────────────────────────────────────────────────┤
+│  阶段1（可选）：发现新源 → 加入候选池                           │
+│  阶段2：观察候选源（读取历史统计数据，标记稳定）                 │
+│  阶段3：提升稳定源 → 写入稳定版 (stable_sources.json)           │
+│  阶段4：健康预测替换（高风险源自动替换）                        │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                      输出层（推送到仓库）                        │
+├─────────────────────────────────────────────────────────────────┤
+│  tv.m3u / tv.txt / tv_multi.m3u / channels.json / stats.json  │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    GitHub Pages 托管                            │
+│            https://你的用户名.github.io/ITV/tv.m3u              │
+└─────────────────────────────────────────────────────────────────┘
 
 🚀 快速开始
 
-方式一：Docker 部署（推荐）
-git clone https://github.com/zzgpy1/ITV.git
-cd ITV
-cp .env.example .env
-docker-compose up -d
+Fork 仓库
+访问 https://github.com/zzgpy1/ITV
 
-# 浏览器打开 http://你的IP:8080
+点击右上角 Fork 按钮
 
-容器启动后，会自动执行以下任务：
+等待 Fork 完成
 
-拉取所有配置的 IPTV 源
+启用 GitHub Pages（可选）
+进入你的仓库 → Settings → Pages
 
-测速、验证、分类、输出播放列表
+将 Source 设置为 main 分支，/(root) 目录
 
-启动 Web 管理界面（端口 8080）
+点击 Save
 
-数据持久化：
-
-./data/ → 缓存数据库、源池、候选池
-
-./output/ → 生成的播放列表、日志、统计信息
-
-方式二：GitHub Actions 自动运行
-
-Fork 本仓库到你的 GitHub 账号
-
-启用 Actions：仓库 → Actions → 允许工作流
-
-手动触发首次运行：Actions → IPTV 源智能更新与整理 → Run workflow
-
-访问播放列表：
+几分钟后，播放列表可通过以下地址访问：
 
 https://你的用户名.github.io/ITV/tv.m3u
 
 https://你的用户名.github.io/ITV/tv.txt
 
+查看输出文件
+输出文件位于仓库的 output/ 目录：
+
+output/tv.m3u - 标准 M3U 播放列表
+
+output/tv.txt - TXT 格式
+
+output/tv_multi.m3u - 多源 M3U
+
+output/channels.json - JSON API
+
+output/stats.json - 统计信息
+
+自定义配置
+编辑 .env.example 并重命名为 .env，或直接修改仓库中的 .github/workflows/update_iptv.yml 中的环境变量。
+
+🔄 运行方式
+
+方式一：自动运行（推荐）
+GitHub Actions 会按照以下规则自动运行：
+
+定时触发：每 6 小时自动执行一次（UTC 0, 6, 12, 18 点）
+
+手动触发：进入 Actions → IPTV 源智能更新与整理 → Run workflow
+
+方式二：本地运行
+# 克隆仓库
+git clone https://github.com/你的用户名/ITV.git
+cd ITV
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 安装 ffmpeg（用于深度验证）
+# Ubuntu/Debian
+sudo apt-get install ffmpeg
+# macOS
+brew install ffmpeg
+
+# 运行
+python -m src.run
+
 ⚙️ 配置说明
-
-项目通过 环境变量（.env 文件或 Docker 环境）灵活配置。所有配置项见 .env.example。
-
-核心配置项
-
-
+通过修改 .github/workflows/update_iptv.yml 中的环境变量，或本地 .env 文件进行配置。
 变量	默认值	说明
-
-RUN_MODE	schedule	运行模式：once（一次性）或 schedule（定时）
-
-SCHEDULE_INTERVAL	21600	定时模式间隔（秒），默认 6 小时
-
+AUTONOMOUS_MODE	true	启用自治模式（先跑传统模式，再跑自治模式）
 MAX_WORKERS	20	并发测速线程数
-
 TIMEOUT	8	HTTP 超时（秒）
-
 FFMPEG_ENABLE	true	是否启用 ffmpeg 深度验证
-
 FFMPEG_MODE	deep	deep（深度）/ quick（快速）/ off（关闭）
-
-AUTONOMOUS_MODE	false	是否启用自治模式（源池→候选→稳定）
-
 ENABLE_DEMO_FILTER	true	是否按 demo.txt 筛选频道
+CANDIDATE_MIN_SUCCESS	3	候选源提升所需最少成功次数
+CANDIDATE_MIN_SUCCESS_RATE	0.5	候选源最低成功率（50%）
+CANDIDATE_MAX_LATENCY	3000	候选源最大平均延迟（毫秒）
+PREDICT_THRESHOLD	0.6	健康预测失效阈值（超过则尝试替换）
+SLOW_SPEED_THRESHOLD	3000	慢速源阈值
 
-CACHE_RAW_HOURS	48	原始源缓存时长（小时）
-
-WEB_SERVER_PORT	8080	Web 管理界面端口
-
-固定源配置
-
-编辑 src/fixed_sources.py 可预设优质源，格式：
-
-CCTV_FIXED_SOURCES = {
-    "CCTV-1": "http://45.192.97.170:8880/play/1.m3u8",
-    "CCTV-5+": "http://45.192.97.170:8880/play/6.m3u8",
-    # ...
-}
-
-📺 Web 管理界面
-
-访问 http://你的IP:8080 进入管理面板：
-
-1. 仪表盘
-
-显示稳定源、固定源、源池总量、候选观察中数量
-
-系统状态与最后运行时间
-
-2. 频道列表
-
-展示所有稳定源频道（名称、分类、延迟、编码、固定状态）
-
-支持按频道名搜索、按分类筛选
-
-点击图表图标快速跳转质量趋势
-
-3. 固定源管理
-
-添加固定源（频道名 + URL），同名会更新 URL
-
-删除固定源（移除保护，但频道仍保留）
-
-列表展示所有固定源及其 URL
-
-4. 配置管理
-
-在线编辑 MAX_WORKERS、TIMEOUT、MAX_SOURCES_PER_CHANNEL、DEMO_MATCH_MODE、FFMPEG_ENABLE
-
-保存后需重启容器生效
-
-5. 质量趋势
-
-输入任意稳定源频道名（如 CCTV-1）
-
-显示最近 7/14/30 天的延迟变化曲线
-
-成功/失败状态用绿/红点标识
-
-📂 输出文件说明
+📂 输出文件
+所有输出文件位于 output/ 目录：
+文件	说明
+tv.m3u	标准 M3U 播放列表（按 demo.txt 顺序）
+tv.txt	TXT 格式（频道名,URL）
+tv_multi.m3u	多源 M3U（每个频道多个备源，用 # 分隔）
+channels.json	JSON API（供第三方调用）
+shai.txt	Demo 未匹配的频道列表
+stats.json	采集统计信息
+stable_sources.json	稳定源列表（含固定标记）
+run.log	运行日志
+数据文件位于 data/ 目录：
 
 文件	说明
+source_pool.json	源池（所有发现过的源）
+candidate_pool.json	候选池（观察中的源）
+iptv_cache.db	SQLite 缓存（测速结果、历史记录）
 
-output/tv.m3u	标准 M3U 播放列表（按 demo.txt 顺序）
+🤖 自治模式详解
+自治模式实现“采集→评估→观察→提升→替换”的完整闭环：
 
-output/tv.txt	标准 TXT 格式（频道名,URL）
+阶段1：发现新源（可选）
+拉取所有配置源，新发现的源自动加入候选池（状态 observing）。
 
-output/tv_multi.m3u	多源 M3U（每个频道多个备源，用 # 分隔）
+阶段2：观察候选源
+从数据库读取候选源的历史测速统计数据（成功率、平均延迟、检查次数），将满足以下条件的源标记为 stable：
 
-output/channels.json	JSON API（供第三方调用）
+检查次数 ≥ CANDIDATE_MIN_SUCCESS（默认 3 次）
 
-output/shai.txt	demo 未匹配的频道列表
+成功率 ≥ CANDIDATE_MIN_SUCCESS_RATE（默认 50%）
 
-output/stats.json	采集统计信息
+平均延迟 ≤ CANDIDATE_MAX_LATENCY（默认 3000ms）
 
-output/stable_sources.json	稳定源列表（含固定标记）
+阶段3：提升稳定源
+将 stable 候选源提升为稳定源，写入 stable_sources.json，并替换同名旧源（除非是固定源）。
 
-data/source_pool.json	源池（所有发现过的源）
+阶段4：健康预测与自动替换
+对每个稳定源，基于过去 HEALTH_HISTORY_DAYS 天的速度历史预测失效概率。若概率超过 PREDICT_THRESHOLD，尝试从候选池中寻找更优源进行替换。
 
-data/candidate_pool.json	候选池（观察中的源）
+运行流程
+当 AUTONOMOUS_MODE=true 时：
 
-data/trend.db	质量趋势数据库（SQLite）
+传统模式：拉取源 → 测速 → 验证 → 合并 → 输出（同时将结果写入候选池）
 
-🔧 高级特性
+自治模式（跳过发现）：直接观察候选池 → 提升稳定源 → 健康预测替换
 
-自治模式工作流程
+📌 固定源管理
+编辑 src/fixed_sources.py 可预设优质源，这些源不会被自动替换，且拥有最高优先级。
+CCTV_FIXED_SOURCES = {
+    "CCTV-1": [
+        "http://69.30.245.50/live/cctv1.m3u8",
+        "http://45.192.97.170:8880/play/1.m3u8"
+    ],
+    "CCTV-5+": [
+        "http://45.192.97.170:8880/play/6.m3u8"
+    ],
+    # ...
+}
+固定源支持多个备选地址，系统会自动选择延迟最低的有效源。
 
-发现阶段：拉取所有源，新源进入候选池
+如何添加自定义固定源？
+编辑 src/fixed_sources.py
 
-观察阶段：候选源经多次验证（成功率≥80%、延迟≤2000ms）后稳定
+按 "频道名": ["url1", "url2"] 格式添加
 
-提升阶段：稳定候选源提升为稳定版，替换同名劣质源
+提交并推送，下次 Actions 运行时会自动生效
 
-质量监控：稳定源持续检测，连续失败 3 次触发告警
+❓ 常见问题
+Q: 自治模式提升数为 0，怎么办？
+A: 可能原因：
 
-回滚机制：质量严重下降时自动从候选池找替代源
+候选源检查次数不足（需 ≥ CANDIDATE_MIN_SUCCESS）
 
-智能分类匹配
+成功率低于阈值
 
-支持拼音匹配（如 zhejiang → 浙江卫视）
+延迟过高
 
-自动归类：全国省份、直辖市、港澳台
+解决方法：降低门槛（调整 .env 中相关变量），或等待更多测速数据积累。
 
-未匹配频道按省份关键词自动归类
+Q: 源池总数为 0，正常吗？
+A: 正常。source_pool.json 仅在发现阶段写入，自治模式跳过发现时不会加载。不影响候选池提升。
 
-固定源保护
+Q: 如何手动触发一次更新？
+A: 进入仓库 Actions → IPTV 源智能更新与整理 → Run workflow。
 
-用户指定的固定源不会被自动替换
+Q: 固定源如何更新？
+A: 修改 src/fixed_sources.py，提交后下次运行会自动生效。
 
-可在 Web 界面或 fixed_sources.py 中管理
+Q: 播放列表多久更新一次？
+A: 每 6 小时自动更新一次。如需更频繁，可修改 .github/workflows/update_iptv.yml 中的 cron 表达式。
 
-🐳 Docker 高级部署
+Q: 如何查看运行日志？
+A: 进入仓库 Actions → 点击最新的运行记录 → 展开 运行采集程序 步骤即可查看详细日志。
 
-使用 Docker Compose（推荐）
-
-# docker-compose.yml（示例）
-services:
-  iptv-collector:
-    build: .
-    container_name: iptv-collector
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./data:/app/data
-      - ./output:/app/output
-    environment:
-      - AUTONOMOUS_MODE=true
-      - MAX_WORKERS=20
-      - TIMEOUT=8
-      - RUN_MODE=schedule
-      - SCHEDULE_INTERVAL=21600
-      - WEB_SERVER_PORT=8080
-
-      手动构建镜像
-      docker build -t iptv-collector .
-docker run -d \
-  --name iptv-collector \
-  -p 8080:8080 \
-  -v ./data:/app/data \
-  -v ./output:/app/output \
-  -e AUTONOMOUS_MODE=true \
-  iptv-collector
-
-  📦 依赖与兼容性
-Python：3.10+
-
-关键依赖：aiohttp, aiosqlite, Flask, flask-cors, pypinyin, tqdm, Chart.js (前端)
-
-系统工具：ffmpeg（用于深度验证）
-
-架构支持：x86_64 / ARM64（Docker 自动适配）
-
-版本演进时间线
-v1.0  基础采集 + 测速 + 分类
-v1.1  固定源 + 国外频道
-v1.2  EPG 注入 + 全球频道
-v2.0  自治模式（源池→候选→稳定）
-v2.1  港澳台日源 + 拼音匹配
-v2.2  Web 管理界面
-v2.3  性能优化 + 动态并发
-v2.4  质量趋势 + 配置管理完善
-
-后续可扩展方向
-批量操作（批量添加/删除固定源）
-
-手动触发采集（从 Web 界面）
-
-用户认证（简单登录）
-
-日志查看（Web 界面查看 run.log）
-
-多用户支持（不同用户独立配置）
-
-🤝 贡献指南
-欢迎提交 Issue 和 Pull Request。开发前请确保：
-
-代码风格符合 PEP8
-
-新功能有对应测试（或日志验证）
-
-更新 README.md 和 .env.example
-
-📄 免责声明
-
+⚠️ 免责声明
 本项目仅用于个人学习与测试，不用于任何商业用途。
-
 所有节目源均来自互联网公开链接，项目本身不存储、不篡改任何媒体内容。
-
 严禁将本项目及生成的播放列表用于商业传播、二次分发。
-
 所有频道版权归原版权方所有，使用前请确保符合当地法律法规。
-
 因违规使用产生的任何法律责任，均由使用者自行承担。
 
 🙏 致谢
@@ -303,14 +266,3 @@ Guovin/iptv-api – 采集工具参考
 
 zilong7728/Collect-IPTV – 国内源
 
-Flask – Web 框架
-
-Chart.js – 前端图表
-
-📬 反馈与支持
-
-提交 Issue
-
-查看 Actions 运行日志
-
-交流讨论 Discussions
