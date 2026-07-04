@@ -1186,5 +1186,53 @@
     "last_verified": null,
     "fail_count": 0,
     "status": "active"
+  },
+  "宿州公共 (1080p) [Not 24/7]": {
+    "channel_name": "宿州公共 (1080p) [Not 24/7]",
+    "url": "http://live.ahsz.tv/video/s10001-ggpd/index.m3u8",
+    "latency": 1555,
+    "video_codec": "",
+    "promoted_at": "2026-07-04T13:20:46.092994",
+    "is_fixed": false,
+    "auto_optimize": false,
+    "last_verified": null,
+    "fail_count": 0,
+    "status": "active"
+  },
+  "宿州科教 (1080p) [Not 24/7]": {
+    "channel_name": "宿州科教 (1080p) [Not 24/7]",
+    "url": "http://live.ahsz.tv/video/s10001-kxjy/index.m3u8",
+    "latency": 695,
+    "video_codec": "",
+    "promoted_at": "2026-07-04T13:20:46.131432",
+    "is_fixed": false,
+    "auto_optimize": false,
+    "last_verified": null,
+    "fail_count": 0,
+    "status": "active"
+  },
+  "河北都市": {
+    "channel_name": "河北都市",
+    "url": "http://1.94.31.214/php/hebei.php?id=hbds",
+    "latency": 2563,
+    "video_codec": "",
+    "promoted_at": "2026-07-04T13:20:46.168494",
+    "is_fixed": false,
+    "auto_optimize": false,
+    "last_verified": null,
+    "fail_count": 0,
+    "status": "active"
+  },
+  "东阳影视生活": {
+    "channel_name": "东阳影视生活",
+    "url": "http://l.cztvcloud.com/channels/lantian/SXdongyang1/720p.m3u8",
+    "latency": 1414,
+    "video_codec": "",
+    "promoted_at": "2026-07-04T13:20:46.206026",
+    "is_fixed": false,
+    "auto_optimize": false,
+    "last_verified": null,
+    "fail_count": 0,
+    "status": "active"
   }
 }
