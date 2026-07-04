@@ -95,7 +95,6 @@
 输出文件位于仓库的 `output/` 目录：
 - `output/tv.m3u` - 标准 M3U 播放列表
 - `output/tv.txt` - TXT 格式
-- `output/tv_multi.m3u` - 多源 M3U
 - `output/channels.json` - JSON API
 - `output/stats.json` - 统计信息
 
