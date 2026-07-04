@@ -19,18 +19,15 @@ def get_channel_urls(channel: dict) -> List[str]:
             return [url]
         return []
     
-    # 如果 urls 是字符串，直接转为列表
     if isinstance(urls, str):
         return [urls]
     
-    # 如果 urls 是列表，展平嵌套列表
     if isinstance(urls, list):
         flat = []
         for item in urls:
             if isinstance(item, str):
                 flat.append(item)
             elif isinstance(item, list):
-                # 递归展平
                 for sub in item:
                     if isinstance(sub, str):
                         flat.append(sub)
@@ -69,7 +66,6 @@ def generate_m3u_by_demo_order(
         # 2. 追加额外的频道（按分类分组）
         if extra_channels:
             f.write("\n# ===== 以下为自动追加的频道 =====\n")
-            # 按分类分组
             grouped = defaultdict(list)
             for ch in extra_channels:
                 cat = ch.get("demo_category", "其他")
@@ -131,53 +127,10 @@ def generate_txt_by_demo_order(
     logger.info(f"✅ TXT 文件已生成: {output_path}")
 
 
-def generate_multi_m3u_by_demo_order(
-    channels_by_name: Dict[str, dict],
-    demo_order: List[Tuple[str, str]],
-    extra_channels: List[dict],
-    output_path: Path
-) -> None:
-    """生成多源 M3U 文件，支持自动切换，同样追加 extra_channels"""
-    with open(output_path, 'w', encoding='utf-8') as f:
-        f.write("#EXTM3U\n")
-        # 1. demo 频道
-        for cat, demo_name in demo_order:
-            channel = channels_by_name.get(demo_name)
-            if channel:
-                urls = get_channel_urls(channel)
-                valid_urls = [u for u in urls if u and u.startswith(('http://', 'https://'))]
-                if valid_urls:
-                    multi_url = " # ".join(valid_urls)
-                    name = channel.get("name", demo_name)
-                    clean_cat = cat.replace(",#genre#", "").strip()
-                    f.write(f'#EXTINF:-1 group-title="{clean_cat}",{name}\n')
-                    f.write(f"{multi_url}\n")
-        
-        # 2. 额外频道
-        if extra_channels:
-            f.write("\n# ===== 以下为自动追加的频道 =====\n")
-            grouped = defaultdict(list)
-            for ch in extra_channels:
-                cat = ch.get("demo_category", "其他")
-                grouped[cat].append(ch)
-            
-            for cat, channels in grouped.items():
-                f.write(f"\n# ----- {cat} -----\n")
-                for ch in channels:
-                    urls = get_channel_urls(ch)
-                    valid_urls = [u for u in urls if u and u.startswith(('http://', 'https://'))]
-                    if valid_urls:
-                        multi_url = " # ".join(valid_urls)
-                        name = ch.get("name")
-                        f.write(f'#EXTINF:-1 group-title="{cat}",{name}\n')
-                        f.write(f"{multi_url}\n")
-    
-    logger.info(f"✅ 多源 M3U 文件已生成: {output_path}")
-
-
 def generate_outputs_from_demo(ordered_channels: List[dict], demo_order: List[Tuple[str, str]]) -> None:
     """
     按照 demo.txt 的顺序输出 M3U 和 TXT 文件，并自动追加未匹配的港澳台日频道
+    （不再生成 tv_multi.m3u）
     """
     if not ordered_channels:
         logger.warning("无频道数据，跳过输出生成")
@@ -186,16 +139,13 @@ def generate_outputs_from_demo(ordered_channels: List[dict], demo_order: List[Tu
     demo_categories = {cat for cat, _ in demo_order}
     channels_by_name = {}
     
-    # 构建 channels_by_name
     for ch in ordered_channels:
         name = ch.get("name")
         if name:
             channels_by_name[name] = ch
-        # 同时使用 demo_name 作为备用键
         if "demo_name" in ch:
             channels_by_name[ch["demo_name"]] = ch
     
-    # 提取额外频道（分类不在 demo_order 中）
     extra_channels = [
         ch for ch in ordered_channels
         if ch.get("demo_category") and ch.get("demo_category") not in demo_categories
@@ -205,4 +155,5 @@ def generate_outputs_from_demo(ordered_channels: List[dict], demo_order: List[Tu
     
     generate_m3u_by_demo_order(channels_by_name, demo_order, extra_channels, OUTPUT_DIR / M3U_FILE)
     generate_txt_by_demo_order(channels_by_name, demo_order, extra_channels, OUTPUT_DIR / TXT_FILE)
-    generate_multi_m3u_by_demo_order(channels_by_name, demo_order, extra_channels, OUTPUT_DIR / "tv_multi.m3u")
+    # 不再生成 tv_multi.m3u
+    logger.info("✅ 输出生成完成（仅 M3U 和 TXT）")
