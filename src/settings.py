@@ -73,12 +73,8 @@ class Settings:
         "https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/cn.m3u",
         "https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.txt",
         "https://raw.githubusercontent.com/zzgpy1/iptv-api/master/output/result.txt",
-        "https://raw.githubusercontent.com/dogwalkerg/IPTV-collect-tv-txt/main/live.txt",
         "https://raw.githubusercontent.com/zzgpy1/Collect-IPTV/main/best_sorted.m3u",
-        "https://raw.githubusercontent.com/YueChan/Live/main/IPTV.m3u",
-        "https://raw.githubusercontent.com/fanmingming/live/main/tv/m3u/ipv6.m3u",
-        "https://raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u",
-    ])
+       ])
     DIRECT_SOURCES: List[str] = field(default_factory=lambda: [
         "https://tv.19860519.xyz/abc123",
     ])
