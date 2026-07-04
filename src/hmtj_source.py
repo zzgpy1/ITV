@@ -14,14 +14,6 @@ CATEGORY_MAP = {
     "group_地方": "地方",
 }
 
-SPORTS_KEYWORDS = [
-    "体育", "赛事", "竞技", "比赛", "运动",
-    "nba", "英超", "中超", "世界杯", "奥运",
-    "足球", "篮球", "排球", "乒乓球", "羽毛球",
-    "网球", "高尔夫", "台球", "斯诺克", "F1"
-]
-
-
 async def fetch_hmtj_source() -> List[Dict]:
     """拉取 JSON 数据并解析为频道列表"""
     source_url = "http://1080p.19860519.de5.net/"
@@ -78,21 +70,6 @@ def extract_play_url(play_url_raw: str) -> Optional[str]:
                 return part
     return None
 
-
-def classify_hmtj_channel(channel: Dict) -> str:
-    group_title = channel.get("group_title", "")
-    for src_cat, demo_cat in CATEGORY_MAP.items():
-        if group_title == src_cat or group_title == demo_cat:
-            return demo_cat
-
-    name = channel.get("name", "")
-    name_lower = name.lower()
-    for kw in SPORTS_KEYWORDS:
-        if kw in name_lower:
-            return "体育赛事"
-    return None
-
-
 async def integrate_hmtj_source() -> Dict[str, List[Dict]]:
     """拉取并分类，返回分类字典（值均为频道列表）"""
     channels = await fetch_hmtj_source()
@@ -103,7 +80,6 @@ async def integrate_hmtj_source() -> Dict[str, List[Dict]]:
         "央视": [],
         "卫视": [],
         "地方": [],
-        "体育赛事": [],
     }
     unknown = []
 
