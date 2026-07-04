@@ -47,7 +47,7 @@ from src.hmtj_source import integrate_hmtj_source
 from src.special_categories import collect_and_append_special_categories
 
 
-# ========== 子函数（拆分 run_legacy_mode） ==========
+# ========== 子函数 ==========
 async def collect_raw_sources(db):
     """拉取原始源（增量或完整）"""
     raw_contents = {}
@@ -194,8 +194,8 @@ def merge_and_filter(valid_channels, db):
     return ordered_channels, demo_order, unmatched_channels
 
 
-def output_results(ordered_channels, demo_order, unmatched_channels, stats):
-    """生成输出文件"""
+async def output_results(ordered_channels, demo_order, unmatched_channels, stats, db):
+    """生成输出文件（异步）"""
     # 用稳定源覆盖
     try:
         from src.stable.manager import StableManager
@@ -289,7 +289,7 @@ async def run_legacy_mode():
 
     # 4. 集成新源（央视/卫视/地方存入固定源，体育赛事追加输出）
     try:
-        hmtj_classified = await integrate_hmtj_source()   # ← 修正：加 await
+        hmtj_classified = await integrate_hmtj_source()
         if hmtj_classified:
             from src.stable.manager import StableManager
             stable_mgr = StableManager()
@@ -322,7 +322,7 @@ async def run_legacy_mode():
 
     # 5. 生成输出
     stats = {}
-    output_results(ordered_channels, demo_order, unmatched_channels, stats)
+    await output_results(ordered_channels, demo_order, unmatched_channels, stats, db)
 
     ffmpeg_cleanup()
     await db.close()
@@ -351,7 +351,6 @@ async def run_autonomous_mode(skip_discover: bool = False):
 
 # ========== 主入口 ==========
 async def main():
-    # 全局异常钩子
     try:
         if AUTONOMOUS_MODE:
             logger.info("🔀 根据 AUTONOMOUS_MODE=true 启用自治模式（先采集测速，再自治优化）")
