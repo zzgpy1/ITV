@@ -224,18 +224,26 @@ class IPTVOrchestrator:
             logger.info("⏭️ 跳过发现阶段（使用已有源池）")
         else:
             logger.info("⚡ 强制刷新模式：重新拉取所有源")
+
         try:
             self.db = await get_db_cache()
+
+            # ----- 阶段1: 发现（可选） -----
             if not skip_discover:
                 await self.discover_phase()
-                stable_candidates = await self.observe_phase()
-                await self.promote_phase(stable_candidates)
             else:
                 logger.info("⏭️ 跳过发现阶段")
-                await self.promote_phase(None)  # 提升所有稳定候选
+
+            # ===== 阶段2 & 3: 观察 + 提升（始终执行） =====
+            stable_candidates = await self.observe_phase()
+            await self.promote_phase(stable_candidates)
+
+            # ----- 健康预测替换 -----
             replaced = await self.auto_replace_if_risky()
             if replaced:
                 logger.info(f"🔄 已预替换 {replaced} 个高风险源")
+
+            # ----- 统计 -----
             logger.info("=" * 50)
             logger.info("📊 自治模式统计")
             logger.info("=" * 50)
@@ -244,11 +252,13 @@ class IPTVOrchestrator:
             logger.info(f"  候选池观察中: {self.candidate_observer.get_statistics()['observing']}")
             logger.info(f"  本次新提升: {self.stats.get('new_stable_count', 0)}")
             logger.info(f"  累计提升: {self.stats['total_promoted']}")
+
         except Exception as e:
             logger.exception(f"❌ 自治流程执行失败: {e}")
         finally:
             if self.db:
                 await self.db.close()
+
         return self.stats
 
 
