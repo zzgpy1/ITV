@@ -99,22 +99,6 @@ graph LR
     G -->|否| F
 ```
 
-## 时序图
-```mermaid
-sequenceDiagram
-    participant U as 用户
-    participant E as 编辑器
-    participant P as 预览器
-    participant S as 服务器
-
-    U->>E: 输入 Markdown 文本内容
-    E->>P: 实时渲染 Markdown 为 HTML
-    P->>U: 展示渲染后的预览效果
-    U->>E: 点击「导出」按钮
-    E->>S: 发送导出请求（含文本内容）
-    S->>E: 返回导出后的文件（PDF/HTML/MD）
-    E->>U: 触发文件下载
-```
 1. 采集阶段：拉取所有配置的 IPTV 源，解析并去重。
 
 2. 测速验证：HTTP 探测 + ffmpeg 深度验证，过滤无效源，结果写入候选池。
