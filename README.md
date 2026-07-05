@@ -38,7 +38,8 @@
 - 标准 M3U：https://你的用户名.github.io/ITV/output/tv.m3u
 - 标准 TXT：https://你的用户名.github.io/ITV/output/tv.txt
 - JSON API：https://你的用户名.github.io/ITV/output/channels.json
-    替换 你的用户名 为你的 GitHub 账号名。
+
+替换 你的用户名 为你的 GitHub 账号名。
 ### 方式二：本地运行（调试用）
 
 ```python
