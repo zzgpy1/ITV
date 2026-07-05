@@ -10,7 +10,7 @@ from pathlib import Path
 @dataclass
 class Settings:
     # ---------- 路径 ----------
-    ROOT_DIR: Path = Path(__file__).parent.parent
+    ROOT_DIR: Path = Path(__file__).parent.parent.parent
     DATA_DIR: Path = ROOT_DIR / "data"
     OUTPUT_DIR: Path = ROOT_DIR / "output"
 
