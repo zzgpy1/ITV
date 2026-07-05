@@ -75,7 +75,7 @@ class Settings:
         "https://raw.githubusercontent.com/zzgpy1/iptv-api/master/output/result.txt",
         "https://raw.githubusercontent.com/zzgpy1/Collect-IPTV/main/best_sorted.m3u",
         "https://raw.githubusercontent.com/zzgpy1/ipv6-iptv/master/tv/iptv4.txt",
-        "https://raw.githubusercontent.com/CCSH/IPTV/refs/heads/main/live.txt"，
+        "https://raw.githubusercontent.com/CCSH/IPTV/refs/heads/main/live.txt",
         "https://raw.githubusercontent.com/kakaxi-1/IPTV/main/iptv.txt",
         ])
     DIRECT_SOURCES: List[str] = field(default_factory=lambda: [
