@@ -2,7 +2,6 @@
 """统一配置管理 - 从环境变量加载并校验"""
 
 import os
-from src.config.settings import settings
 from dataclasses import dataclass, field
 from typing import List, Optional
 from pathlib import Path
