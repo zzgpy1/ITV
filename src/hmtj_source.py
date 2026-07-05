@@ -6,13 +6,45 @@ import json
 import re
 from typing import List, Dict, Optional
 from src.logger import logger
+from src.constants import PROVINCES
 
 
-CATEGORY_MAP = {
-    "group_央视": "央视",
-    "group_卫视": "卫视",
-    "group_地方": "地方",
-}
+def classify_hmtj_channel(channel: Dict) -> Optional[str]:
+    """
+    根据频道名和分组标题进行分类，返回 '央视' / '卫视' / '地方' 或 None
+    注意：体育赛事分类已被取消，不再返回 '体育赛事'
+    """
+    name = channel.get("name", "")
+    group_title = channel.get("group_title", "")
+    name_lower = name.lower()
+
+    # 1. 央视检测
+    if "cctv" in name_lower or "央视" in name or "中央电视" in name:
+        return "央视"
+    # 也检查 group_title
+    if "cctv" in group_title.lower() or "央视" in group_title:
+        return "央视"
+
+    # 2. 卫视检测（排除已归为央视的）
+    if "卫视" in name:
+        return "卫视"
+    if "卫视" in group_title:
+        return "卫视"
+
+    # 3. 地方检测：省份关键词
+    for prov in PROVINCES:
+        if prov in name or prov in group_title:
+            return "地方"
+
+    # 4. 地方检测：常见地市级关键词
+    city_keywords = ["电视台", "综合频道", "公共频道", "生活频道", "新闻综合", "都市频道", "经济频道"]
+    for kw in city_keywords:
+        if kw in name or kw in group_title:
+            return "地方"
+
+    # 未匹配
+    return None
+
 
 async def fetch_hmtj_source() -> List[Dict]:
     """拉取 JSON 数据并解析为频道列表"""
@@ -70,8 +102,9 @@ def extract_play_url(play_url_raw: str) -> Optional[str]:
                 return part
     return None
 
+
 async def integrate_hmtj_source() -> Dict[str, List[Dict]]:
-    """拉取并分类，返回分类字典（值均为频道列表）"""
+    """拉取并分类，返回分类字典（仅包含央视/卫视/地方）"""
     channels = await fetch_hmtj_source()
     if not channels:
         return {}
@@ -93,11 +126,12 @@ async def integrate_hmtj_source() -> Dict[str, List[Dict]]:
         else:
             unknown.append(ch)
 
-    # 记录统计信息（仅日志）
+    # 记录统计信息
     for cat, channels in classified.items():
-        logger.info(f"📊 新源分类 {cat}: {len(channels)} 个频道")
+        if channels:
+            logger.info(f"📊 新源分类 {cat}: {len(channels)} 个频道")
     if unknown:
         logger.debug(f"未分类频道示例: {[ch['name'] for ch in unknown[:5]]}")
 
-    # 返回只包含非空分类的字典
+    # 只返回非空分类
     return {k: v for k, v in classified.items() if v}
