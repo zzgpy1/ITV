@@ -44,7 +44,6 @@ def generate_m3u(
             channels = category_channels.get(cat, [])
             if not channels:
                 continue
-            # 每个分类只输出一次，所有频道都在这里
             for ch in channels:
                 url = get_first_url(ch)
                 if url:
@@ -97,7 +96,7 @@ def generate_outputs_from_demo(ordered_channels: List[dict], demo_order: List[Tu
         logger.warning("无频道数据，跳过输出生成")
         return
 
-    # 1. 提取 demo 中分类的顺序（去重保留顺序）
+    # 获取 demo 中所有分类（去重保留顺序）
     demo_category_order = []
     seen = set()
     for cat, _ in demo_order:
@@ -105,18 +104,22 @@ def generate_outputs_from_demo(ordered_channels: List[dict], demo_order: List[Tu
             seen.add(cat)
             demo_category_order.append(cat)
 
-    # 2. 按 demo_category 分组所有频道
+    # 过滤频道：只保留 demo_category 在 demo_order 分类中的频道
+    filtered = [ch for ch in ordered_channels if ch.get("demo_category") in seen]
+    if not filtered:
+        logger.warning("过滤后无频道（可能所有频道的分类都不在 demo 中），跳过输出")
+        return
+
+    # 按 demo_category 分组
     category_channels = defaultdict(list)
-    for ch in ordered_channels:
+    for ch in filtered:
         cat = ch.get("demo_category", "其他")
         category_channels[cat].append(ch)
 
-    # 3. 构建最终分类顺序：先 demo 中的分类，再追加其他未在 demo 中出现的分类（排序）
-    final_order = list(demo_category_order)
-    extra_cats = [cat for cat in category_channels.keys() if cat not in seen]
-    final_order.extend(sorted(extra_cats))
+    # 最终分类顺序：保持 demo 中的顺序，其他未出现的分类（如果有）不再追加
+    final_order = demo_category_order
 
-    # 4. 生成文件
+    # 生成文件
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     generate_m3u(category_channels, final_order, OUTPUT_DIR / M3U_FILE)
     generate_txt(category_channels, final_order, OUTPUT_DIR / TXT_FILE)
