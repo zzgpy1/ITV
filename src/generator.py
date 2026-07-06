@@ -9,19 +9,14 @@ from src.logger import logger
 
 
 def get_channel_urls(channel: dict) -> List[str]:
-    """
-    从频道字典中安全提取 URL 列表，确保是字符串列表
-    """
     urls = channel.get("urls")
     if urls is None:
         url = channel.get("url")
         if url and isinstance(url, str):
             return [url]
         return []
-
     if isinstance(urls, str):
         return [urls]
-
     if isinstance(urls, list):
         flat = []
         for item in urls:
@@ -32,12 +27,10 @@ def get_channel_urls(channel: dict) -> List[str]:
                     if isinstance(sub, str):
                         flat.append(sub)
         return flat
-
     return []
 
 
 def get_first_url(channel: dict) -> str:
-    """获取第一个有效 URL"""
     urls = get_channel_urls(channel)
     return urls[0] if urls else ""
 
@@ -50,78 +43,81 @@ def build_category_groups(
     按分类聚合频道，保持 demo 顺序
     返回: {分类名: [频道对象列表]}
     """
-    # 提取 demo 中的分类顺序（去重）和每个分类下的频道名列表
+    # 1. 解析 demo_order，构建分类顺序、每个分类下的demo频道名列表
     category_order = []
     category_demo_names = {}  # {分类名: [demo中的频道名列表]}
+    demo_name_to_category = {}  # {频道名: 分类名}
     for cat, demo_name in demo_order:
         clean_cat = cat.replace(",#genre#", "").strip()
         if clean_cat not in category_order:
             category_order.append(clean_cat)
             category_demo_names[clean_cat] = []
         category_demo_names[clean_cat].append(demo_name)
+        demo_name_to_category[demo_name] = clean_cat
 
-    # 构建 demo 名称集合（用于判断是否匹配）
-    demo_names = {demo_name for _, demo_name in demo_order}
-
-    # 按分类分组
-    groups = defaultdict(list)
+    # 2. 构建频道名到频道对象的映射（只取第一个，因为合并后同名应唯一）
+    channel_by_name = {}
     for ch in ordered_channels:
         name = ch.get("name")
-        cat = ch.get("demo_category", ch.get("group_title", "其他"))
-        if name in demo_names:
-            # 找到对应的 demo 分类
-            for d_cat, d_name in demo_order:
-                if d_name == name:
-                    clean_cat = d_cat.replace(",#genre#", "").strip()
-                    ch["demo_category"] = clean_cat
-                    groups[clean_cat].append(ch)
-                    break
-        else:
-            # 未匹配的频道，保留原分类
-            groups[cat].append(ch)
+        if name and name not in channel_by_name:
+            channel_by_name[name] = ch
+        # 如果有同名，可考虑覆盖或合并，但通常不会
 
-    # 对每个分类内的频道排序
-    result = OrderedDict()
-
-    # 先按 category_order 顺序输出分类
+    # 3. 按分类聚合
+    groups = OrderedDict()
+    # 先按 category_order 顺序处理
     for cat in category_order:
-        if cat in groups:
-            # 获取该分类在 demo 中的频道名列表（按顺序）
-            demo_names_in_cat = category_demo_names.get(cat, [])
-            # 分离匹配和未匹配
-            matched = []
-            unmatched = []
-            for ch in groups[cat]:
-                if ch.get("name") in demo_names:
-                    matched.append(ch)
-                else:
-                    unmatched.append(ch)
+        # 该分类的频道列表
+        cat_channels = []
+        # 3a. 按 demo 顺序添加匹配的频道
+        demo_names_in_cat = category_demo_names.get(cat, [])
+        for demo_name in demo_names_in_cat:
+            ch = channel_by_name.get(demo_name)
+            if ch:
+                # 确保分类标记
+                ch_copy = ch.copy()
+                ch_copy["demo_category"] = cat
+                cat_channels.append(ch_copy)
+        # 3b. 收集该分类下未匹配的频道（不在 demo_names 中）
+        # 遍历 ordered_channels，找出属于该分类但不在 demo_names 中的频道
+        unmatched = []
+        for ch in ordered_channels:
+            name = ch.get("name")
+            if name not in demo_name_to_category:
+                # 判断频道所属分类
+                ch_cat = ch.get("demo_category", ch.get("group_title", "其他"))
+                if ch_cat == cat:
+                    unmatched.append(ch.copy())
+        # 未匹配的按名称排序
+        unmatched.sort(key=lambda x: x.get("name", ""))
+        # 合并
+        groups[cat] = cat_channels + unmatched
 
-            # 匹配的按 demo 顺序排序
-            # 创建一个排序映射
-            demo_order_map = {name: idx for idx, name in enumerate(demo_names_in_cat)}
-            matched.sort(key=lambda x: demo_order_map.get(x.get("name", ""), 9999))
+    # 4. 处理未在 category_order 中的分类（其他）
+    # 收集所有已处理分类
+    processed_cats = set(category_order)
+    # 从 ordered_channels 中找出未处理分类的频道
+    other_groups = defaultdict(list)
+    for ch in ordered_channels:
+        name = ch.get("name")
+        if name in demo_name_to_category:
+            continue  # 已处理
+        cat = ch.get("demo_category", ch.get("group_title", "其他"))
+        if cat not in processed_cats:
+            other_groups[cat].append(ch.copy())
 
-            # 未匹配的按名称排序（自然排序）
-            unmatched.sort(key=lambda x: x.get("name", ""))
+    # 其他分类按字母排序
+    for cat in sorted(other_groups.keys()):
+        other_groups[cat].sort(key=lambda x: x.get("name", ""))
+        groups[cat] = other_groups[cat]
 
-            groups[cat] = matched + unmatched
-            result[cat] = groups[cat]
-
-    # 处理其他未在 category_order 中的分类（按字母排序）
-    other_cats = sorted([cat for cat in groups.keys() if cat not in category_order])
-    for cat in other_cats:
-        groups[cat].sort(key=lambda x: x.get("name", ""))
-        result[cat] = groups[cat]
-
-    return result
+    return groups
 
 
 def generate_m3u_from_groups(
     groups: Dict[str, List[dict]],
     output_path: Path
 ) -> None:
-    """根据分类组生成 M3U 文件"""
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write("#EXTM3U\n")
         for cat, channels in groups.items():
@@ -142,7 +138,6 @@ def generate_txt_from_groups(
     groups: Dict[str, List[dict]],
     output_path: Path
 ) -> None:
-    """根据分类组生成 TXT 文件"""
     with open(output_path, 'w', encoding='utf-8') as f:
         for cat, channels in groups.items():
             if not channels:
@@ -161,7 +156,6 @@ def generate_multi_m3u_from_groups(
     groups: Dict[str, List[dict]],
     output_path: Path
 ) -> None:
-    """生成多源 M3U 文件"""
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write("#EXTM3U\n")
         for cat, channels in groups.items():
@@ -183,9 +177,6 @@ def generate_outputs_from_demo(
     ordered_channels: List[dict],
     demo_order: List[Tuple[str, str]]
 ) -> None:
-    """
-    按照 demo.txt 的顺序输出 M3U 和 TXT 文件，自动合并同分类频道
-    """
     if not ordered_channels:
         logger.warning("无频道数据，跳过输出生成")
         return
