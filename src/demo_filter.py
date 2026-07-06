@@ -18,6 +18,12 @@ except ImportError:
     HAS_PYPINYIN = False
     logger.warning("⚠️ pypinyin 未安装，拼音匹配功能将不可用。建议安装: pip install pypinyin")
 
+# 内部分类名到 Demo 分类名的映射（确保与 demo.txt 中一致）
+CATEGORY_NAME_MAP = {
+    "港澳台": "🌊港·澳·台",
+    # 如有其他分类需要映射，可在此添加
+}
+
 
 def parse_demo_order_with_categories(demo_file: Path = DEMO_FILE) -> List[Tuple[str, str]]:
     """解析 demo.txt，返回 [(分类, 频道名), ...]"""
@@ -269,6 +275,11 @@ def get_demo_category_for_province(province: str, demo_order: List[Tuple[str, st
     return f"☘️{province}频道"
 
 
+def normalize_demo_category(cat: str) -> str:
+    """将内部分类名映射到 Demo 中的分类名"""
+    return CATEGORY_NAME_MAP.get(cat, cat)
+
+
 def filter_and_order_by_demo(channels: list) -> tuple:
     """
     增强筛选 + 智能追加：
@@ -289,7 +300,8 @@ def filter_and_order_by_demo(channels: list) -> tuple:
         for cat in keep_cats:
             for ch in classified.get(cat, []):
                 ch_copy = ch.copy()
-                ch_copy["demo_category"] = cat
+                # 应用分类名映射
+                ch_copy["demo_category"] = normalize_demo_category(cat)
                 ch_copy["demo_name"] = ch["name"]
                 matched.append(ch_copy)
         # 按分类顺序排序：央视、卫视、地方、港澳台
@@ -356,6 +368,10 @@ def filter_and_order_by_demo(channels: list) -> tuple:
     
     if province_appended:
         logger.info(f"📊 自动追加统计: {dict(province_appended)}")
+    
+    # 对所有匹配的频道，确保 demo_category 经过映射（以防万一）
+    for ch in matched:
+        ch["demo_category"] = normalize_demo_category(ch.get("demo_category", "其他"))
     
     logger.info(f"🎯 Demo 筛选：原始 {len(channels)} -> 匹配 {len(matched)}，未匹配 {len(remaining)}")
     return matched, remaining
