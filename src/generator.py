@@ -1,80 +1,193 @@
-def generate_m3u_by_demo_order(
-    channels_by_name: Dict[str, dict],
-    demo_order: List[Tuple[str, str]],
-    extra_channels: List[dict],
+# src/generator.py
+# 输出 M3U 和 TXT 文件模块，按 demo.txt 顺序输出，自动合并同分类频道
+
+from pathlib import Path
+from typing import List, Tuple, Dict
+from collections import defaultdict, OrderedDict
+from src.config import OUTPUT_DIR, M3U_FILE, TXT_FILE
+from src.logger import logger
+
+
+def get_channel_urls(channel: dict) -> List[str]:
+    """
+    从频道字典中安全提取 URL 列表，确保是字符串列表
+    """
+    urls = channel.get("urls")
+    if urls is None:
+        url = channel.get("url")
+        if url and isinstance(url, str):
+            return [url]
+        return []
+
+    if isinstance(urls, str):
+        return [urls]
+
+    if isinstance(urls, list):
+        flat = []
+        for item in urls:
+            if isinstance(item, str):
+                flat.append(item)
+            elif isinstance(item, list):
+                for sub in item:
+                    if isinstance(sub, str):
+                        flat.append(sub)
+        return flat
+
+    return []
+
+
+def get_first_url(channel: dict) -> str:
+    """获取第一个有效 URL"""
+    urls = get_channel_urls(channel)
+    return urls[0] if urls else ""
+
+
+def build_category_groups(
+    ordered_channels: List[dict],
+    demo_order: List[Tuple[str, str]]
+) -> Dict[str, List[dict]]:
+    """
+    按分类聚合频道，保持 demo 顺序
+    返回: {分类名: [频道对象列表]}
+    """
+    # 提取 demo 中的分类顺序（去重）
+    category_order = []
+    for cat, _ in demo_order:
+        clean_cat = cat.replace(",#genre#", "").strip()
+        if clean_cat not in category_order:
+            category_order.append(clean_cat)
+
+    # 构建 demo 名称集合
+    demo_names = {demo_name for _, demo_name in demo_order}
+
+    # 分类组
+    groups = defaultdict(list)
+
+    # 先处理匹配 demo 的频道（按 demo 顺序）
+    for cat, demo_name in demo_order:
+        clean_cat = cat.replace(",#genre#", "").strip()
+        for ch in ordered_channels:
+            if ch.get("name") == demo_name:
+                ch["demo_category"] = clean_cat
+                groups[clean_cat].append(ch)
+                break
+
+    # 再处理未匹配的频道
+    for ch in ordered_channels:
+        name = ch.get("name")
+        if name not in demo_names:
+            cat = ch.get("demo_category", ch.get("group_title", "其他"))
+            # 如果分类在 category_order 中，则使用该分类，否则保留原分类
+            if cat not in groups:
+                groups[cat].append(ch)
+            else:
+                groups[cat].append(ch)
+
+    # 对每个分类内的频道排序：先按 demo 顺序（已添加的保持顺序），再按名称排序（未匹配的）
+    result = OrderedDict()
+    # 先按 category_order 顺序输出分类
+    for cat in category_order:
+        if cat in groups:
+            # 分离匹配和未匹配
+            matched = []
+            unmatched = []
+            for ch in groups[cat]:
+                if ch.get("name") in demo_names:
+                    matched.append(ch)
+                else:
+                    unmatched.append(ch)
+            # 匹配的按 demo 顺序（已添加顺序就是demo顺序）
+            # 未匹配的按名称排序
+            unmatched.sort(key=lambda x: x.get("name", ""))
+            groups[cat] = matched + unmatched
+            result[cat] = groups[cat]
+
+    # 处理其他未在 category_order 中的分类（按字母排序）
+    other_cats = sorted([cat for cat in groups.keys() if cat not in category_order])
+    for cat in other_cats:
+        groups[cat].sort(key=lambda x: x.get("name", ""))
+        result[cat] = groups[cat]
+
+    return result
+
+
+def generate_m3u_from_groups(
+    groups: Dict[str, List[dict]],
     output_path: Path
 ) -> None:
+    """根据分类组生成 M3U 文件"""
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write("#EXTM3U\n")
-        # 先输出所有 demo 中的频道（按顺序）
-        # 同时记录已经输出过的分类（用于合并额外频道）
-        outputted_categories = set()
-        # 存储每个分类下已输出的频道（用于排序，但这里直接按顺序）
-        for cat, demo_name in demo_order:
-            clean_cat = cat.replace(",#genre#", "").strip()
-            f.write(f'#EXTINF:-1 group-title="{clean_cat}",{demo_name}\n')
-            # 但这里需要获取频道URL，而不是直接写demo_name
-            # 我们得从channels_by_name中获取
-        # 重新设计：先循环demo_order，输出匹配的频道
-        # 但为了合并，我们需要先输出所有匹配频道，同时记录分类
-        # 然后处理extra_channels
-        # 我们可以先构建一个有序的分类列表
-        category_order = []
-        for cat, _ in demo_order:
-            clean_cat = cat.replace(",#genre#", "").strip()
-            if clean_cat not in category_order:
-                category_order.append(clean_cat)
-        
-        # 第一遍：输出匹配的频道
-        # 为了不重复写分类标题，我们可以记录当前分类
-        current_cat = None
-        for cat, demo_name in demo_order:
-            clean_cat = cat.replace(",#genre#", "").strip()
-            channel = channels_by_name.get(demo_name)
-            if channel:
-                url = get_first_url(channel)
-                if url:
-                    # 如果分类变化，写分类标题
-                    if clean_cat != current_cat:
-                        f.write(f'\n# ----- {clean_cat} -----\n')
-                        current_cat = clean_cat
-                    name = channel.get("name", demo_name)
-                    f.write(f'#EXTINF:-1 group-title="{clean_cat}",{name}\n')
-                    f.write(f"{url}\n")
-        
-        # 第二遍：处理 extra_channels，按分类分组
-        if extra_channels:
-            # 分组
-            grouped = defaultdict(list)
-            for ch in extra_channels:
-                cat = ch.get("demo_category", ch.get("group_title", "其他"))
-                grouped[cat].append(ch)
-            
-            # 按分类顺序输出：先按category_order顺序，再按字母
-            # 但为了合并，我们优先将extra_channels追加到已存在的分类
-            # 已存在的分类即为category_order中的分类
-            # 我们按category_order顺序输出，并在每个分类的尾部追加该分类的extra_channels
-            # 然后再处理不在category_order中的分类
-            
-            # 先处理已存在的分类
-            for cat in category_order:
-                if cat in grouped and grouped[cat]:
-                    # 如果当前分类已经输出过（由demo匹配输出），则直接追加，不再写标题
-                    # 但为了确保标题存在，如果之前没有输出过任何频道，但当前分类有extra频道，我们要写标题
-                    # 简单处理：不管是否已输出，我们都先确保标题存在，但可能会重复
-                    # 更好的方式：在输出demo匹配时已经写了标题，这里只需追加频道
-                    # 我们可以在输出demo匹配时保存已输出分类列表，然后这里追加
-                    # 但我们没有保存，所以可以在这里判断如果该分类之前没有输出过，则写标题
-                    # 由于我们可能先输出所有demo匹配，然后才处理extra，我们可以先输出所有demo匹配，然后再处理extra时，
-                    # 对于每个分类，先检查该分类是否已经输出过（通过标志变量）
-                    
-                    # 我们重构：先输出所有demo匹配，并记录已经输出过的分类，然后处理extra时，如果分类已输出则直接追加，否则写标题。
-                    
-                    # 由于前面的循环已经输出了匹配频道，且可能写了标题，但我们现在无法知道标题是否已写。
-                    # 更好的办法：先构建一个按分类顺序的完整频道列表，然后统一输出。
-        
-        # 我们采用另一种方式：先构建一个按分类顺序的完整频道列表。
-        # 但为了简单，我们按如下方式：
-        # 1. 先输出所有 demo 匹配的频道，同时记录输出过的分类。
-        # 2. 然后处理 extra_channels，对于每个分类，如果该分类已经输出过，则直接追加（不写标题），否则写标题后追加。
-        # 这样合并分类。
+        for cat, channels in groups.items():
+            if not channels:
+                continue
+            f.write(f'\n# ----- {cat} -----\n')
+            for ch in channels:
+                url = get_first_url(ch)
+                if not url:
+                    continue
+                name = ch.get("name", "未知频道")
+                f.write(f'#EXTINF:-1 group-title="{cat}",{name}\n')
+                f.write(f"{url}\n")
+    logger.info(f"✅ M3U 文件已生成: {output_path}")
+
+
+def generate_txt_from_groups(
+    groups: Dict[str, List[dict]],
+    output_path: Path
+) -> None:
+    """根据分类组生成 TXT 文件"""
+    with open(output_path, 'w', encoding='utf-8') as f:
+        for cat, channels in groups.items():
+            if not channels:
+                continue
+            f.write(f"{cat},#genre#\n")
+            for ch in channels:
+                url = get_first_url(ch)
+                if not url:
+                    continue
+                name = ch.get("name", "未知频道")
+                f.write(f"{name},{url}\n")
+    logger.info(f"✅ TXT 文件已生成: {output_path}")
+
+
+def generate_multi_m3u_from_groups(
+    groups: Dict[str, List[dict]],
+    output_path: Path
+) -> None:
+    """生成多源 M3U 文件"""
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write("#EXTM3U\n")
+        for cat, channels in groups.items():
+            if not channels:
+                continue
+            f.write(f'\n# ----- {cat} -----\n')
+            for ch in channels:
+                urls = get_channel_urls(ch)
+                valid_urls = [u for u in urls if u and u.startswith(('http://', 'https://'))]
+                if valid_urls:
+                    multi_url = " # ".join(valid_urls)
+                    name = ch.get("name", "未知频道")
+                    f.write(f'#EXTINF:-1 group-title="{cat}",{name}\n')
+                    f.write(f"{multi_url}\n")
+    logger.info(f"✅ 多源 M3U 文件已生成: {output_path}")
+
+
+def generate_outputs_from_demo(
+    ordered_channels: List[dict],
+    demo_order: List[Tuple[str, str]]
+) -> None:
+    """
+    按照 demo.txt 的顺序输出 M3U 和 TXT 文件，自动合并同分类频道
+    """
+    if not ordered_channels:
+        logger.warning("无频道数据，跳过输出生成")
+        return
+
+    groups = build_category_groups(ordered_channels, demo_order)
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    generate_m3u_from_groups(groups, OUTPUT_DIR / M3U_FILE)
+    generate_txt_from_groups(groups, OUTPUT_DIR / TXT_FILE)
+    generate_multi_m3u_from_groups(groups, OUTPUT_DIR / "tv_multi.m3u")
