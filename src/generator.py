@@ -30,7 +30,6 @@ def get_channel_urls(channel: dict) -> List[str]:
             if isinstance(item, str):
                 flat.append(item)
             elif isinstance(item, list):
-                # 递归展平
                 for sub in item:
                     if isinstance(sub, str):
                         flat.append(sub)
@@ -69,10 +68,12 @@ def generate_m3u_by_demo_order(
         # 2. 追加额外的频道（按分类分组）
         if extra_channels:
             f.write("\n# ===== 以下为自动追加的频道 =====\n")
-            # 按分类分组
             grouped = defaultdict(list)
             for ch in extra_channels:
                 cat = ch.get("demo_category", "其他")
+                # 统一港澳台分类名称
+                if cat == "🌊港澳台频道":
+                    cat = "🌊港·澳·台"
                 grouped[cat].append(ch)
             
             for cat, channels in grouped.items():
@@ -117,6 +118,9 @@ def generate_txt_by_demo_order(
             grouped = defaultdict(list)
             for ch in extra_channels:
                 cat = ch.get("demo_category", "其他")
+                # 统一港澳台分类名称
+                if cat == "🌊港澳台频道":
+                    cat = "🌊港·澳·台"
                 grouped[cat].append(ch)
             
             for cat, channels in grouped.items():
@@ -131,12 +135,6 @@ def generate_txt_by_demo_order(
     logger.info(f"✅ TXT 文件已生成: {output_path}")
 
 
-# 已废弃：不再生成 tv_multi.m3u
-def generate_multi_m3u_by_demo_order(...):
-    """已废弃，不再使用"""
-    pass
-
-
 def generate_outputs_from_demo(ordered_channels: List[dict], demo_order: List[Tuple[str, str]]) -> None:
     """
     按照 demo.txt 的顺序输出 M3U 和 TXT 文件，并自动追加未匹配的港澳台日频道
@@ -149,12 +147,10 @@ def generate_outputs_from_demo(ordered_channels: List[dict], demo_order: List[Tu
     demo_categories = {cat for cat, _ in demo_order}
     channels_by_name = {}
     
-    # 构建 channels_by_name
     for ch in ordered_channels:
         name = ch.get("name")
         if name:
             channels_by_name[name] = ch
-        # 同时使用 demo_name 作为备用键
         if "demo_name" in ch:
             channels_by_name[ch["demo_name"]] = ch
     
@@ -169,4 +165,4 @@ def generate_outputs_from_demo(ordered_channels: List[dict], demo_order: List[Tu
     generate_m3u_by_demo_order(channels_by_name, demo_order, extra_channels, OUTPUT_DIR / M3U_FILE)
     generate_txt_by_demo_order(channels_by_name, demo_order, extra_channels, OUTPUT_DIR / TXT_FILE)
     # 不再生成 tv_multi.m3u
-    logger.info("✅ 输出文件生成完成（仅 tv.m3u 和 tv.txt）")
+    logger.info("✅ 已生成标准 M3U 和 TXT 文件（tv_multi.m3u 已取消）")
