@@ -66,73 +66,77 @@ def match_channel_name(channel_name: str, demo_name: str) -> bool:
     """
     if DEMO_MATCH_MODE == "exact":
         return channel_name == demo_name
-    
+
     cn_lower = channel_name.lower()
     dn_lower = demo_name.lower()
-    
+
     # ---------- 央视频道特殊匹配 ----------
-    # 提取数字（支持 1-17、4K、8K）
     cctv_pattern = re.compile(r'cctv[-\s]*(\d+(?:k)?)', re.IGNORECASE)
     m1 = cctv_pattern.search(channel_name)
     m2 = cctv_pattern.search(demo_name)
-    if m1 and m2 and m1.group(1) == m2.group(1):
+
+    if m1 and m2 and m1.group(1).lower() == m2.group(1).lower():
         num = m1.group(1).lower()
-        # 关键词映射：demo 中的关键词 -> channel 中应包含的关键词（或英文）
-        keyword_map = {
-            "欧洲": ["欧洲", "europe"],
-            "美洲": ["美洲", "america"],
-            "4k": ["4k", "超高清"],
-            "8k": ["8k", "超高清"],
-            "体育赛事": ["体育赛事", "体育"],
-            "综合": ["综合"],
-            "财经": ["财经"],
-            "综艺": ["综艺"],
-            "中文国际": ["中文国际"],
-            "电影": ["电影"],
-            "国防军事": ["国防军事", "军事"],
-            "电视剧": ["电视剧"],
-            "纪录": ["纪录", "记录"],
-            "科教": ["科教"],
-            "戏曲": ["戏曲"],
-            "社会与法": ["社会与法", "社会法"],
-            "新闻": ["新闻"],
-            "少儿": ["少儿", "儿童"],
-            "音乐": ["音乐"],
-            "奥林匹克": ["奥林匹克", "奥运"],
-            "农业农村": ["农业农村", "农业"],
-        }
-        # 检查 demo_name 是否包含某个关键词，若包含，则要求 channel_name 也必须包含对应的词
-        for kw, variants in keyword_map.items():
-            if kw in dn_lower:
-                # 检查 channel_name 是否包含任一 variant
-                for var in variants:
-                    if var in cn_lower:
-                        # 该关键词匹配成功，继续检查其他关键词（可能有多个）
-                        break
+
+        # 特殊处理 CCTV-5+：必须同时包含 '+' 或 'plus'
+        if num == "5":
+            if '+' in dn_lower or '5plus' in dn_lower:
+                # demo 是 5+，要求 channel 也包含 '+'
+                if '+' in cn_lower or '5plus' in cn_lower:
+                    return True
                 else:
-                    # 没有匹配到任何 variant，匹配失败
                     return False
-        # 所有关键词都匹配（或没有关键词），返回 True
-        return True
-    
+            else:
+                # demo 是普通 5，要求 channel 不包含 '+'
+                if '+' in cn_lower or '5plus' in cn_lower:
+                    return False
+                else:
+                    return True
+
+        # 对于 4K、8K，直接匹配
+        if num in ["4k", "8k"]:
+            return True
+
+        # 对于数字 1-17（除了 4 和 5 已处理），直接匹配
+        if num.isdigit() and 1 <= int(num) <= 17:
+            # 检查 demo 中是否包含区域关键词（欧洲、美洲），用于区分 CCTV-4 的变体
+            area_keywords = {
+                "欧洲": ["欧洲", "europe"],
+                "美洲": ["美洲", "america", "americas"],
+                "中文国际": ["中文国际"]
+            }
+            # 如果 demo 包含这些关键词，则要求 channel 也包含对应的词
+            for kw, variants in area_keywords.items():
+                if kw in dn_lower:
+                    # 检查 channel_name 是否包含任一 variant
+                    matched_kw = False
+                    for var in variants:
+                        if var in cn_lower:
+                            matched_kw = True
+                            break
+                    if not matched_kw:
+                        return False  # 未包含关键词，匹配失败
+            # 如果 demo 没有关键词，直接匹配成功
+            return True
+
     # ---------- 原有匹配逻辑 ----------
     # 1. 直接包含匹配
     if dn_lower in cn_lower or cn_lower in dn_lower:
         return True
-    
+
     # 2. 拼音匹配
     if HAS_PYPINYIN:
         demo_pinyin = to_pinyin(demo_name)
         channel_pinyin = to_pinyin(channel_name)
         if demo_pinyin in channel_pinyin or channel_pinyin in demo_pinyin:
             return True
-    
+
     # 3. 去除特殊字符后的匹配
     def clean(s):
         return re.sub(r'[^a-zA-Z\u4e00-\u9fa5]', '', s).lower()
     if clean(demo_name) in clean(channel_name) or clean(channel_name) in clean(demo_name):
         return True
-    
+
     return False
 
 
