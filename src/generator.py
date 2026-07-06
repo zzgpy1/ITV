@@ -162,7 +162,26 @@ def generate_outputs_from_demo(ordered_channels: List[dict], demo_order: List[Tu
         logger.warning("无频道数据，跳过输出生成")
         return
 
+    demo_categories = {cat for cat, _ in demo_order}
+    channels_by_name = {}
+    
+    # 构建映射：优先使用 demo_name，如果没有则用 name
+    for ch in ordered_channels:
+        key = ch.get("demo_name") or ch.get("name")
+        if key:
+            channels_by_name[key] = ch
+        # 同时用原始 name 作为备用键
+        if ch.get("name"):
+            channels_by_name[ch["name"]] = ch
+    
+    # 提取额外频道（分类不在 demo_order 中）
+    extra_channels = [
+        ch for ch in ordered_channels
+        if ch.get("demo_category") and ch.get("demo_category") not in demo_categories
+    ]
+
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    generate_m3u_by_demo_order(ordered_channels, demo_order, OUTPUT_DIR / M3U_FILE)
-    generate_txt_by_demo_order(ordered_channels, demo_order, OUTPUT_DIR / TXT_FILE)
-    # generate_multi_m3u_by_demo_order 类似，暂略
+    
+    generate_m3u_by_demo_order(channels_by_name, demo_order, extra_channels, OUTPUT_DIR / M3U_FILE)
+    generate_txt_by_demo_order(channels_by_name, demo_order, extra_channels, OUTPUT_DIR / TXT_FILE)
+    generate_multi_m3u_by_demo_order(channels_by_name, demo_order, extra_channels, OUTPUT_DIR / "tv_multi.m3u")
