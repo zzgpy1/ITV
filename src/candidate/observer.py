@@ -131,6 +131,16 @@ class CandidateObserver:
                    obs.avg_latency <= self.MAX_AVG_LATENCY:
                     obs.status = CandidateStatus.STABLE
                     self._save()
+                    # ===== 新增：同步更新数据库中的状态 =====
+                    try:
+                        await db._conn.execute(
+                            "UPDATE candidate_pool SET status = ? WHERE channel_key = ?",
+                            ('stable', obs.source_key)
+                        )
+                        await db._conn.commit()
+                    except Exception as e:
+                        logger.warning(f"更新数据库状态失败: {e}")
+                    # ======================================
                     stable_results.append(obs)
                     logger.info(f"✅ 候选源稳定: {obs.channel_name} (成功率 {obs.success_rate:.2%}, 延迟 {obs.avg_latency}ms, 检查 {obs.check_count} 次)")
             else:
