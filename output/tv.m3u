@@ -3,30 +3,30 @@
 http://45.192.97.170:8880/play/16.m3u8
 #EXTINF:-1 group-title="📺央视频道",CCTV-5+
 http://45.192.97.170:8880/play/6.m3u8
-#EXTINF:-1 group-title="📺央视频道",CCTV-9
-http://69.30.245.50/live/cctv9.m3u8
 #EXTINF:-1 group-title="📺央视频道",CCTV-11
 http://45.192.97.170:8880/play/12.m3u8
-#EXTINF:-1 group-title="📺央视频道",CCTV-1
-http://69.30.245.50/live/cctv1.m3u8
+#EXTINF:-1 group-title="📺央视频道",CCTV-9
+http://69.30.245.50/live/cctv9.m3u8
 #EXTINF:-1 group-title="📺央视频道",CCTV-12
 http://45.192.97.170:8880/play/13.m3u8
+#EXTINF:-1 group-title="📺央视频道",CCTV-3
+http://69.30.245.50/live/cctv3.m3u8
+#EXTINF:-1 group-title="📺央视频道",CCTV-4
+http://69.30.245.50/live/cctv4.m3u8
+#EXTINF:-1 group-title="📺央视频道",CCTV-5
+http://69.30.245.50/live/cctv5.m3u8
+#EXTINF:-1 group-title="📺央视频道",CCTV-1
+http://69.30.245.50/live/cctv1.m3u8
 #EXTINF:-1 group-title="📺央视频道",CCTV-6
 http://69.30.245.50/live/cctv6.m3u8
 #EXTINF:-1 group-title="📺央视频道",CCTV-7
 http://69.30.245.50/live/cctv7.m3u8
-#EXTINF:-1 group-title="📺央视频道",CCTV-2
-http://69.30.245.50/live/cctv2.m3u8
-#EXTINF:-1 group-title="📺央视频道",CCTV-3
-http://69.30.245.50/live/cctv3.m3u8
-#EXTINF:-1 group-title="📺央视频道",CCTV-5
-http://69.30.245.50/live/cctv5.m3u8
-#EXTINF:-1 group-title="📺央视频道",CCTV-4
-http://69.30.245.50/live/cctv4.m3u8
 #EXTINF:-1 group-title="📺央视频道",CCTV-8
 http://69.30.245.50/live/cctv8.m3u8
 #EXTINF:-1 group-title="📺央视频道",CCTV-10
 http://69.30.245.50/live/cctv10.m3u8
+#EXTINF:-1 group-title="📺央视频道",CCTV-2
+http://69.30.245.50/live/cctv2.m3u8
 #EXTINF:-1 group-title="📺央视频道",CCTV-13
 http://45.192.97.170:8880/play/14.m3u8
 #EXTINF:-1 group-title="📺央视频道",CCTV-14
@@ -167,6 +167,8 @@ http://www.guzhenm.com:7001/hls/hd-live.m3u8?%E5%85%B3%E6%B3%A8%E5%BE%AE%E4%BF%A
 https://ls.qingting.fm/live/21303/64k.m3u8
 #EXTINF:-1 group-title="☘️安徽频道",黄山
 https://gcalic.v.myalicdn.com/gc/ahhs01_1/index.m3u8
+#EXTINF:-1 group-title="☘️安徽频道",祁门综合
+http://zbbf2.ahbztv.com/live/416.m3u8?zanhd
 #EXTINF:-1 group-title="☘️安徽频道",七台河新闻综合
 http://live.qthnews.org.cn:1935/live/live1/800k/tzwj_video.m3u8
 #EXTINF:-1 group-title="☘️安徽频道",亳州农村
@@ -197,8 +199,6 @@ http://183.64.174.171:40123/ch1.m3u8?zzhongqd
 http://183.64.181.25:40023/rongchang01.m3u8
 #EXTINF:-1 group-title="☘️四川频道",四川卫视
 http://112.27.235.94:8000/hls/35/index.m3u8
-#EXTINF:-1 group-title="☘️四川频道",延边新闻综合 [Geo-blocked]
-https://stream2.jlntv.cn/jlyb/sd/live.m3u8
 #EXTINF:-1 group-title="☘️四川频道",广元综合
 https://m3u8.channel.dzsm.com/nmip-media/channellive/channel100999/playlist.m3u8
 #EXTINF:-1 group-title="☘️四川频道",朝天综合
@@ -259,6 +259,8 @@ https://ls.qingting.fm/live/5043/64k.m3u8
 http://zb.gxlbamc.com:1935/live/lbzh.stream/playlist.m3u8
 #EXTINF:-1 group-title="☘️天津频道",天津卫视
 http://112.27.235.94:8000/hls/42/index.m3u8
+#EXTINF:-1 group-title="☘️天津频道",津南一套
+http://play.jinnantv.top/live/JNTV1.m3u8?ztianjd
 #EXTINF:-1 group-title="☘️河北频道",河北
 https://event.pull.hebtv.com:443/live/live101.m3u8
 #EXTINF:-1 group-title="☘️河北频道",河北影视
@@ -281,6 +283,8 @@ https://www.wxhcgbds.com:8081/channelTv/WXTV_1.m3u8?zshanxd
 https://p2.vzan.com/slowlive/596867413819827251/live.m3u8?zbid=1725814272&tpid=1516989100&type=0
 #EXTINF:-1 group-title="☘️山西频道",万荣综合
 http://60.222.246.220:19433/hls1.m3u8
+#EXTINF:-1 group-title="☘️山西频道",古县综合
+https://l2fpdktp.live.sxmty.com/live/hls/e4c3b363cc4549788e2d983f403e07db/d99ce1eb686e41b9afc888110bd95aa7.m3u8?zshanxd
 #EXTINF:-1 group-title="☘️山西频道",汾西综合
 https://qmmqvzoz.live.sxmty.com/live/hls/f24f8a390c084386a564074c9260100c/be3fdf07606145739ab2c4b80fe0136a.m3u8?zshanxd
 #EXTINF:-1 group-title="☘️内蒙古频道",内蒙古卫视
@@ -291,10 +295,12 @@ http://223.167.209.88:1234/630291707
 http://live.qthnews.org.cn:1935/live/live1/800k/tzwj_video.m3u8
 #EXTINF:-1 group-title="☘️吉林频道",长春综合 [Geo-blocked]
 https://stream2.jlntv.cn/jlcc/sd/live.m3u8
-#EXTINF:-1 group-title="☘️吉林频道",九台综合
-http://stream10.jlntv.cn/jiutaitv/sd/live.m3u8
+#EXTINF:-1 group-title="☘️吉林频道",九台
+http://stream10.jlntv.cn/jiutaitv/sd/live.m3u8?zjild
 #EXTINF:-1 group-title="☘️吉林频道",农安新闻综合 [Geo-blocked]
 https://stream2.jlntv.cn/naxw/sd/live.m3u8
+#EXTINF:-1 group-title="☘️吉林频道",德惠综合
+http://stream11.jlntv.cn/dehuitv/sd/live.m3u8
 #EXTINF:-1 group-title="☘️吉林频道",吉林市新闻综合 [Geo-blocked]
 https://stream2.jlntv.cn/jilin1/sd/live.m3u8
 #EXTINF:-1 group-title="☘️吉林频道",舒兰新闻综合
@@ -303,8 +309,14 @@ http://stream8.jlntv.cn/shulan/sd/live.m3u8?_upt=332db6421699196585
 http://stream5.jlntv.cn/ps/sd/live.m3u8?zjild
 #EXTINF:-1 group-title="☘️吉林频道",四平新闻综合 [Geo-blocked]
 https://stream2.jlntv.cn/sptv/sd/live.m3u8
+#EXTINF:-1 group-title="☘️吉林频道",东丰
+http://stream5.jlntv.cn/df/sd/live.m3u8?zjild
 #EXTINF:-1 group-title="☘️吉林频道",通化新闻 [Geo-blocked]
 https://stream2.jlntv.cn/tonghua1/sd/live.m3u8
+#EXTINF:-1 group-title="☘️吉林频道",通化县
+http://stream5.jlntv.cn/thx/sd/live.m3u8?zjild
+#EXTINF:-1 group-title="☘️吉林频道",辉南新闻综合
+http://stream5.jlntv.cn/hn/sd/live.m3u8
 #EXTINF:-1 group-title="☘️吉林频道",集安综合 [Geo-blocked]
 https://stream2.jlntv.cn/ja/sd/live.m3u8
 #EXTINF:-1 group-title="☘️吉林频道",白山新闻综合 [Geo-blocked]
@@ -323,14 +335,12 @@ http://stream8.jlntv.cn/dhtv/playlist.m3u8
 http://stream8.jlntv.cn/hctv/sd/live.m3u8?zjild
 #EXTINF:-1 group-title="☘️吉林频道",龙井
 http://stream8.jlntv.cn/ljtv/sd/live.m3u8?zjild
-#EXTINF:-1 group-title="☘️吉林频道",汪清
-http://stream5.jlntv.cn/wq/sd/live.m3u8?zjild
+#EXTINF:-1 group-title="☘️吉林频道",汪清综合
+http://stream5.jlntv.cn/wq/sd/live.m3u8
 #EXTINF:-1 group-title="☘️黑龙江频道",黑龙江卫视
 http://223.167.209.88:1234/738906901
 #EXTINF:-1 group-title="☘️黑龙江频道",黑龙江新闻
 https://ls.qingting.fm/live/4974/64k.m3u8
-#EXTINF:-1 group-title="☘️黑龙江频道",黑龙江少儿
-https://ls.qingting.fm/live/4972/64k.m3u8
 #EXTINF:-1 group-title="☘️黑龙江频道",哈尔滨资讯
 http://stream.hrbtv.net/zxpd/sd/live.m3u8
 #EXTINF:-1 group-title="☘️黑龙江频道",哈尔滨都市咨询
@@ -355,8 +365,8 @@ http://devlivepull.migucloud.com/live/A2HVH5BQ_C0.flv
 http://devlivepull.migucloud.com/live/Q081CD54_C0.flv
 #EXTINF:-1 group-title="☘️湖北频道",湖北卫视
 http://223.167.209.88:1234/947472496
-#EXTINF:-1 group-title="☘️湖南频道",湖南张家界水绕四门
-https://gcalic.v.myalicdn.com/gc/zjjsrsm_1/index.m3u8
+#EXTINF:-1 group-title="☘️湖南频道",湖南张家界宝峰湖
+https://gcalic.v.myalicdn.com/gc/zjjbfh_1/index.m3u8
 #EXTINF:-1 group-title="☘️湖南频道",湖南张家界御笔峰
 https://gcalic.v.myalicdn.com/gc/zjjybf_1/index.m3u8
 #EXTINF:-1 group-title="🌊港·澳·台",台视新闻
@@ -376,7 +386,7 @@ http://61.216.67.119:1935/bltvhd/bltv1/chunklist_w1266569526.m3u
 
 # ========== 智能补充分类 ==========
 
-# ----- 📻 网络电台 (262个频道) -----
+# ----- 📻 网络电台 (261个频道) -----
 #EXTINF:-1 group-title="📻 网络电台",香港第三台
 http://45.192.97.170:8880/play/5917.m3u8
 #EXTINF:-1 group-title="📻 网络电台",澳门绿坉
@@ -595,8 +605,6 @@ http://45.192.97.170:8880/play/6066.m3u8
 http://45.192.97.170:8880/play/6067.m3u8
 #EXTINF:-1 group-title="📻 网络电台",黑龙江音乐广播
 http://45.192.97.170:8880/play/6068.m3u8
-#EXTINF:-1 group-title="📻 网络电台",青岛摩登音乐调频
-http://45.192.97.170:8880/play/6070.m3u8
 #EXTINF:-1 group-title="📻 网络电台",辽宁经典音乐广播
 http://45.192.97.170:8880/play/6071.m3u8
 #EXTINF:-1 group-title="📻 网络电台",青海交通音乐广播
