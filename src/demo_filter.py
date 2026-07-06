@@ -62,7 +62,7 @@ def to_pinyin(text: str) -> str:
 
 def match_channel_name(channel_name: str, demo_name: str) -> bool:
     """
-    增强匹配：支持中文/拼音/子串匹配
+    增强匹配：支持中文/拼音/子串匹配，并专门处理央视频道
     """
     if DEMO_MATCH_MODE == "exact":
         return channel_name == demo_name
@@ -70,6 +70,52 @@ def match_channel_name(channel_name: str, demo_name: str) -> bool:
     cn_lower = channel_name.lower()
     dn_lower = demo_name.lower()
     
+    # ---------- 央视频道特殊匹配 ----------
+    # 提取数字（支持 1-17、4K、8K）
+    cctv_pattern = re.compile(r'cctv[-\s]*(\d+(?:k)?)', re.IGNORECASE)
+    m1 = cctv_pattern.search(channel_name)
+    m2 = cctv_pattern.search(demo_name)
+    if m1 and m2 and m1.group(1) == m2.group(1):
+        num = m1.group(1).lower()
+        # 关键词映射：demo 中的关键词 -> channel 中应包含的关键词（或英文）
+        keyword_map = {
+            "欧洲": ["欧洲", "europe"],
+            "美洲": ["美洲", "america"],
+            "4k": ["4k", "超高清"],
+            "8k": ["8k", "超高清"],
+            "体育赛事": ["体育赛事", "体育"],
+            "综合": ["综合"],
+            "财经": ["财经"],
+            "综艺": ["综艺"],
+            "中文国际": ["中文国际"],
+            "电影": ["电影"],
+            "国防军事": ["国防军事", "军事"],
+            "电视剧": ["电视剧"],
+            "纪录": ["纪录", "记录"],
+            "科教": ["科教"],
+            "戏曲": ["戏曲"],
+            "社会与法": ["社会与法", "社会法"],
+            "新闻": ["新闻"],
+            "少儿": ["少儿", "儿童"],
+            "音乐": ["音乐"],
+            "奥林匹克": ["奥林匹克", "奥运"],
+            "农业农村": ["农业农村", "农业"],
+        }
+        # 检查 demo_name 是否包含某个关键词，若包含，则要求 channel_name 也必须包含对应的词
+        for kw, variants in keyword_map.items():
+            if kw in dn_lower:
+                # 检查 channel_name 是否包含任一 variant
+                for var in variants:
+                    if var in cn_lower:
+                        # 该关键词匹配成功，继续检查其他关键词（可能有多个）
+                        break
+                else:
+                    # 没有匹配到任何 variant，匹配失败
+                    return False
+        # 所有关键词都匹配（或没有关键词），返回 True
+        return True
+    
+    # ---------- 原有匹配逻辑 ----------
     # 1. 直接包含匹配
     if dn_lower in cn_lower or cn_lower in dn_lower:
         return True
@@ -120,7 +166,8 @@ def detect_province(channel_name: str) -> str:
     if "津" in name: return "天津"
     if "渝" in name: return "重庆"
     
-    # 常见地级市映射到省份（扩展）
+    # 常见地级市映射到省份（省略，保持原有映射）
+    # ...（原有 city_to_province 字典，为节省篇幅此处省略，实际代码保留完整）
     city_to_province = {
         # 广东
         "广州": "广东", "深圳": "广东", "佛山": "广东", "东莞": "广东", 
@@ -244,18 +291,13 @@ def get_demo_category_for_province(province: str, demo_order: List[Tuple[str, st
     港澳台统一返回 "🌊港·澳·台"
     日本返回 "日本频道"
     """
-    # 港澳台特殊处理
     if province == "港澳台":
         return "🌊港·澳·台"
-    # 日本特殊处理
     if province == "日本":
-        # 尝试在 demo 中查找 "日本频道" 或 "日本"
         for cat, _ in demo_order:
             if cat == "日本频道" or cat == "日本":
                 return cat
-        # 若没有，返回默认 "日本频道"
         return "日本频道"
-    # 其他省份
     candidates = [
         f"☘️{province}频道",
         f"{province}频道",
@@ -281,9 +323,7 @@ def filter_and_order_by_demo(channels: list) -> tuple:
     demo_order = parse_demo_order_with_categories()
     if not demo_order:
         logger.warning("⚠️ demo.txt 为空，按分类筛选所有频道（仅保留央视/卫视/地方/港澳台）")
-        # 使用 classifier 分类并只保留主要分类
         classified = classify_and_filter(channels)
-        # 保留的类别
         keep_cats = ["央视", "卫视", "地方", "港澳台"]
         matched = []
         for cat in keep_cats:
@@ -292,8 +332,6 @@ def filter_and_order_by_demo(channels: list) -> tuple:
                 ch_copy["demo_category"] = cat
                 ch_copy["demo_name"] = ch["name"]
                 matched.append(ch_copy)
-        # 按分类顺序排序：央视、卫视、地方、港澳台
-        # 每个分类内频道已由 classify_and_filter 排序
         logger.info(f"📊 按分类筛选后，保留 {len(matched)} 个频道")
         return matched, []
 
@@ -302,8 +340,9 @@ def filter_and_order_by_demo(channels: list) -> tuple:
     unmatched = list(channels)
     matched_names = set()
     
-    # 第一遍：匹配 demo 中的频道名（支持拼音）
+    # 第一遍：匹配 demo 中的频道名（支持增强匹配）
     for category, demo_name in demo_order:
+        found = False
         # 精确匹配
         if demo_name in name_to_channel:
             ch = name_to_channel[demo_name].copy()
@@ -313,10 +352,10 @@ def filter_and_order_by_demo(channels: list) -> tuple:
                 matched.append(ch)
                 matched_names.add(ch["name"])
                 unmatched = [c for c in unmatched if c["name"] != ch["name"]]
+                found = True
                 continue
         
-        # 模糊/拼音匹配
-        found = False
+        # 模糊/增强匹配
         for i, ch in enumerate(unmatched[:]):
             if ch["name"] in matched_names:
                 continue
@@ -331,13 +370,12 @@ def filter_and_order_by_demo(channels: list) -> tuple:
                 logger.debug(f"🎯 匹配: {ch['name']} -> {category}/{demo_name}")
                 break
 
-    # 第二遍：未匹配频道自动归类到省份分类（港澳台统一归入 🌊港·澳·台，日本归入 日本频道）
+    # 第二遍：未匹配频道自动归类到省份分类
     remaining = []
     province_appended = {}
     appended_names = set()
     
     for ch in unmatched:
-        # 如果该频道已经在 matched 中（通过名字），跳过
         if ch["name"] in matched_names:
             continue
         province = detect_province(ch["name"])
