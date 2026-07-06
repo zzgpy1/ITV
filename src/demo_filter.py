@@ -319,10 +319,11 @@ def filter_and_order_by_demo(channels: list) -> tuple:
     """
     增强筛选 + 智能追加：
     1. 匹配 demo 中的频道（支持拼音）
-    2. 未匹配的但测速有效的频道，按省份/城市自动追加到对应分类
+    2. 未匹配的频道，按省份/城市自动追加到对应分类，若无法检测省份则归入“其他”
     3. 港澳台统一归入 🌊港·澳·台
     4. 日本归入 日本频道
     5. 如果 demo_order 为空，则使用 classify_and_filter 按分类输出所有频道（仅保留四大类）
+    6. 所有频道都会被保留，第二个返回值始终为空列表（无丢弃）
     """
     demo_order = parse_demo_order_with_categories()
     if not demo_order:
@@ -337,7 +338,7 @@ def filter_and_order_by_demo(channels: list) -> tuple:
                 ch_copy["demo_name"] = ch["name"]
                 matched.append(ch_copy)
         logger.info(f"📊 按分类筛选后，保留 {len(matched)} 个频道")
-        return matched, []
+        return matched, []  # 第二个返回值始终为空
 
     name_to_channel = {ch["name"]: ch for ch in channels}
     matched = []
@@ -346,7 +347,6 @@ def filter_and_order_by_demo(channels: list) -> tuple:
     
     # 第一遍：匹配 demo 中的频道名（支持增强匹配）
     for category, demo_name in demo_order:
-        found = False
         # 精确匹配
         if demo_name in name_to_channel:
             ch = name_to_channel[demo_name].copy()
@@ -356,7 +356,6 @@ def filter_and_order_by_demo(channels: list) -> tuple:
                 matched.append(ch)
                 matched_names.add(ch["name"])
                 unmatched = [c for c in unmatched if c["name"] != ch["name"]]
-                found = True
                 continue
         
         # 模糊/增强匹配
@@ -370,41 +369,43 @@ def filter_and_order_by_demo(channels: list) -> tuple:
                 matched.append(ch_copy)
                 matched_names.add(ch["name"])
                 unmatched.pop(i)
-                found = True
                 logger.debug(f"🎯 匹配: {ch['name']} -> {category}/{demo_name}")
                 break
 
-    # 第二遍：未匹配频道自动归类到省份分类
-    remaining = []
+    # 第二遍：未匹配频道全部处理（有省份则归类，否则归入“其他”）
     province_appended = {}
-    appended_names = set()
-    
+    other_count = 0
     for ch in unmatched:
         if ch["name"] in matched_names:
             continue
         province = detect_province(ch["name"])
         if province:
             cat = get_demo_category_for_province(province, demo_order)
-            ch_copy = ch.copy()
-            ch_copy["demo_category"] = cat
-            ch_copy["demo_name"] = ch["name"]
-            matched.append(ch_copy)
-            matched_names.add(ch["name"])
-            appended_names.add(ch["name"])
+        else:
+            cat = "其他"
+            other_count += 1
+        ch_copy = ch.copy()
+        ch_copy["demo_category"] = cat
+        ch_copy["demo_name"] = ch["name"]
+        matched.append(ch_copy)
+        matched_names.add(ch["name"])
+        if province:
             province_appended[province] = province_appended.get(province, 0) + 1
             logger.info(f"🌏 自动追加: {ch['name']} -> {cat}")
         else:
-            remaining.append(ch)
+            logger.info(f"📌 归入 '其他': {ch['name']}")
     
     if province_appended:
-        logger.info(f"📊 自动追加统计: {dict(province_appended)}")
+        logger.info(f"📊 省份归类统计: {dict(province_appended)}")
+    if other_count:
+        logger.info(f"📊 无法检测省份，归入 '其他': {other_count} 个频道")
     
-    logger.info(f"🎯 Demo 筛选：原始 {len(channels)} -> 匹配 {len(matched)}，未匹配 {len(remaining)}")
-    return matched, remaining
+    logger.info(f"🎯 Demo 筛选：原始 {len(channels)} -> 最终保留 {len(matched)} 个频道（全部保留）")
+    return matched, []  # 不再丢弃任何频道
 
 
 def write_shai_file(unmatched_channels: list, matched_count: int, total_raw: int):
-    """保存未匹配的频道列表"""
+    """保存未匹配的频道列表（现在 always empty，但保留）"""
     shai_path = OUTPUT_DIR / "shai.txt"
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     
@@ -412,10 +413,6 @@ def write_shai_file(unmatched_channels: list, matched_count: int, total_raw: int
         f.write("# Demo筛选丢弃的频道\n")
         f.write(f"# 原始频道总数: {total_raw}\n")
         f.write(f"# Demo匹配成功: {matched_count}\n")
-        f.write(f"# 丢弃数量: {len(unmatched_channels)}\n\n")
-        
-        for ch in unmatched_channels:
-            url = ch["urls"][0] if ch.get("urls") else ch["url"]
-            f.write(f"{ch['name']},{url}\n")
+        f.write("# 现在所有频道均被保留，无丢弃\n")
     
-    logger.info(f"📄 未匹配频道列表已保存: {shai_path}")
+    logger.info(f"📄 未匹配频道列表已保存（无丢弃）: {shai_path}")
