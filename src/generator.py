@@ -50,44 +50,44 @@ def build_category_groups(
     按分类聚合频道，保持 demo 顺序
     返回: {分类名: [频道对象列表]}
     """
-    # 提取 demo 中的分类顺序（去重）
+    # 提取 demo 中的分类顺序（去重）和每个分类下的频道名列表
     category_order = []
-    for cat, _ in demo_order:
+    category_demo_names = {}  # {分类名: [demo中的频道名列表]}
+    for cat, demo_name in demo_order:
         clean_cat = cat.replace(",#genre#", "").strip()
         if clean_cat not in category_order:
             category_order.append(clean_cat)
+            category_demo_names[clean_cat] = []
+        category_demo_names[clean_cat].append(demo_name)
 
-    # 构建 demo 名称集合
+    # 构建 demo 名称集合（用于判断是否匹配）
     demo_names = {demo_name for _, demo_name in demo_order}
 
-    # 分类组
+    # 按分类分组
     groups = defaultdict(list)
-
-    # 先处理匹配 demo 的频道（按 demo 顺序）
-    for cat, demo_name in demo_order:
-        clean_cat = cat.replace(",#genre#", "").strip()
-        for ch in ordered_channels:
-            if ch.get("name") == demo_name:
-                ch["demo_category"] = clean_cat
-                groups[clean_cat].append(ch)
-                break
-
-    # 再处理未匹配的频道
     for ch in ordered_channels:
         name = ch.get("name")
-        if name not in demo_names:
-            cat = ch.get("demo_category", ch.get("group_title", "其他"))
-            # 如果分类在 category_order 中，则使用该分类，否则保留原分类
-            if cat not in groups:
-                groups[cat].append(ch)
-            else:
-                groups[cat].append(ch)
+        cat = ch.get("demo_category", ch.get("group_title", "其他"))
+        if name in demo_names:
+            # 找到对应的 demo 分类
+            for d_cat, d_name in demo_order:
+                if d_name == name:
+                    clean_cat = d_cat.replace(",#genre#", "").strip()
+                    ch["demo_category"] = clean_cat
+                    groups[clean_cat].append(ch)
+                    break
+        else:
+            # 未匹配的频道，保留原分类
+            groups[cat].append(ch)
 
-    # 对每个分类内的频道排序：先按 demo 顺序（已添加的保持顺序），再按名称排序（未匹配的）
+    # 对每个分类内的频道排序
     result = OrderedDict()
+
     # 先按 category_order 顺序输出分类
     for cat in category_order:
         if cat in groups:
+            # 获取该分类在 demo 中的频道名列表（按顺序）
+            demo_names_in_cat = category_demo_names.get(cat, [])
             # 分离匹配和未匹配
             matched = []
             unmatched = []
@@ -96,9 +96,15 @@ def build_category_groups(
                     matched.append(ch)
                 else:
                     unmatched.append(ch)
-            # 匹配的按 demo 顺序（已添加顺序就是demo顺序）
-            # 未匹配的按名称排序
+
+            # 匹配的按 demo 顺序排序
+            # 创建一个排序映射
+            demo_order_map = {name: idx for idx, name in enumerate(demo_names_in_cat)}
+            matched.sort(key=lambda x: demo_order_map.get(x.get("name", ""), 9999))
+
+            # 未匹配的按名称排序（自然排序）
             unmatched.sort(key=lambda x: x.get("name", ""))
+
             groups[cat] = matched + unmatched
             result[cat] = groups[cat]
 
