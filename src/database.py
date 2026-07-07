@@ -98,11 +98,23 @@ class DatabaseCache:
                 updated_at TIMESTAMP
             )
         ''')
+        # 新增 stable_sources 表
+        await self._conn.execute('''
+            CREATE TABLE IF NOT EXISTS stable_sources (
+                channel_name TEXT PRIMARY KEY,
+                url TEXT,
+                latency INTEGER,
+                video_codec TEXT,
+                is_fixed INTEGER DEFAULT 0,
+                updated_at TIMESTAMP
+            )
+        ''')
         # 索引
         await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_channel_cache_updated ON channel_cache(updated_at)')
         await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_speed_history_key_time ON speed_history(channel_key, timestamp)')
         await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_candidate_status ON candidate_pool(status)')
         await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_candidate_lastcheck ON candidate_pool(last_check)')
+        await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_stable_channel ON stable_sources(channel_name)')
         await self._conn.commit()
 
     # ---------- 原有方法 ----------
@@ -339,6 +351,77 @@ class DatabaseCache:
         await cursor.close()
         return [{'timestamp': r[0], 'latency': r[1], 'success': r[2]} for r in rows]
 
+    # ---------- 稳定源方法 ----------
+    async def get_stable_source(self, channel_name: str) -> Optional[Dict]:
+        """获取单个稳定源"""
+        if not self._conn:
+            return None
+        try:
+            cursor = await self._conn.execute(
+                'SELECT channel_name, url, latency, video_codec, is_fixed, updated_at FROM stable_sources WHERE channel_name = ?',
+                (channel_name,)
+            )
+            row = await cursor.fetchone()
+            await cursor.close()
+            if row:
+                return {
+                    'channel_name': row[0],
+                    'url': row[1],
+                    'latency': row[2],
+                    'video_codec': row[3],
+                    'is_fixed': bool(row[4]),
+                    'updated_at': row[5]
+                }
+        except Exception as e:
+            logger.warning(f"获取稳定源失败: {e}")
+        return None
+
+    async def upsert_stable_source(self, channel_name: str, url: str, latency: int, video_codec: str = '', is_fixed: bool = False):
+        """插入或更新稳定源"""
+        if not self._conn:
+            return
+        try:
+            await self._conn.execute(
+                '''INSERT OR REPLACE INTO stable_sources (channel_name, url, latency, video_codec, is_fixed, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?)''',
+                (channel_name, url, latency, video_codec, 1 if is_fixed else 0, datetime.now().isoformat())
+            )
+            await self._conn.commit()
+        except Exception as e:
+            logger.warning(f"更新稳定源失败: {e}")
+
+    async def delete_stable_source(self, channel_name: str):
+        """删除稳定源"""
+        if not self._conn:
+            return
+        try:
+            await self._conn.execute('DELETE FROM stable_sources WHERE channel_name = ?', (channel_name,))
+            await self._conn.commit()
+        except Exception as e:
+            logger.warning(f"删除稳定源失败: {e}")
+
+    async def get_all_stable_sources(self) -> Dict[str, Dict]:
+        """获取所有稳定源"""
+        if not self._conn:
+            return {}
+        try:
+            cursor = await self._conn.execute('SELECT channel_name, url, latency, video_codec, is_fixed, updated_at FROM stable_sources')
+            rows = await cursor.fetchall()
+            await cursor.close()
+            result = {}
+            for row in rows:
+                result[row[0]] = {
+                    'url': row[1],
+                    'latency': row[2],
+                    'video_codec': row[3],
+                    'is_fixed': bool(row[4]),
+                    'updated_at': row[5]
+                }
+            return result
+        except Exception as e:
+            logger.warning(f"获取所有稳定源失败: {e}")
+            return {}
+
     async def close(self):
         if self._conn:
             await self._conn.close()
@@ -358,65 +441,3 @@ async def get_db_cache() -> DatabaseCache:
 
 def channel_key(name: str, url: str) -> str:
     return hashlib.md5(f"{name}|{url}".encode()).hexdigest()
-
-# 在数据库初始化时增加表
-async def _create_tables(self):
-    # ... 原有表
-    await self._conn.execute('''
-        CREATE TABLE IF NOT EXISTS stable_sources (
-            channel_name TEXT PRIMARY KEY,
-            url TEXT,
-            latency INTEGER,
-            video_codec TEXT,
-            is_fixed INTEGER DEFAULT 0,
-            updated_at TIMESTAMP
-        )
-    ''')
-    # 索引
-    await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_stable_channel ON stable_sources(channel_name)')
-
-# ---------- 稳定源方法 ----------
-async def get_stable_source(self, channel_name: str) -> Optional[Dict]:
-    cursor = await self._conn.execute(
-        'SELECT channel_name, url, latency, video_codec, is_fixed, updated_at FROM stable_sources WHERE channel_name = ?',
-        (channel_name,)
-    )
-    row = await cursor.fetchone()
-    await cursor.close()
-    if row:
-        return {
-            'channel_name': row[0],
-            'url': row[1],
-            'latency': row[2],
-            'video_codec': row[3],
-            'is_fixed': bool(row[4]),
-            'updated_at': row[5]
-        }
-    return None
-
-async def upsert_stable_source(self, channel_name: str, url: str, latency: int, video_codec: str = '', is_fixed: bool = False):
-    await self._conn.execute(
-        '''INSERT OR REPLACE INTO stable_sources (channel_name, url, latency, video_codec, is_fixed, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?)''',
-        (channel_name, url, latency, video_codec, 1 if is_fixed else 0, datetime.now().isoformat())
-    )
-    await self._conn.commit()
-
-async def delete_stable_source(self, channel_name: str):
-    await self._conn.execute('DELETE FROM stable_sources WHERE channel_name = ?', (channel_name,))
-    await self._conn.commit()
-
-async def get_all_stable_sources(self) -> Dict[str, Dict]:
-    cursor = await self._conn.execute('SELECT channel_name, url, latency, video_codec, is_fixed, updated_at FROM stable_sources')
-    rows = await cursor.fetchall()
-    await cursor.close()
-    result = {}
-    for row in rows:
-        result[row[0]] = {
-            'url': row[1],
-            'latency': row[2],
-            'video_codec': row[3],
-            'is_fixed': bool(row[4]),
-            'updated_at': row[5]
-        }
-    return result
