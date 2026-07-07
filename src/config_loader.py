@@ -1,39 +1,31 @@
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Union
-from src.logger import logger
+from typing import Any, Dict
 
 class Config:
-    """
-    统一配置加载器，优先级：
-    1. 环境变量（大写名称）
-    2. config/config.yaml（若存在）
-    3. 内置默认值
-    """
     def __init__(self):
-        self._data: Dict[str, Any] = {}
+        self._data = {}
         self._load_from_yaml()
         self._load_from_env()
         self._apply_defaults()
         self._post_init()
 
     def _load_from_yaml(self):
-        """尝试加载 config/config.yaml"""
         yaml_path = Path("config/config.yaml")
         if yaml_path.exists():
             try:
                 import yaml
                 with open(yaml_path, 'r', encoding='utf-8') as f:
                     self._data = yaml.safe_load(f) or {}
-                logger.info(f"✅ 已加载配置文件: {yaml_path}")
+                print(f"✅ 已加载配置文件: {yaml_path}")
                 return
             except ImportError:
-                logger.warning("⚠️ pyyaml 未安装，无法读取 config.yaml，将使用环境变量和默认值")
+                print("⚠️ pyyaml 未安装，无法读取 config.yaml，将使用环境变量和默认值")
             except Exception as e:
-                logger.warning(f"⚠️ 读取 config.yaml 失败: {e}")
+                print(f"⚠️ 读取 config.yaml 失败: {e}")
         else:
-            logger.info("ℹ️ config/config.yaml 不存在，使用环境变量和默认值")
+            print("ℹ️ config/config.yaml 不存在，使用环境变量和默认值")
 
     def _load_from_env(self):
         """从环境变量覆盖配置（变量名全大写）"""
