@@ -4,7 +4,7 @@
 所有配置项从 settings 模块导入，保持原有变量名不变
 """
 
-from src.settings import settings
+from src.config_loader import config
 
 ROOT_DIR = settings.ROOT_DIR
 DATA_DIR = settings.DATA_DIR
