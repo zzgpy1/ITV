@@ -10,15 +10,7 @@ from src.source_pool.discoverer import SourceDiscoverer
 from src.candidate.observer import CandidateObserver
 from src.stable.manager import StableManager
 from src.quality.monitor import QualityMonitor
-from src.config import (
-    ENABLE_DEMO_FILTER, OUTPUT_DIR,
-    CANDIDATE_OBSERVATION_HOURS, CANDIDATE_MIN_SUCCESS,
-    CANDIDATE_MIN_SUCCESS_RATE, CANDIDATE_MAX_LATENCY,
-    HEALTH_HISTORY_DAYS, PREDICT_THRESHOLD,
-    AUTO_PROMOTE_THRESHOLD, SLOW_SPEED_THRESHOLD
-)
-from src.demo_filter import parse_demo_order_with_categories
-from src.generator import generate_outputs_from_demo
+from src.config_loader import config
 
 
 class IPTVOrchestrator:
@@ -45,14 +37,14 @@ class IPTVOrchestrator:
             "new_stable_count": 0
         }
 
-        CandidateObserver.MIN_SUCCESS_COUNT = min(CANDIDATE_MIN_SUCCESS, 3)
-        CandidateObserver.MIN_SUCCESS_RATE = CANDIDATE_MIN_SUCCESS_RATE
-        CandidateObserver.MAX_AVG_LATENCY = CANDIDATE_MAX_LATENCY
+        CandidateObserver.MIN_SUCCESS_COUNT = config.candidate_min_success
+        CandidateObserver.MIN_SUCCESS_RATE = config.candidate_min_success_rate
+        CandidateObserver.MAX_AVG_LATENCY = config.candidate_max_latency
 
     async def predict_failure_probability(self, channel_key: str) -> float:
         if not self.db:
             self.db = await get_db_cache()
-        history = await self.db.get_speed_history(channel_key, days=HEALTH_HISTORY_DAYS)
+        history = await self.db.get_speed_history(channel_key, days=config.health_history_days)
         if len(history) < 5:
             return 0.0
         recent = history[-10:]
@@ -68,19 +60,19 @@ class IPTVOrchestrator:
     async def auto_replace_if_risky(self):
         if not self.db:
             self.db = await get_db_cache()
-        stable = self.stable_manager.get_active_sources()
+        stable = await self.stable_manager.get_stable_sources()
         candidates = await self.db.get_candidates_for_promotion(limit=500)
         replaced = 0
         for name, src in stable.items():
-            if src.is_fixed and not src.auto_optimize:
+            if src.get('is_fixed', False) and not src.get('auto_optimize', True):
                 continue
-            key = channel_key(name, src.url)
+            key = channel_key(name, src['url'])
             prob = await self.predict_failure_probability(key)
-            if prob > PREDICT_THRESHOLD:
+            if prob > config.predict_threshold:
                 logger.warning(f"⚠️ {name} 预测失效概率 {prob:.2%}，尝试从候选池替换")
                 for cand in candidates:
-                    if cand['name'] == name and cand['url'] != src.url:
-                        self.stable_manager.replace_source(name, cand['url'], cand['latency'], "")
+                    if cand['name'] == name and cand['url'] != src['url']:
+                        await self.stable_manager.replace_source(name, cand['url'], cand['latency'], "")
                         logger.info(f"✅ {name} 已预替换为 {cand['url']}")
                         replaced += 1
                         break
@@ -155,19 +147,17 @@ class IPTVOrchestrator:
         logger.info("阶段3: 提升稳定源")
         logger.info("=" * 50)
         try:
-            # ===== 关键修改：如果没有传入候选，从内存中获取已稳定的候选 =====
             if stable_candidates is None:
                 stable_candidates = self.candidate_observer.get_stable_candidates()
                 logger.info(f"📦 从内存获取稳定候选: {len(stable_candidates)} 个")
-            # ============================================================
 
             if not stable_candidates:
                 logger.info("📭 没有稳定的候选源需要提升")
                 return 0
 
-            before_count = len(self.stable_manager.get_active_sources())
+            before_count = len(await self.stable_manager.get_stable_sources())
             promoted_count = 0
-            for obs in stable_candidates[:50]:  # 最多提升50个
+            for obs in stable_candidates[:50]:
                 # 如果 obs 是字典（从数据库来的），构造对象
                 if isinstance(obs, dict):
                     from src.candidate.models import ObservationResult
@@ -182,12 +172,12 @@ class IPTVOrchestrator:
                 else:
                     obs_obj = obs
 
-                existing = self.stable_manager.stable_sources.get(obs_obj.channel_name)
-                if existing and existing.is_fixed:
+                existing = await self.stable_manager.get_stable_source(obs_obj.channel_name)
+                if existing and existing.get('is_fixed'):
                     continue
-                if existing and existing.latency < obs_obj.avg_latency:
+                if existing and existing.get('latency', 9999) < obs_obj.avg_latency:
                     continue
-                if self.stable_manager.promote_candidate(
+                if await self.stable_manager.promote_candidate(
                     obs_obj.channel_name, obs_obj.url, obs_obj.avg_latency, ""
                 ):
                     promoted_count += 1
@@ -196,7 +186,7 @@ class IPTVOrchestrator:
 
             self.stats["total_promoted"] += promoted_count
             self.stats["new_stable_count"] = promoted_count
-            after_count = len(self.stable_manager.get_active_sources())
+            after_count = len(await self.stable_manager.get_stable_sources())
             self.stats["stable_count_after"] = after_count
             logger.info(f"✅ 提升阶段完成: {promoted_count} 个源被提升到稳定版")
             logger.info(f"📊 稳定源变化: {before_count} -> {after_count}")
@@ -215,15 +205,26 @@ class IPTVOrchestrator:
             logger.info("⚡ 强制刷新模式：重新拉取所有源")
         try:
             self.db = await get_db_cache()
+            
+            # 0. 如果数据库候选池为空，尝试从 JSON 导入
+            cursor = await self.db._conn.execute('SELECT COUNT(*) FROM candidate_pool')
+            count = (await cursor.fetchone())[0]
+            await cursor.close()
+            if count == 0:
+                json_path = self.data_dir / "candidate_pool.json"
+                if json_path.exists():
+                    await self.db.import_candidate_pool_from_json(json_path)
+                    logger.info("📥 已将 JSON 候选池导入数据库")
+                else:
+                    logger.warning("⚠️ 没有候选池数据，自治模式可能无法工作")
+
             if not skip_discover:
                 await self.discover_phase()
             else:
                 logger.info("⏭️ 跳过发现阶段")
             
-            # ===== 无论是否跳过发现，都执行观察和提升 =====
             stable_candidates = await self.observe_phase()
             await self.promote_phase(stable_candidates)
-            # ============================================
 
             replaced = await self.auto_replace_if_risky()
             if replaced:
