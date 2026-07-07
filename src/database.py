@@ -292,48 +292,49 @@ class DatabaseCache:
         await self._conn.commit()
 
     async def update_candidate_latency(self, channel_key: str, latency: int, success: bool):
-    """更新候选池统计信息，若记录不存在则创建"""
-    if not self._conn:
-        return
-    try:
-        # 先查询现有记录
-        cursor = await self._conn.execute(
-            'SELECT success_count, fail_count, avg_latency FROM candidate_pool WHERE channel_key = ?',
-            (channel_key,)
-        )
-        row = await cursor.fetchone()
-        await cursor.close()
-
-        if row:
-            sc, fc, avg = row
-            if success:
-                sc += 1
-                # 更新平均延迟：使用加权平均
-                if sc == 1:
-                    avg = latency
-                else:
-                    avg = (avg * (sc - 1) + latency) // sc
-            else:
-                fc += 1
-            # 更新记录
-            await self._conn.execute(
-                '''UPDATE candidate_pool SET success_count=?, fail_count=?, avg_latency=?, last_check=?
-                   WHERE channel_key=?''',
-                (sc, fc, avg, datetime.now().isoformat(), channel_key)
+        """更新候选池统计信息，若记录不存在则创建"""
+        if not self._conn:
+            return
+        try:
+            cursor = await self._conn.execute(
+                'SELECT success_count, fail_count, avg_latency FROM candidate_pool WHERE channel_key = ?',
+                (channel_key,)
             )
-        else:
-            # 如果不存在，则插入新记录（仅在成功时插入，失败时忽略？）
-            if success:
+            row = await cursor.fetchone()
+            await cursor.close()
+
+            if row:
+                sc, fc, avg = row
+                if success:
+                    sc += 1
+                    if sc == 1:
+                        avg = latency
+                    else:
+                        avg = (avg * (sc - 1) + latency) // sc
+                else:
+                    fc += 1
                 await self._conn.execute(
-                    '''INSERT INTO candidate_pool (channel_key, success_count, fail_count, avg_latency, last_check, status)
-                       VALUES (?, ?, ?, ?, ?, ?)''',
-                    (channel_key, 1 if success else 0, 0 if success else 1, latency if success else 0,
-                     datetime.now().isoformat(), 'observing')
+                    '''UPDATE candidate_pool SET success_count=?, fail_count=?, avg_latency=?, last_check=?
+                       WHERE channel_key=?''',
+                    (sc, fc, avg, datetime.now().isoformat(), channel_key)
                 )
-            # 注意：如果第一次就是失败，我们也可以插入记录，但之后才会被观察
-        await self._conn.commit()
-    except Exception as e:
-        logger.warning(f"更新候选池统计失败: {e}")
+            else:
+                if success:
+                    await self._conn.execute(
+                        '''INSERT INTO candidate_pool (channel_key, success_count, fail_count, avg_latency, last_check, status)
+                           VALUES (?, ?, ?, ?, ?, ?)''',
+                        (channel_key, 1, 0, latency, datetime.now().isoformat(), 'observing')
+                    )
+                else:
+                    # 记录失败但成功数为0，标记为观察中
+                    await self._conn.execute(
+                        '''INSERT INTO candidate_pool (channel_key, success_count, fail_count, avg_latency, last_check, status)
+                           VALUES (?, ?, ?, ?, ?, ?)''',
+                        (channel_key, 0, 1, 0, datetime.now().isoformat(), 'observing')
+                    )
+            await self._conn.commit()
+        except Exception as e:
+            logger.warning(f"更新候选池统计失败: {e}")
 
     async def get_candidates_for_promotion(self, limit: int = 500) -> List[Dict]:
         if not self._conn:
@@ -347,6 +348,16 @@ class DatabaseCache:
         rows = await cursor.fetchall()
         await cursor.close()
         return [{'key': r[0], 'name': r[1], 'url': r[2], 'latency': r[3], 'success': r[4], 'fail': r[5]} for r in rows]
+
+    # ---------- 速度历史 ----------
+    async def save_speed_history(self, channel_key: str, url: str, latency: int, success: bool):
+        if not self._conn:
+            return
+        await self._conn.execute(
+            'INSERT OR REPLACE INTO speed_history (channel_key, url, timestamp, latency, success) VALUES (?, ?, ?, ?, ?)',
+            (channel_key, url, datetime.now().isoformat(), latency, 1 if success else 0)
+        )
+        await self._conn.commit()
 
     # ---------- 速度历史 ----------
     async def save_speed_history(self, channel_key: str, url: str, latency: int, success: bool):
