@@ -14,10 +14,8 @@ from src.blacklist_filter import get_blacklist_filter
 from src.demo_filter import filter_and_order_by_demo, parse_demo_order_with_categories
 from src.database import get_db_cache
 from src.stable_manager import StableManager
-from src.aggregator import ResultAggregator
 from src.generator import generate_outputs_from_demo
 from src.special_categories import collect_and_append_special_categories
-import datetime
 
 async def run_legacy_mode():
     logger.info("🚀 IPTV 智能整理平台启动 (传统模式)")
@@ -83,8 +81,7 @@ async def run_legacy_mode():
                 ch['is_fixed'] = src.get('is_fixed', False)
         logger.info(f"🔄 稳定源覆盖 {len(stable_sources)} 个频道")
 
-    # 6. 生成输出（实时写入由 Aggregator 负责，这里做最终输出）
-    demo_order = parse_demo_order_with_categories() if config.enable_demo_filter else []
+    # 6. 生成输出
     generate_outputs_from_demo(ordered_channels, demo_order)
 
     # 智能补充采集
@@ -97,11 +94,6 @@ async def run_legacy_mode():
     if config.autonomous_mode:
         from src.orchestrator import run_autonomous_mode
         await run_autonomous_mode(skip_discover=True)
-
-    # 8. 实时写入聚合器（如果启用）
-    if config.open_realtime_write:
-        aggregator = ResultAggregator(ordered_channels, Path(config.output_dir))
-        # 此处聚合器已内置，但在测速过程中已经实时写入，这里不再重复
 
     logger.info("🎉 全部完成！")
     await db.close()
