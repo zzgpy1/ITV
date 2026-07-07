@@ -17,6 +17,28 @@ from src.stable_manager import StableManager
 from src.generator import generate_outputs_from_demo
 from src.special_categories import collect_and_append_special_categories
 
+async def run_once(self, skip_discover: bool = False) -> Dict:
+    # 确保候选池数据在数据库中
+    db = await get_db_cache()
+    # 检查 candidate_pool 表是否有记录
+    cursor = await db._conn.execute("SELECT COUNT(*) FROM candidate_pool")
+    row = await cursor.fetchone()
+    count = row[0] if row else 0
+    if count == 0:
+        logger.info("📥 候选池数据库为空，从 JSON 导入初始数据...")
+        # 从 self.candidate_observer._observations 导入
+        for key, obs in self.candidate_observer._observations.items():
+            await db._conn.execute(
+                '''INSERT OR IGNORE INTO candidate_pool 
+                   (channel_key, name, url, discovered_at, last_check, success_count, fail_count, avg_latency, status)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                (obs.source_key, obs.channel_name, obs.url,
+                 obs.discovered_at.isoformat(), obs.last_check.isoformat() if obs.last_check else None,
+                 obs.success_count, obs.fail_count, obs.avg_latency, obs.status)
+            )
+        await db._conn.commit()
+        logger.info(f"✅ 导入了 {len(self.candidate_observer._observations)} 条候选记录")
+        
 async def run_legacy_mode():
     logger.info("🚀 IPTV 智能整理平台启动 (传统模式)")
     logger.info(f"📡 配置：超时={config.timeout}s, 并发={config.max_workers}, ffmpeg={config.ffmpeg_enable}")
