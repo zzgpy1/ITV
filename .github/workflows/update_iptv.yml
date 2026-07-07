@@ -2,115 +2,52 @@ name: IPTV 源智能更新与整理
 
 on:
   schedule:
-    - cron: '0 */6 * * *'   # 每6小时运行一次
-  workflow_dispatch:         # 允许手动触发
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
 
 permissions:
-  contents: write            # 只需要写入 main 分支的权限
+  contents: write
 
 jobs:
   update-iptv:
     runs-on: ubuntu-latest
-    concurrency:
-      group: iptv-update
-      cancel-in-progress: false
-
     steps:
-    - name: 检出代码
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: 设置 Git 配置
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    - name: 设置 Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          sudo apt-get update && sudo apt-get install -y ffmpeg
 
-    - name: 安装依赖
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        sudo apt-get update
-        sudo apt-get install -y ffmpeg
+      - name: Run update
+        run: python -m src.run
+        env:
+          AUTONOMOUS_MODE: true
+          OPEN_RTMP: false   # Actions 中禁用推流
+          ENABLE_DEMO_FILTER: true
+          ENABLE_ALIAS: true
+          ENABLE_BLACKLIST: true
+          DATABASE_ENABLE: true
+          FFMPEG_ENABLE: true
+          MAX_WORKERS: 20
+          TIMEOUT: 8
 
-    - name: 运行采集程序
-      run: python -m src.run
-      env:
-        MAX_WORKERS: 20
-        TIMEOUT: 8
-        FFMPEG_ENABLE: true
-        CACHE_HOURS: 24
-        ENABLE_DEMO_FILTER: true
-        ENABLE_ALIAS: true
-        ENABLE_BLACKLIST: true
-        DATABASE_ENABLE: true
-        RUN_MODE: once
-        CACHE_RAW_HOURS: 48
-        CACHE_SPEED_HOURS: 24
-        ENABLE_INCREMENTAL_FETCH: true
-        ENABLE_JSON_OUTPUT: true
-        ENABLE_LITE_VERSION: true
-        ENABLE_EPG_OUTPUT: true
-        AUTONOMOUS_MODE: true
-        AUTO_UPDATE_STABLE: true
-        AUTO_REPLACE_FAILED: true
-        QUALITY_CHECK_INTERVAL: 24
-        CANDIDATE_OBSERVATION_HOURS: 24
-        CANDIDATE_MIN_SUCCESS: 3
-        CANDIDATE_MIN_SUCCESS_RATE: 0.5
-        CANDIDATE_MAX_LATENCY: 3000
-        SLOW_SPEED_THRESHOLD: 3000
-        MAX_RETRY_BEFORE_BLACKLIST: 2
-        PREDICT_THRESHOLD: 0.6
-
-    - name: 提交并推送更改到 main 分支
-      run: |
-        echo "🔄 拉取远程最新更改..."
-        git pull origin main --rebase --autostash || echo "拉取失败或无更新，继续..."
-        
-        echo "📝 检查并添加更改..."
-        git add -A
-        
-        if git diff --cached --quiet; then
-          echo "✅ 没有检测到新更改"
-          exit 0
-        fi
-        
-        echo "📦 提交更改..."
-        git commit -m "自动更新 IPTV 列表 - $(date '+%Y-%m-%d %H:%M:%S')"
-        
-        echo "🚀 推送到 main 分支（带重试）..."
-        for i in 1 2 3; do
-          echo "尝试第 $i 次推送..."
-          # 关键修改：使用 refs/heads/main 明确指定推送的是分支
-          if git push origin refs/heads/main; then
-            echo "✅ 推送成功"
-            exit 0
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          if ! git diff --staged --quiet; then
+            git commit -m "Auto update IPTV list $(date '+%Y-%m-%d %H:%M:%S')"
+            git push origin main
           else
-            echo "⚠️ 推送失败，拉取最新更改后重试..."
-            git pull origin main --rebase --autostash
-            sleep 2
+            echo "No changes"
           fi
-        done
-        
-        echo "⚠️ 重试后仍失败，尝试安全强制推送..."
-        # 安全强制推送时也使用完整引用
-        git push --force-with-lease origin refs/heads/main
-        echo "✅ 安全强制推送成功"
-
-    - name: 上传输出文件作为 artifacts（可选）
-      uses: actions/upload-artifact@v4
-      with:
-        name: iptv-output
-        path: |
-          output/*.m3u
-          output/*.txt
-          output/*.json
-          output/*.log
-        retention-days: 7
