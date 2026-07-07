@@ -28,7 +28,6 @@ class Config:
             print("ℹ️ config/config.yaml 不存在，使用环境变量和默认值")
 
     def _load_from_env(self):
-        """从环境变量覆盖配置（变量名全大写）"""
         for key, value in list(self._data.items()):
             env_val = os.getenv(key.upper())
             if env_val is not None:
@@ -44,25 +43,19 @@ class Config:
                     self._data[key] = env_val
 
     def _apply_defaults(self):
-        """设置所有默认值（确保所有属性都有定义）"""
         defaults = {
-            # 路径
             'root_dir': '.',
             'data_dir': 'data',
             'output_dir': 'output',
-            # 性能
             'max_workers': 20,
             'timeout': 8,
             'http_timeout': 8,
-            # ffmpeg
             'ffmpeg_enable': True,
             'ffmpeg_mode': 'deep',
             'ffprobe_cache_hours': 168,
-            # 缓存
             'cache_hours': 24,
             'cache_raw_hours': 48,
             'cache_speed_hours': 24,
-            # 功能开关
             'enable_demo_filter': True,
             'enable_alias': True,
             'enable_blacklist': True,
@@ -72,13 +65,10 @@ class Config:
             'enable_lite_version': True,
             'enable_epg_output': True,
             'demo_match_mode': 'contains',
-            # 合并
             'max_sources_per_channel': 3,
-            # 测速与黑名单
             'max_retry_before_blacklist': 2,
             'slow_speed_threshold': 3000,
             'download_chunk_size': 262144,
-            # 自治模式
             'autonomous_mode': True,
             'auto_update_stable': True,
             'auto_replace_failed': True,
@@ -88,29 +78,23 @@ class Config:
             'candidate_min_success_rate': 0.5,
             'candidate_max_latency': 3000,
             'auto_promote_threshold': 3,
-            # 健康预测
             'health_history_days': 30,
             'predict_threshold': 0.6,
-            # 固定源优化
             'enable_fixed_optimization': True,
             'fixed_optimization_threshold': 200,
-            # RTMP
             'open_rtmp': False,
             'nginx_http_port': 8080,
             'nginx_rtmp_port': 1935,
             'rtmp_idle_timeout': 300,
             'rtmp_max_streams': 10,
             'rtmp_transcode_mode': 'copy',
-            # EPG
             'open_epg': True,
             'open_subscribe_epg': True,
-            # 文件路径
             'subscribe_file': 'config/subscribe.txt',
             'whitelist_file': 'config/whitelist.txt',
             'blacklist_file': 'config/blacklist.txt',
             'alias_file': 'config/alias.txt',
             'demo_file': 'config/demo.txt',
-            # 代理
             'enable_github_proxy': False,
             'github_raw_proxies': [
                 'https://ghproxy.net/',
@@ -118,7 +102,6 @@ class Config:
                 'https://raw.kkgithub.com/',
             ],
             'github_proxy_timeout': 15,
-            # 源列表（默认）
             'raw_sources': [
                 'https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/cn.m3u',
                 'https://raw.githubusercontent.com/iptv-org/iptv/gh-pages/countries/cn.m3u',
@@ -132,7 +115,6 @@ class Config:
             'direct_sources': [
                 'https://tv.19860519.xyz/abc123',
             ],
-            # 实时写入
             'open_realtime_write': True,
         }
         for key, val in defaults.items():
@@ -140,13 +122,9 @@ class Config:
                 self._data[key] = val
 
     def _post_init(self):
-        """后处理：路径转换、派生属性"""
-        # 转换路径为 Path 对象
-        for key in ['root_dir', 'data_dir', 'output_dir', 'subscribe_file', 'whitelist_file',
-                    'blacklist_file', 'alias_file', 'demo_file']:
+        for key in ['root_dir', 'data_dir', 'output_dir', 'subscribe_file', 'whitelist_file', 'blacklist_file', 'alias_file', 'demo_file']:
             if key in self._data:
                 self._data[key] = Path(self._data[key])
-        # 合并 IPTV_SOURCES = raw_sources + direct_sources
         raw = self._data.get('raw_sources', [])
         direct = self._data.get('direct_sources', [])
         self._data['iptv_sources'] = list(raw) + list(direct)
@@ -161,8 +139,7 @@ class Config:
             return self._data[name]
         raise AttributeError(f"Config has no attribute '{name}'")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> Dict:
         return self._data.copy()
 
-# 全局单例
 config = Config()
