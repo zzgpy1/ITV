@@ -1,4 +1,3 @@
-# src/database.py
 import json
 import aiosqlite
 from datetime import datetime, timedelta
@@ -23,11 +22,10 @@ class DatabaseCache:
         if not config.database_enable:
             return
         try:
-            db_path = Path(config.data_dir) / "iptv_cache.db"
-            db_path.parent.mkdir(parents=True, exist_ok=True)
-            self._conn = await aiosqlite.connect(str(db_path))
+            config.data_dir.mkdir(parents=True, exist_ok=True)
+            self._conn = await aiosqlite.connect(str(config.data_dir / "iptv_cache.db"))
             await self._create_tables()
-            logger.info(f"✅ 数据库缓存已启用: {db_path}")
+            logger.info(f"✅ 数据库缓存已启用: {config.data_dir / 'iptv_cache.db'}")
         except Exception as e:
             logger.warning(f"⚠️ 数据库初始化失败: {e}")
             self._conn = None
@@ -65,6 +63,7 @@ class DatabaseCache:
                 fail_count INTEGER DEFAULT 1
             )
         ''')
+        # 新增 speed_history 表
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS speed_history (
                 channel_key TEXT,
@@ -75,7 +74,7 @@ class DatabaseCache:
                 PRIMARY KEY (channel_key, timestamp)
             )
         ''')
-        # 候选池表（新增）
+        # 候选池表（如果尚未创建）
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS candidate_pool (
                 channel_key TEXT PRIMARY KEY,
@@ -89,7 +88,16 @@ class DatabaseCache:
                 status TEXT DEFAULT 'observing'
             )
         ''')
-        # 稳定源表（新增）
+        await self._conn.execute('''
+            CREATE TABLE IF NOT EXISTS ffprobe_cache (
+                url TEXT PRIMARY KEY,
+                valid INTEGER,
+                video_codec TEXT,
+                has_video INTEGER,
+                updated_at TIMESTAMP
+            )
+        ''')
+        # 稳定源表（如果尚未创建）
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS stable_sources (
                 channel_name TEXT PRIMARY KEY,
@@ -97,15 +105,6 @@ class DatabaseCache:
                 latency INTEGER,
                 video_codec TEXT,
                 is_fixed INTEGER DEFAULT 0,
-                updated_at TIMESTAMP
-            )
-        ''')
-        await self._conn.execute('''
-            CREATE TABLE IF NOT EXISTS ffprobe_cache (
-                url TEXT PRIMARY KEY,
-                valid INTEGER,
-                video_codec TEXT,
-                has_video INTEGER,
                 updated_at TIMESTAMP
             )
         ''')
@@ -117,7 +116,7 @@ class DatabaseCache:
         await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_stable_channel ON stable_sources(channel_name)')
         await self._conn.commit()
 
-    # ---------- 原有方法 ----------
+    # ---------- 原有方法（保留） ----------
     async def get_raw_source(self, url: str) -> Optional[str]:
         if not self._conn:
             return None
@@ -280,7 +279,22 @@ class DatabaseCache:
             return 1
 
     # ---------- 候选池 ----------
+    async def add_to_candidate(self, channel_key: str, name: str, url: str, latency: int = 0):
+        if not self._conn:
+            return
+        try:
+            await self._conn.execute(
+                '''INSERT OR REPLACE INTO candidate_pool 
+                   (channel_key, name, url, discovered_at, last_check, avg_latency, status)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                (channel_key, name, url, datetime.now().isoformat(), datetime.now().isoformat(), latency, 'observing')
+            )
+            await self._conn.commit()
+        except Exception:
+            pass
+
     async def update_candidate_latency(self, channel_key: str, latency: int, success: bool):
+        """更新候选池统计，若记录不存在则创建（仅在成功时创建）"""
         if not self._conn:
             return
         try:
@@ -290,15 +304,11 @@ class DatabaseCache:
             )
             row = await cursor.fetchone()
             await cursor.close()
-
             if row:
                 sc, fc, avg = row
                 if success:
                     sc += 1
-                    if sc == 1:
-                        avg = latency
-                    else:
-                        avg = (avg * (sc - 1) + latency) // sc
+                    avg = (avg * (sc - 1) + latency) // sc if sc > 1 else latency
                 else:
                     fc += 1
                 await self._conn.execute(
@@ -318,7 +328,21 @@ class DatabaseCache:
         except Exception as e:
             logger.warning(f"更新候选池统计失败: {e}")
 
+    async def get_candidates_for_promotion(self, limit: int = 500) -> List[Dict]:
+        if not self._conn:
+            return []
+        cursor = await self._conn.execute(
+            '''SELECT channel_key, name, url, avg_latency, success_count, fail_count
+               FROM candidate_pool WHERE status = 'stable' AND fail_count < 3
+               ORDER BY last_check ASC LIMIT ?''',
+            (limit,)
+        )
+        rows = await cursor.fetchall()
+        await cursor.close()
+        return [{'key': r[0], 'name': r[1], 'url': r[2], 'latency': r[3], 'success': r[4], 'fail': r[5]} for r in rows]
+
     async def get_candidate_stats_batch(self) -> Dict[str, Dict]:
+        """批量获取所有候选池统计"""
         if not self._conn:
             return {}
         cursor = await self._conn.execute(
@@ -336,8 +360,10 @@ class DatabaseCache:
         return result
 
     async def import_candidate_pool_from_json(self, json_path: Path):
+        """从 JSON 文件导入候选池"""
         if not json_path.exists():
             return
+        import json
         try:
             with open(json_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -367,6 +393,32 @@ class DatabaseCache:
             logger.info(f"📥 从 JSON 导入候选池 {len(data)} 条记录")
         except Exception as e:
             logger.warning(f"导入候选池 JSON 失败: {e}")
+
+    # ---------- 速度历史 ----------
+    async def save_speed_history(self, channel_key: str, url: str, latency: int, success: bool):
+        """保存单条速度历史"""
+        if not self._conn:
+            return
+        try:
+            await self._conn.execute(
+                'INSERT OR REPLACE INTO speed_history (channel_key, url, timestamp, latency, success) VALUES (?, ?, ?, ?, ?)',
+                (channel_key, url, datetime.now().isoformat(), latency, 1 if success else 0)
+            )
+            await self._conn.commit()
+        except Exception as e:
+            logger.warning(f"保存速度历史失败: {e}")
+
+    async def get_speed_history(self, channel_key: str, days: int = 30) -> List[Dict]:
+        if not self._conn:
+            return []
+        cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+        cursor = await self._conn.execute(
+            'SELECT timestamp, latency, success FROM speed_history WHERE channel_key = ? AND timestamp > ? ORDER BY timestamp ASC',
+            (channel_key, cutoff)
+        )
+        rows = await cursor.fetchall()
+        await cursor.close()
+        return [{'timestamp': r[0], 'latency': r[1], 'success': r[2]} for r in rows]
 
     # ---------- 稳定源 ----------
     async def get_stable_source(self, channel_name: str) -> Optional[Dict]:
@@ -408,9 +460,7 @@ class DatabaseCache:
     async def get_all_stable_sources(self) -> Dict[str, Dict]:
         if not self._conn:
             return {}
-        cursor = await self._conn.execute(
-            'SELECT channel_name, url, latency, video_codec, is_fixed, updated_at FROM stable_sources'
-        )
+        cursor = await self._conn.execute('SELECT channel_name, url, latency, video_codec, is_fixed, updated_at FROM stable_sources')
         rows = await cursor.fetchall()
         await cursor.close()
         result = {}
@@ -424,6 +474,7 @@ class DatabaseCache:
             }
         return result
 
+    # ---------- 其他 ----------
     async def close(self):
         if self._conn:
             await self._conn.close()
