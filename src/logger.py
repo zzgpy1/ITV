@@ -1,10 +1,7 @@
-# src/logger.py
 import logging
 import sys
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
-
-# 从 config_loader 导入 config，避免循环依赖
 from src.config_loader import config
 
 def setup_logger(name: str = "IPTVCollector", level: int = logging.INFO, log_file: Path = None) -> logging.Logger:
@@ -19,7 +16,7 @@ def setup_logger(name: str = "IPTVCollector", level: int = logging.INFO, log_fil
     logger.addHandler(console)
 
     if log_file is None:
-        log_file = config.output_dir / "run.log"   # 使用 config.output_dir
+        log_file = config.output_dir / "run.log"
     try:
         config.output_dir.mkdir(parents=True, exist_ok=True)
         file_handler = RotatingFileHandler(
