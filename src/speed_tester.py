@@ -119,6 +119,23 @@ async def test_channels_concurrent(channels_dict: dict) -> list:
                 continue
             tasks.append(probe_channel_advanced(session, ch, db))
 
+        # 在成功和失败分支中，都调用 update_candidate_latency
+if ok:
+    ch["latency"] = latency
+    ch["speed"] = speed
+    key = channel_key(ch["name"], ch["url"])
+    await db.update_candidate_latency(key, latency, True)
+    await db.save_speed_history(key, ch["url"], latency, True)
+    if is_slow:
+        await db.add_to_candidate(key, ch["name"], ch["url"], latency)
+        logger.debug(f"🐢 慢速源: {ch['name']} {latency}ms")
+    else:
+        valid.append(ch)
+else:
+    key = channel_key(ch["name"], ch["url"])
+    await db.update_candidate_latency(key, 0, False)
+    await db.save_speed_history(key, ch["url"], 0, False)
+    
         async def probe_with_semaphore(task):
             async with semaphore:
                 return await task
