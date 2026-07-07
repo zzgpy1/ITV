@@ -253,6 +253,6 @@ def get_orchestrator() -> IPTVOrchestrator:
         _orchestrator = IPTVOrchestrator()
     return _orchestrator
 
-async def run_autonomous_mode():
+async def run_autonomous_mode(skip_discover: bool = False):
     orchestrator = get_orchestrator()
-    return await orchestrator.run_once()
+    return await orchestrator.run_once(skip_discover=skip_discover)
