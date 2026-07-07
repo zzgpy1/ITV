@@ -33,7 +33,7 @@ async def run_legacy_mode():
         logger.info(f"📋 使用订阅源：{len(subscribe_urls)} 个")
         sources = subscribe_urls
     else:
-        sources = config.raw_sources  # 使用默认
+        sources = config.raw_sources
         logger.info(f"📋 使用默认源：{len(sources)} 个")
 
     # 2. 拉取
