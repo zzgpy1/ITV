@@ -119,26 +119,30 @@ async def test_channels_concurrent(channels_dict: dict) -> list:
                 continue
             tasks.append(probe_channel_advanced(session, ch, db))
 
-        # 在成功和失败分支中，都调用 update_candidate_latency
-if ok:
-    ch["latency"] = latency
-    ch["speed"] = speed
-    key = channel_key(ch["name"], ch["url"])
-    await db.update_candidate_latency(key, latency, True)
-    await db.save_speed_history(key, ch["url"], latency, True)
-    if is_slow:
-        await db.add_to_candidate(key, ch["name"], ch["url"], latency)
-        logger.debug(f"🐢 慢速源: {ch['name']} {latency}ms")
-    else:
-        valid.append(ch)
-else:
-    key = channel_key(ch["name"], ch["url"])
-    await db.update_candidate_latency(key, 0, False)
-    await db.save_speed_history(key, ch["url"], 0, False)
-    
+        # 定义带信号量的包装函数（缩进与 tasks 循环平齐）
         async def probe_with_semaphore(task):
             async with semaphore:
                 return await task
+
+        # 使用 tqdm.as_completed 迭代
+        for coro in tqdm.as_completed([probe_with_semaphore(t) for t in tasks], desc="🔍 测速+过滤", unit="频道"):
+            ch, latency, ok, speed, is_slow = await coro
+            if ok:
+                ch["latency"] = latency
+                ch["speed"] = speed
+                key = channel_key(ch["name"], ch["url"])
+                await db.update_candidate_latency(key, latency, True)
+                await db.save_speed_history(key, ch["url"], latency, True)
+                if is_slow:
+                    await db.add_to_candidate(key, ch["name"], ch["url"], latency)
+                    logger.debug(f"🐢 慢速源: {ch['name']} {latency}ms")
+                else:
+                    valid.append(ch)
+            else:
+                key = channel_key(ch["name"], ch["url"])
+                await db.update_candidate_latency(key, 0, False)
+                await db.save_speed_history(key, ch["url"], 0, False)
+    return valid
 
         for coro in tqdm.as_completed([probe_with_semaphore(t) for t in tasks], desc="🔍 测速+过滤", unit="频道"):
             ch, latency, ok, speed, is_slow = await coro
