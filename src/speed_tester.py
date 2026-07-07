@@ -3,7 +3,7 @@ import asyncio
 import aiohttp
 import time
 import re
-from tqdm.asyncio import tqdm
+from tqdm.asyncio import tqdm  # 注意使用 tqdm.asyncio，而不是 tqdm
 
 from src.config import (
     HEADERS, HTTP_TIMEOUT, DOWNLOAD_CHUNK_SIZE, MAX_RETRY_BEFORE_BLACKLIST,
@@ -37,7 +37,7 @@ def get_channel_quality_score(channel: dict) -> tuple:
     speed = channel.get("speed", 0)
     return (1 if latency < 2000 else 2, latency, -speed)
 
-async def probe_channel_advanced(session: aiohttp.ClientSession, channel: dict, db) -> tuple:
+async def probe_channel_advanced(session: aiohttp.ClientSession, channel: dict, db):
     """
     返回 (channel, latency, is_valid, speed, is_slow)
     """
@@ -47,7 +47,7 @@ async def probe_channel_advanced(session: aiohttp.ClientSession, channel: dict, 
         return channel, 0, False, 0, False
 
     key = channel_key(channel["name"], url)
-    # 检查缓存，使用 CACHE_SPEED_HOURS
+    # 检查缓存
     cached = await db.get_speed_result(key, max_age_hours=CACHE_SPEED_HOURS)
     if cached and cached.get("latency", 9999) < SLOW_SPEED_THRESHOLD:
         channel["latency"] = cached["latency"]
@@ -97,7 +97,8 @@ async def probe_channel_advanced(session: aiohttp.ClientSession, channel: dict, 
             final_latency = head_latency + int(download_time * 1000)
             is_slow = final_latency > SLOW_SPEED_THRESHOLD
             return channel, final_latency, True, speed, is_slow
-    except Exception:
+    except Exception as e:
+        logger.debug(f"测速失败 {url}: {e}")
         fail_count = await db.increment_fail_count(url)
         if fail_count >= MAX_RETRY_BEFORE_BLACKLIST:
             await db.add_to_blacklist(url, "连续失败")
@@ -119,31 +120,11 @@ async def test_channels_concurrent(channels_dict: dict) -> list:
                 continue
             tasks.append(probe_channel_advanced(session, ch, db))
 
-        # 定义带信号量的包装函数（缩进与 tasks 循环平齐）
         async def probe_with_semaphore(task):
             async with semaphore:
                 return await task
 
-        # 使用 tqdm.as_completed 迭代
-        for coro in tqdm.as_completed([probe_with_semaphore(t) for t in tasks], desc="🔍 测速+过滤", unit="频道"):
-            ch, latency, ok, speed, is_slow = await coro
-            if ok:
-                ch["latency"] = latency
-                ch["speed"] = speed
-                key = channel_key(ch["name"], ch["url"])
-                await db.update_candidate_latency(key, latency, True)
-                await db.save_speed_history(key, ch["url"], latency, True)
-                if is_slow:
-                    await db.add_to_candidate(key, ch["name"], ch["url"], latency)
-                    logger.debug(f"🐢 慢速源: {ch['name']} {latency}ms")
-                else:
-                    valid.append(ch)
-            else:
-                key = channel_key(ch["name"], ch["url"])
-                await db.update_candidate_latency(key, 0, False)
-                await db.save_speed_history(key, ch["url"], 0, False)
-    return valid
-
+        # 使用 tqdm.asyncio 的 as_completed
         for coro in tqdm.as_completed([probe_with_semaphore(t) for t in tasks], desc="🔍 测速+过滤", unit="频道"):
             ch, latency, ok, speed, is_slow = await coro
             if ok:
