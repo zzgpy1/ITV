@@ -82,15 +82,15 @@ class DatabaseCache:
         # 候选池（核心）
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS candidate_pool (
-                channel_key TEXT PRIMARY KEY,
-                name TEXT,
-                url TEXT,
-                discovered_at TIMESTAMP,
-                last_check TIMESTAMP,
-                fail_count INTEGER DEFAULT 0,
-                success_count INTEGER DEFAULT 0,
-                avg_latency INTEGER DEFAULT 0,
-                status TEXT DEFAULT 'observing'
+              channel_key TEXT PRIMARY KEY,
+              name TEXT,
+              url TEXT,
+              discovered_at TIMESTAMP,
+              last_check TIMESTAMP,
+              fail_count INTEGER DEFAULT 0,
+              success_count INTEGER DEFAULT 0,
+              avg_latency INTEGER DEFAULT 0,
+              status TEXT DEFAULT 'observing'
             )
         ''')
         # ffprobe 缓存
