@@ -76,31 +76,43 @@ async def run_legacy_mode():
     # ========== 关键修正：强制使用固定源覆盖（优先级最高） ==========
     # 从数据库获取所有固定源 (is_fixed=True)
     all_stable = await stable_mgr.get_stable_sources()
-    if all_stable:
-        fixed_sources = {name: src for name, src in all_stable.items() if src.get('is_fixed', False)}
-        if fixed_sources:
-            matcher = get_alias_matcher()
-            fixed_count = 0
-            for ch in ordered_channels:
-                raw_name = ch.get('name')
-                if not raw_name:
-                    continue
-                # 归一化频道名
-                std_name = matcher.normalize(raw_name) if matcher else raw_name
-                if std_name in fixed_sources:
-                    src = fixed_sources[std_name]
-                    # 强制覆盖 URL
-                    ch['url'] = src['url']
-                    ch['latency'] = src.get('latency', 50)
-                    ch['video_codec'] = src.get('video_codec', 'h264')
-                    ch['is_fixed'] = True
-                    # 同时更新 urls 列表
-                    if 'urls' in ch:
-                        if src['url'] not in ch['urls']:
-                            ch['urls'] = [src['url']] + [u for u in ch['urls'] if u != src['url']]
-                    fixed_count += 1
-                    logger.info(f"🔄 固定源强制覆盖: {std_name} -> {src['url'][:50]}...")
-            logger.info(f"📌 固定源强制覆盖完成: {fixed_count} 个频道")
+if all_stable:
+    fixed_sources = {name: src for name, src in all_stable.items() if src.get('is_fixed', False)}
+    if fixed_sources:
+        # 获取别名匹配器
+        matcher = get_alias_matcher()
+        fixed_count = 0
+        for ch in ordered_channels:
+            raw_name = ch.get('name')
+            if not raw_name:
+                continue
+            # 使用 matcher.match 获取标准名（优先精确匹配）
+            std_name = matcher.match(raw_name)
+            if not std_name:
+                # 如果 match 返回 None，尝试 normalize（但这样可能丢失格式）
+                std_name = matcher.normalize(raw_name)
+            # 如果 std_name 不在固定源中，尝试将 raw_name 直接作为键（如果它本身就是标准名）
+            if std_name not in fixed_sources:
+                # 如果 raw_name 本身就是 "CCTV-1" 格式，则直接使用
+                if raw_name.startswith("CCTV-") and raw_name in fixed_sources:
+                    std_name = raw_name
+                else:
+                    # 否则尝试去掉后缀（如 "综合"）
+                    base_name = raw_name.split(' ')[0] if ' ' in raw_name else raw_name
+                    if base_name in fixed_sources:
+                        std_name = base_name
+            if std_name in fixed_sources:
+                src = fixed_sources[std_name]
+                ch['url'] = src['url']
+                ch['latency'] = src.get('latency', 50)
+                ch['video_codec'] = src.get('video_codec', 'h264')
+                ch['is_fixed'] = True
+                if 'urls' in ch:
+                    if src['url'] not in ch['urls']:
+                        ch['urls'] = [src['url']] + [u for u in ch['urls'] if u != src['url']]
+                fixed_count += 1
+                logger.info(f"🔄 固定源强制覆盖: {std_name} -> {src['url'][:50]}...")
+        logger.info(f"📌 固定源强制覆盖完成: {fixed_count} 个频道")
 
     # 6. 生成输出
     generate_outputs_from_demo(ordered_channels, demo_order)
