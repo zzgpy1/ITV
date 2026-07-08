@@ -16,6 +16,7 @@ from src.database import get_db_cache
 from src.stable_manager import StableManager
 from src.generator import generate_outputs_from_demo
 from src.special_categories import collect_and_append_special_categories
+from src.alias_matcher import get_alias_matcher
 
 
 async def run_legacy_mode():
@@ -25,7 +26,10 @@ async def run_legacy_mode():
     # 初始化数据库
     db = await get_db_cache()
     stable_mgr = StableManager()
-    await stable_mgr.sync_fixed_sources()  # 导入固定源
+    
+    # ===== 关键修正：先同步固定源（写入数据库） =====
+    await stable_mgr.sync_fixed_sources()
+    logger.info("📌 固定源已同步到数据库")
 
     # 1. 获取订阅源列表
     sub_mgr = SubscribeManager()
@@ -68,36 +72,36 @@ async def run_legacy_mode():
         logger.info(f"📊 Demo筛选后: {len(ordered_channels)}")
     else:
         ordered_channels = merged_channels
-        unmatched = []
 
-    # 5. 使用稳定源覆盖（从数据库读取）
-    stable_sources = await stable_mgr.get_stable_sources()
-    if stable_sources:
-        from src.alias_matcher import get_alias_matcher
+    # 5. 使用稳定源覆盖（但保留固定源优先）
+    # 先获取所有稳定源
+    all_stable = await stable_mgr.get_stable_sources()
+    if all_stable:
+        # 获取别名匹配器
         matcher = get_alias_matcher()
-        covered_count = 0
+        fixed_count = 0
         for ch in ordered_channels:
             raw_name = ch.get('name')
             if not raw_name:
                 continue
-            # 使用别名归一化频道名
+            # 归一化频道名
             std_name = matcher.normalize(raw_name) if matcher else raw_name
-            if std_name in stable_sources:
-                src = stable_sources[std_name]
-                ch['url'] = src['url']
-                ch['latency'] = src['latency']
-                ch['video_codec'] = src['video_codec']
-                ch['is_fixed'] = src.get('is_fixed', False)
-                # 更新 urls 列表
-                if 'urls' in ch and src['url'] not in ch['urls']:
-                    ch['urls'] = [src['url']] + [u for u in ch['urls'] if u != src['url']]
-                covered_count += 1
-        logger.info(f"🔄 稳定源覆盖了 {covered_count} 个频道")
-
-    # 在 run_legacy_mode 中，sync_fixed_sources 之后添加：
-await db._conn.execute('DELETE FROM stable_sources')
-await db._conn.commit()
-logger.info("🧹 已清空稳定源表，将从固定源重新生成")
+            if std_name in all_stable:
+                src = all_stable[std_name]
+                # 如果是固定源，强制使用固定源 URL（即使数据库有旧记录）
+                if src.get('is_fixed', False):
+                    ch['url'] = src['url']
+                    ch['latency'] = src.get('latency', 50)
+                    ch['video_codec'] = src.get('video_codec', 'h264')
+                    ch['is_fixed'] = True
+                    if 'urls' in ch:
+                        if src['url'] not in ch['urls']:
+                            ch['urls'] = [src['url']] + [u for u in ch['urls'] if u != src['url']]
+                    fixed_count += 1
+                else:
+                    # 非固定源可以覆盖（但您的合并逻辑已经处理了）
+                    pass
+        logger.info(f"🔄 固定源覆盖 {fixed_count} 个频道")
 
     # 6. 生成输出
     generate_outputs_from_demo(ordered_channels, demo_order)
