@@ -94,6 +94,11 @@ async def run_legacy_mode():
                 covered_count += 1
         logger.info(f"🔄 稳定源覆盖了 {covered_count} 个频道")
 
+    # 在 run_legacy_mode 中，sync_fixed_sources 之后添加：
+await db._conn.execute('DELETE FROM stable_sources')
+await db._conn.commit()
+logger.info("🧹 已清空稳定源表，将从固定源重新生成")
+
     # 6. 生成输出
     generate_outputs_from_demo(ordered_channels, demo_order)
 
