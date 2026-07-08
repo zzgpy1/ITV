@@ -1,3 +1,4 @@
+# src/database.py
 import json
 import aiosqlite
 from datetime import datetime, timedelta
@@ -31,7 +32,6 @@ class DatabaseCache:
             self._conn = None
 
     async def _create_tables(self):
-        # 原有表
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS channel_cache (
                 channel_key TEXT PRIMARY KEY,
@@ -63,7 +63,6 @@ class DatabaseCache:
                 fail_count INTEGER DEFAULT 1
             )
         ''')
-        # 新增 speed_history 表
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS speed_history (
                 channel_key TEXT,
@@ -74,7 +73,6 @@ class DatabaseCache:
                 PRIMARY KEY (channel_key, timestamp)
             )
         ''')
-        # 候选池表（如果尚未创建）
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS candidate_pool (
                 channel_key TEXT PRIMARY KEY,
@@ -97,7 +95,7 @@ class DatabaseCache:
                 updated_at TIMESTAMP
             )
         ''')
-        # 稳定源表（如果尚未创建）
+        # 稳定源表
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS stable_sources (
                 channel_name TEXT PRIMARY KEY,
@@ -116,7 +114,7 @@ class DatabaseCache:
         await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_stable_channel ON stable_sources(channel_name)')
         await self._conn.commit()
 
-    # ---------- 原有方法（保留） ----------
+    # ---------- 原有方法 ----------
     async def get_raw_source(self, url: str) -> Optional[str]:
         if not self._conn:
             return None
@@ -282,67 +280,41 @@ class DatabaseCache:
     async def add_to_candidate(self, channel_key: str, name: str, url: str, latency: int = 0):
         if not self._conn:
             return
-        try:
-            await self._conn.execute(
-                '''INSERT OR REPLACE INTO candidate_pool 
-                   (channel_key, name, url, discovered_at, last_check, avg_latency, status)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                (channel_key, name, url, datetime.now().isoformat(), datetime.now().isoformat(), latency, 'observing')
-            )
-            await self._conn.commit()
-        except Exception:
-            pass
+        await self._conn.execute(
+            '''INSERT OR REPLACE INTO candidate_pool 
+               (channel_key, name, url, discovered_at, last_check, avg_latency, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?)''',
+            (channel_key, name, url, datetime.now().isoformat(), datetime.now().isoformat(), latency, 'observing')
+        )
+        await self._conn.commit()
 
     async def update_candidate_latency(self, channel_key: str, latency: int, success: bool):
-        """更新候选池统计，若记录不存在则创建（仅在成功时创建）"""
         if not self._conn:
             return
-        try:
-            cursor = await self._conn.execute(
-                'SELECT success_count, fail_count, avg_latency FROM candidate_pool WHERE channel_key = ?',
-                (channel_key,)
-            )
-            row = await cursor.fetchone()
-            await cursor.close()
-            if row:
-                sc, fc, avg = row
-                if success:
-                    sc += 1
-                    avg = (avg * (sc - 1) + latency) // sc if sc > 1 else latency
-                else:
-                    fc += 1
-                await self._conn.execute(
-                    '''UPDATE candidate_pool SET success_count=?, fail_count=?, avg_latency=?, last_check=?
-                       WHERE channel_key=?''',
-                    (sc, fc, avg, datetime.now().isoformat(), channel_key)
-                )
-            else:
-                if success:
-                    await self._conn.execute(
-                        '''INSERT INTO candidate_pool 
-                           (channel_key, name, url, success_count, fail_count, avg_latency, last_check, status, discovered_at)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                        (channel_key, '', '', 1, 0, latency, datetime.now().isoformat(), 'observing', datetime.now().isoformat())
-                    )
-            await self._conn.commit()
-        except Exception as e:
-            logger.warning(f"更新候选池统计失败: {e}")
-
-    async def get_candidates_for_promotion(self, limit: int = 500) -> List[Dict]:
-        if not self._conn:
-            return []
         cursor = await self._conn.execute(
-            '''SELECT channel_key, name, url, avg_latency, success_count, fail_count
-               FROM candidate_pool WHERE status = 'stable' AND fail_count < 3
-               ORDER BY last_check ASC LIMIT ?''',
-            (limit,)
+            'SELECT success_count, fail_count, avg_latency FROM candidate_pool WHERE channel_key = ?',
+            (channel_key,)
         )
-        rows = await cursor.fetchall()
-        await cursor.close()
-        return [{'key': r[0], 'name': r[1], 'url': r[2], 'latency': r[3], 'success': r[4], 'fail': r[5]} for r in rows]
+        row = await cursor.fetchone()
+        if row:
+            sc, fc, avg = row
+            if success:
+                sc += 1
+                avg = (avg * (sc - 1) + latency) // sc if sc > 0 else latency
+            else:
+                fc += 1
+            status = 'stable' if sc >= 3 and avg < 3000 else 'observing'
+            await self._conn.execute(
+                '''UPDATE candidate_pool SET success_count=?, fail_count=?, avg_latency=?, last_check=?, status=?
+                   WHERE channel_key=?''',
+                (sc, fc, avg, datetime.now().isoformat(), status, channel_key)
+            )
+        else:
+            if success:
+                await self.add_to_candidate(channel_key, '', '', latency)
+        await self._conn.commit()
 
     async def get_candidate_stats_batch(self) -> Dict[str, Dict]:
-        """批量获取所有候选池统计"""
         if not self._conn:
             return {}
         cursor = await self._conn.execute(
@@ -360,7 +332,6 @@ class DatabaseCache:
         return result
 
     async def import_candidate_pool_from_json(self, json_path: Path):
-        """从 JSON 文件导入候选池"""
         if not json_path.exists():
             return
         import json
@@ -394,19 +365,28 @@ class DatabaseCache:
         except Exception as e:
             logger.warning(f"导入候选池 JSON 失败: {e}")
 
+    async def get_candidates_for_promotion(self, limit: int = 500) -> List[Dict]:
+        if not self._conn:
+            return []
+        cursor = await self._conn.execute(
+            '''SELECT channel_key, name, url, avg_latency, success_count, fail_count
+               FROM candidate_pool WHERE status = 'stable' AND fail_count < 3
+               ORDER BY last_check ASC LIMIT ?''',
+            (limit,)
+        )
+        rows = await cursor.fetchall()
+        await cursor.close()
+        return [{'key': r[0], 'name': r[1], 'url': r[2], 'latency': r[3], 'success': r[4], 'fail': r[5]} for r in rows]
+
     # ---------- 速度历史 ----------
     async def save_speed_history(self, channel_key: str, url: str, latency: int, success: bool):
-        """保存单条速度历史"""
         if not self._conn:
             return
-        try:
-            await self._conn.execute(
-                'INSERT OR REPLACE INTO speed_history (channel_key, url, timestamp, latency, success) VALUES (?, ?, ?, ?, ?)',
-                (channel_key, url, datetime.now().isoformat(), latency, 1 if success else 0)
-            )
-            await self._conn.commit()
-        except Exception as e:
-            logger.warning(f"保存速度历史失败: {e}")
+        await self._conn.execute(
+            'INSERT OR REPLACE INTO speed_history (channel_key, url, timestamp, latency, success) VALUES (?, ?, ?, ?, ?)',
+            (channel_key, url, datetime.now().isoformat(), latency, 1 if success else 0)
+        )
+        await self._conn.commit()
 
     async def get_speed_history(self, channel_key: str, days: int = 30) -> List[Dict]:
         if not self._conn:
@@ -442,40 +422,75 @@ class DatabaseCache:
         return None
 
     async def upsert_stable_source(self, channel_name: str, url: str, latency: int, video_codec: str = '', is_fixed: bool = False):
-    if not self._conn:
-        return
-    try:
-        await self._conn.execute(
-            '''INSERT OR REPLACE INTO stable_sources (channel_name, url, latency, video_codec, is_fixed, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?)''',
-            (channel_name, url, latency, video_codec, 1 if is_fixed else 0, datetime.now().isoformat())
-        )
-        await self._conn.commit()
-    except Exception as e:
-        logger.warning(f"更新稳定源失败: {e}")
+        if not self._conn:
+            return
+        try:
+            await self._conn.execute(
+                '''INSERT OR REPLACE INTO stable_sources (channel_name, url, latency, video_codec, is_fixed, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?)''',
+                (channel_name, url, latency, video_codec, 1 if is_fixed else 0, datetime.now().isoformat())
+            )
+            await self._conn.commit()
+        except Exception as e:
+            logger.warning(f"更新稳定源失败: {e}")
 
-async def get_all_stable_sources(self) -> Dict[str, Dict]:
-    if not self._conn:
-        return {}
-    try:
-        cursor = await self._conn.execute('SELECT channel_name, url, latency, video_codec, is_fixed, updated_at FROM stable_sources')
-        rows = await cursor.fetchall()
-        await cursor.close()
-        result = {}
-        for row in rows:
-            result[row[0]] = {
-                'url': row[1],
-                'latency': row[2],
-                'video_codec': row[3],
-                'is_fixed': bool(row[4]),
-                'updated_at': row[5]
-            }
-        return result
-    except Exception as e:
-        logger.warning(f"获取所有稳定源失败: {e}")
-        return {}
+    async def delete_stable_source(self, channel_name: str):
+        if not self._conn:
+            return
+        try:
+            await self._conn.execute('DELETE FROM stable_sources WHERE channel_name = ?', (channel_name,))
+            await self._conn.commit()
+        except Exception as e:
+            logger.warning(f"删除稳定源失败: {e}")
 
-    # ---------- 其他 ----------
+    async def get_all_stable_sources(self) -> Dict[str, Dict]:
+        if not self._conn:
+            return {}
+        try:
+            cursor = await self._conn.execute('SELECT channel_name, url, latency, video_codec, is_fixed, updated_at FROM stable_sources')
+            rows = await cursor.fetchall()
+            await cursor.close()
+            result = {}
+            for row in rows:
+                result[row[0]] = {
+                    'url': row[1],
+                    'latency': row[2],
+                    'video_codec': row[3],
+                    'is_fixed': bool(row[4]),
+                    'updated_at': row[5]
+                }
+            return result
+        except Exception as e:
+            logger.warning(f"获取所有稳定源失败: {e}")
+            return {}
+
+    # ---------- FFprobe 缓存 ----------
+    async def get_cached_probe_result(self, url: str) -> Optional[Dict]:
+        try:
+            cursor = await self._conn.execute(
+                'SELECT valid, video_codec, has_video, updated_at FROM ffprobe_cache WHERE url = ?',
+                (url,)
+            )
+            row = await cursor.fetchone()
+            await cursor.close()
+            if row:
+                valid, video_codec, has_video, updated_at = row
+                if datetime.now() - datetime.fromisoformat(updated_at) < timedelta(hours=config.ffprobe_cache_hours):
+                    return {"valid": bool(valid), "video_codec": video_codec, "has_video": bool(has_video)}
+        except Exception:
+            pass
+        return None
+
+    async def save_probe_result(self, url: str, result: dict):
+        try:
+            await self._conn.execute(
+                'INSERT OR REPLACE INTO ffprobe_cache (url, valid, video_codec, has_video, updated_at) VALUES (?, ?, ?, ?, ?)',
+                (url, result.get("valid", False), result.get("video_codec", ""), result.get("has_video", False), datetime.now().isoformat())
+            )
+            await self._conn.commit()
+        except Exception:
+            pass
+
     async def close(self):
         if self._conn:
             await self._conn.close()
