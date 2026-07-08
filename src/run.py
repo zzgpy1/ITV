@@ -93,26 +93,19 @@ async def run_legacy_mode():
 
  # 5. 使用稳定源覆盖（从数据库读取）
     stable_sources = await stable_mgr.get_stable_sources()
-    if stable_sources:
-        # 导入别名匹配器
-        from src.alias_matcher import get_alias_matcher
-        matcher = get_alias_matcher()
-        for ch in ordered_channels:
-            raw_name = ch.get('name')
-            if not raw_name:
-                continue
-            # 归一化频道名
-            std_name = matcher.normalize(raw_name) if matcher else raw_name
-            if std_name in stable_sources:
-                src = stable_sources[std_name]
-                ch['url'] = src['url']
-                ch['latency'] = src['latency']
-                ch['video_codec'] = src['video_codec']
-                ch['is_fixed'] = src.get('is_fixed', False)
-                # 同时更新 urls 列表（如果有）
-                if 'urls' in ch and src['url'] not in ch['urls']:
-                    ch['urls'] = [src['url']] + [u for u in ch['urls'] if u != src['url']]
-        logger.info(f"🔄 稳定源覆盖 {len(stable_sources)} 个频道（匹配后实际覆盖数量见上方）")
+  if stable_sources:
+     for ch in ordered_channels:
+        name = ch.get('name')
+        if name in stable_sources:
+            src = stable_sources[name]
+            ch['url'] = src['url']
+            ch['latency'] = src['latency']
+            ch['video_codec'] = src['video_codec']
+            ch['is_fixed'] = src.get('is_fixed', False)
+            # 同时更新 urls 列表（如果有）
+            if 'urls' in ch and src['url'] not in ch['urls']:
+                ch['urls'] = [src['url']] + [u for u in ch['urls'] if u != src['url']]
+    logger.info(f"🔄 稳定源覆盖 {len(stable_sources)} 个频道")
 
     # 6. 生成输出
     generate_outputs_from_demo(ordered_channels, demo_order)
