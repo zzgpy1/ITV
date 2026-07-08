@@ -53,29 +53,32 @@ class IPTVOrchestrator:
             return min(1, prob)
         return 0.0
 
-    async def auto_replace_if_risky(self):
-        if not self.db:
-            self.db = await get_db_cache()
-        # 使用 await 调用异步方法
-        stable = await self.stable_manager.get_stable_sources()
-        candidates = await self.db.get_candidates_for_promotion(limit=500)
-        replaced = 0
-        for name, src in stable.items():
-            # 判断是否为固定源（从 src 中获取 is_fixed）
-            if src.get('is_fixed', False):
-                continue
-            key = channel_key(name, src['url'])
-            prob = await self.predict_failure_probability(key)
-            if prob > config.predict_threshold:
-                logger.warning(f"⚠️ {name} 预测失效概率 {prob:.2%}，尝试从候选池替换")
-                for cand in candidates:
-                    if cand['name'] == name and cand['url'] != src['url']:
-                        await self.stable_manager.replace_source(name, cand['url'], cand['latency'], "")
-                        logger.info(f"✅ {name} 已预替换为 {cand['url']}")
-                        replaced += 1
-                        break
-        return replaced
-
+    # src/orchestrator.py 中的 auto_replace_if_risky 方法
+async def auto_replace_if_risky(self):
+    if not self.db:
+        self.db = await get_db_cache()
+    # 获取稳定源（异步）
+    stable = await self.stable_manager.get_stable_sources()   # 注意这里使用了 await
+    if not stable:
+        return 0
+    # 获取候选池
+    candidates = await self.db.get_candidates_for_promotion(limit=500)
+    replaced = 0
+    for name, src in stable.items():
+        if src.get('is_fixed', False) and not src.get('auto_optimize', True):
+            continue
+        key = channel_key(name, src['url'])
+        prob = await self.predict_failure_probability(key)
+        if prob > config.predict_threshold:
+            logger.warning(f"⚠️ {name} 预测失效概率 {prob:.2%}，尝试从候选池替换")
+            for cand in candidates:
+                if cand['name'] == name and cand['url'] != src['url']:
+                    await self.stable_manager.replace_source(name, cand['url'], cand['latency'], "")
+                    logger.info(f"✅ {name} 已预替换为 {cand['url']}")
+                    replaced += 1
+                    break
+    return replaced
+    
     async def discover_phase(self) -> Dict:
         logger.info("=" * 50)
         logger.info("阶段1: 发现新源（国内频道）")
