@@ -1,28 +1,47 @@
 # src/stable_manager.py
-import asyncio
+"""稳定版管理器 - 管理最终使用的稳定源"""
+
 from datetime import datetime
-from typing import Dict, Optional, List
-from src.database import get_db_cache, channel_key
+from typing import Dict, Optional
 from src.logger import logger
+from src.database import get_db_cache
 from src.fixed_sources import CCTV_FIXED_SOURCES, ENABLE_FIXED_SOURCES
 from src.config_loader import config
 
 
 class StableManager:
+    """稳定源管理器"""
+
     def __init__(self):
         self.db = None
 
     async def _ensure_db(self):
+        """确保数据库连接已初始化"""
         if self.db is None:
             self.db = await get_db_cache()
 
+    async def sync_fixed_sources(self):
+        """从 fixed_sources.py 同步固定源到数据库（强制覆盖）"""
+        if not ENABLE_FIXED_SOURCES:
+            return
+        await self._ensure_db()
+        for name, urls in CCTV_FIXED_SOURCES.items():
+            if isinstance(urls, list):
+                url = urls[0] if urls else None
+            else:
+                url = urls
+            if url:
+                # 强制覆盖：无论是否存在，都设置为固定源
+                await self.db.upsert_stable_source(name, url, 50, 'h264', is_fixed=True)
+                logger.info(f"📌 同步固定源: {name} -> {url[:50]}...")
+
     async def get_stable_sources(self) -> Dict[str, Dict]:
-        """获取所有稳定源（异步）"""
+        """获取所有稳定源"""
         await self._ensure_db()
         return await self.db.get_all_stable_sources()
 
     async def get_stable_source(self, channel_name: str) -> Optional[Dict]:
-        """获取单个稳定源（异步）"""
+        """获取单个稳定源"""
         await self._ensure_db()
         return await self.db.get_stable_source(channel_name)
 
@@ -44,21 +63,6 @@ class StableManager:
         logger.info(f"📌 {channel_name} 已设为固定源")
         return True
 
-    async def sync_fixed_sources(self):
-    """从 fixed_sources.py 同步固定源到数据库（强制覆盖）"""
-    if not ENABLE_FIXED_SOURCES:
-        return
-    await self._ensure_db()
-    for name, urls in CCTV_FIXED_SOURCES.items():
-        if isinstance(urls, list):
-            url = urls[0] if urls else None
-        else:
-            url = urls
-        if url:
-            # 强制覆盖：无论是否存在，都设置为固定源
-            await self.db.upsert_stable_source(name, url, 50, 'h264', is_fixed=True)
-            logger.info(f"📌 同步固定源: {name} -> {url[:50]}...")
-
     async def replace_source(self, channel_name: str, new_url: str, latency: int, video_codec: str = '') -> bool:
         """替换稳定源（保留固定标记）"""
         await self._ensure_db()
@@ -72,22 +76,21 @@ class StableManager:
         return True
 
     async def record_failure(self, channel_name: str):
-        """记录失败（可扩展）"""
-        # 可增加失败计数功能，这里仅记录日志
-        logger.debug(f"记录失败: {channel_name}")
+        """记录频道失败（用于质量监控）"""
+        # 可扩展实现
+        pass
 
     async def record_success(self, channel_name: str):
-        """记录成功"""
-        logger.debug(f"记录成功: {channel_name}")
+        """记录频道成功（用于质量监控）"""
+        pass
 
-    # 同步版本（仅供兼容，不建议使用）
-    def get_stable_sources_sync(self) -> Dict[str, Dict]:
-        """同步获取稳定源（不推荐，仅供紧急使用）"""
+    def get_active_sources(self) -> Dict[str, Dict]:
+        """获取活跃源（同步方法，实际使用需改为异步）"""
+        # 注意：此方法为同步，仅用于兼容旧代码，建议使用异步方法
         import asyncio
         try:
             loop = asyncio.get_running_loop()
             return loop.run_until_complete(self.get_stable_sources())
         except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            return loop.run_until_complete(self.get_stable_sources())
+            import asyncio
+            return asyncio.run(self.get_stable_sources())
