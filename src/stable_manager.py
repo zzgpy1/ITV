@@ -65,14 +65,8 @@ class StableManager:
         return True
 
     async def record_failure(self, channel_name: str):
-        # 可增加失败计数功能，这里简化
+        # 可扩展，暂不实现
         pass
 
     async def record_success(self, channel_name: str):
         pass
-
-    # 为了保持兼容，提供同步方法（不推荐使用）
-    def get_stable_sources_sync(self) -> Dict[str, Dict]:
-        # 实际项目中建议全面 async
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(self.get_stable_sources())
