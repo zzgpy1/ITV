@@ -1,12 +1,10 @@
 # src/merger.py
 import re
-import copy
 from collections import defaultdict
 from src.config import MAX_SOURCES_PER_CHANNEL
 from src.logo_matcher import get_logo_matcher
 from src.logger import logger
 from src.fixed_sources import CCTV_FIXED_SOURCES, ENABLE_FIXED_SOURCES
-from src.constants import CCTV_ORDER
 
 
 def normalize_channel_name(name: str) -> str:
@@ -44,12 +42,12 @@ def is_cctv5(name: str) -> bool:
 
 def get_cctv_standard_name(name: str) -> str:
     """
-    获取央视频道的标准名称，**优先使用精确匹配**，避免将 CCTV-15 误判为 CCTV-1。
+    获取央视频道的标准名称，优先精确匹配，避免误将 CCTV-15 判为 CCTV-1。
     """
     name_clean = re.sub(r'\s*\([^)]*\)', '', name)
     name_lower = name_clean.lower()
 
-    # 1. 如果已经是 "CCTV-数字" 格式，直接返回（不进行二次匹配）
+    # 1. 如果已经是 "CCTV-数字" 格式，直接返回
     exact_match = re.match(r'^cctv[-\s]*(\d+)(?:\+|plus)?', name_lower)
     if exact_match:
         num = exact_match.group(1)
@@ -71,7 +69,7 @@ def get_cctv_standard_name(name: str) -> str:
     if is_cctv5(name_clean):
         return "CCTV-5"
 
-    # 3. 降级：使用正则搜索数字（但可能匹配到 "15" 作为 "1" 的问题已由第一步规避）
+    # 3. 降级：正则搜索数字（但已由第一步规避）
     match = re.search(r'cctv[-\s]*(\d+)', name_lower)
     if match:
         num = int(match.group(1))
@@ -152,7 +150,7 @@ def merge_channels_by_name(valid_channels: list) -> list:
             "is_fixed": primary.get("is_fixed", False),
         })
 
-    # 固定源处理（保留原有逻辑）
+    # 固定源处理
     if ENABLE_FIXED_SOURCES:
         merged_names = {ch["name"] for ch in merged}
         for fixed_name, fixed_urls in CCTV_FIXED_SOURCES.items():
