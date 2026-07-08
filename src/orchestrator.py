@@ -5,15 +5,11 @@ from pathlib import Path
 from typing import Dict, List
 
 from src.logger import logger
-from src.database import get_db_cache, channel_key
+from src.database import get_db_cache
 from src.source_pool.discoverer import SourceDiscoverer
 from src.candidate.observer import CandidateObserver
 from src.stable.manager import StableManager
-from src.quality.monitor import QualityMonitor
 from src.config_loader import config
-from src.demo_filter import parse_demo_order_with_categories
-from src.generator import generate_outputs_from_demo
-
 
 class IPTVOrchestrator:
     MAX_NEW_SOURCES_PER_RUN = 5000
@@ -26,7 +22,7 @@ class IPTVOrchestrator:
         self.discoverer = SourceDiscoverer(self.data_dir / "source_pool.json")
         self.candidate_observer = CandidateObserver(self.data_dir / "candidate_pool.json")
         self.stable_manager = StableManager()
-        self.quality_monitor = QualityMonitor(self.stable_manager)
+
         self.stats = {
             "last_discover": None,
             "last_observe": None,
@@ -37,66 +33,22 @@ class IPTVOrchestrator:
             "new_stable_count": 0
         }
 
-    async def predict_failure_probability(self, channel_key: str) -> float:
-        if not self.db:
-            self.db = await get_db_cache()
-        history = await self.db.get_speed_history(channel_key, days=config.health_history_days)
-        if len(history) < 5:
-            return 0.0
-        recent = history[-10:]
-        success_rate = sum(1 for h in recent if h['success']) / len(recent)
-        latencies = [h['latency'] for h in recent if h['success']]
-        if latencies:
-            avg_lat = sum(latencies) / len(latencies)
-            trend = (latencies[-1] - latencies[0]) / (latencies[0] + 1) if latencies else 0
-            prob = (1 - success_rate) * 0.6 + min(1, max(0, trend)) * 0.4
-            return min(1, prob)
-        return 0.0
-
-    # src/orchestrator.py 中的 auto_replace_if_risky 方法
-async def auto_replace_if_risky(self):
-    if not self.db:
-        self.db = await get_db_cache()
-    # 获取稳定源（异步）
-    stable = await self.stable_manager.get_stable_sources()   # 注意这里使用了 await
-    if not stable:
-        return 0
-    # 获取候选池
-    candidates = await self.db.get_candidates_for_promotion(limit=500)
-    replaced = 0
-    for name, src in stable.items():
-        if src.get('is_fixed', False) and not src.get('auto_optimize', True):
-            continue
-        key = channel_key(name, src['url'])
-        prob = await self.predict_failure_probability(key)
-        if prob > config.predict_threshold:
-            logger.warning(f"⚠️ {name} 预测失效概率 {prob:.2%}，尝试从候选池替换")
-            for cand in candidates:
-                if cand['name'] == name and cand['url'] != src['url']:
-                    await self.stable_manager.replace_source(name, cand['url'], cand['latency'], "")
-                    logger.info(f"✅ {name} 已预替换为 {cand['url']}")
-                    replaced += 1
-                    break
-    return replaced
-    
     async def discover_phase(self) -> Dict:
         logger.info("=" * 50)
         logger.info("阶段1: 发现新源（国内频道）")
         logger.info("=" * 50)
         try:
-            if not self.db:
+            if self.db is None:
                 self.db = await get_db_cache()
-            new_sources = await asyncio.wait_for(
-                self.discoverer.discover(self.db, filter_domestic=True, force_refresh=True),
-                timeout=120
-            )
+            new_sources = await self.discoverer.discover(self.db, filter_domestic=True, force_refresh=True)
             total_new = sum(len(s) for s in new_sources.values())
             self.stats["new_sources_count"] = total_new
             self.stats["last_discover"] = datetime.now()
             if total_new == 0:
                 logger.info("✅ 没有发现新源")
                 return {}
-            # 限制数量
+            if total_new > self.MAX_NEW_SOURCES_PER_RUN:
+                logger.warning(f"⚠️ 新源数量 {total_new} 超过限制 {self.MAX_NEW_SOURCES_PER_RUN}，只取前 {self.MAX_NEW_SOURCES_PER_RUN} 个")
             added_sources = []
             count = 0
             for channel_name, sources in new_sources.items():
@@ -119,40 +71,19 @@ async def auto_replace_if_risky(self):
         logger.info("阶段2: 从缓存观察候选源")
         logger.info("=" * 50)
         try:
-            # 确保候选池数据已从 JSON 导入数据库
-            if not self.db:
-                self.db = await get_db_cache()
-            cursor = await self.db._conn.execute('SELECT COUNT(*) FROM candidate_pool')
-            count = (await cursor.fetchone())[0]
-            await cursor.close()
-            if count == 0:
-                json_path = self.data_dir / "candidate_pool.json"
-                if json_path.exists():
-                    await self.db.import_candidate_pool_from_json(json_path)
-                    logger.info("📥 已将 JSON 候选池导入数据库")
-                else:
-                    logger.warning("⚠️ 没有候选池数据，跳过观察")
-                    return []
-
             observing_count = self.candidate_observer.get_observing_count()
             if observing_count == 0:
                 logger.info("📭 没有候选源需要观察")
                 return []
             stable_count = len(self.candidate_observer.get_stable_candidates())
             logger.info(f"📊 候选池状态: {observing_count} 个正在观察，{stable_count} 个已稳定")
-            stable_candidates = await asyncio.wait_for(
-                self.candidate_observer.observe_batch_from_cache(
-                    batch_size=self.MAX_OBSERVE_PER_RUN
-                ),
-                timeout=150
+            stable_candidates = await self.candidate_observer.observe_batch_from_cache(
+                batch_size=self.MAX_OBSERVE_PER_RUN
             )
             self.stats["last_observe"] = datetime.now()
             self.stats["observed_count"] = len(stable_candidates)
             logger.info(f"✅ 观察阶段完成: {len(stable_candidates)} 个源达到稳定标准")
             return stable_candidates
-        except asyncio.TimeoutError:
-            logger.warning("⚠️ 观察候选源阶段整体超时")
-            return []
         except Exception as e:
             logger.error(f"❌ 观察候选源阶段失败: {e}")
             return []
@@ -165,13 +96,15 @@ async def auto_replace_if_risky(self):
             if stable_candidates is None:
                 stable_candidates = self.candidate_observer.get_stable_candidates()
                 logger.info(f"📦 从内存获取稳定候选: {len(stable_candidates)} 个")
+
             if not stable_candidates:
                 logger.info("📭 没有稳定的候选源需要提升")
                 return 0
 
             before_count = len(await self.stable_manager.get_stable_sources())
             promoted_count = 0
-            for obs in stable_candidates[:50]:
+            for obs in stable_candidates[:50]:  # 最多提升50个
+                # 如果 obs 是字典（从数据库来的），构造对象
                 if isinstance(obs, dict):
                     from src.candidate.models import ObservationResult
                     obs_obj = ObservationResult(
@@ -216,8 +149,22 @@ async def auto_replace_if_risky(self):
             logger.info("⏭️ 跳过发现阶段（使用已有源池）")
         else:
             logger.info("⚡ 强制刷新模式：重新拉取所有源")
+
         try:
             self.db = await get_db_cache()
+            
+            # 0. 如果数据库候选池为空，尝试从 JSON 导入
+            cursor = await self.db._conn.execute('SELECT COUNT(*) FROM candidate_pool')
+            count = (await cursor.fetchone())[0]
+            await cursor.close()
+            if count == 0:
+                json_path = self.data_dir / "candidate_pool.json"
+                if json_path.exists():
+                    await self.db.import_candidate_pool_from_json(json_path)
+                    logger.info("📥 已将 JSON 候选池导入数据库")
+                else:
+                    logger.warning("⚠️ 没有候选池数据，自治模式可能无法正常工作")
+
             if not skip_discover:
                 await self.discover_phase()
             else:
@@ -226,9 +173,11 @@ async def auto_replace_if_risky(self):
             stable_candidates = await self.observe_phase()
             await self.promote_phase(stable_candidates)
 
-            replaced = await self.auto_replace_if_risky()
-            if replaced:
-                logger.info(f"🔄 已预替换 {replaced} 个高风险源")
+            # 未来可增加自动替换高风险源的功能
+            # replaced = await self.auto_replace_if_risky()
+            # if replaced:
+            #     logger.info(f"🔄 已预替换 {replaced} 个高风险源")
+
             logger.info("=" * 50)
             logger.info("📊 自治模式统计")
             logger.info("=" * 50)
@@ -237,6 +186,7 @@ async def auto_replace_if_risky(self):
             logger.info(f"  候选池观察中: {self.candidate_observer.get_statistics()['observing']}")
             logger.info(f"  本次新提升: {self.stats.get('new_stable_count', 0)}")
             logger.info(f"  累计提升: {self.stats['total_promoted']}")
+
         except Exception as e:
             logger.exception(f"❌ 自治流程执行失败: {e}")
         finally:
@@ -244,8 +194,7 @@ async def auto_replace_if_risky(self):
                 await self.db.close()
         return self.stats
 
-
-# 全局函数（兼容旧调用）
-async def run_autonomous_mode(skip_discover: bool = False):
+async def run_autonomous_mode(skip_discover: bool = False) -> Dict:
+    """独立运行的自治模式入口"""
     orchestrator = IPTVOrchestrator()
     return await orchestrator.run_once(skip_discover=skip_discover)
