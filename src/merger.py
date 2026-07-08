@@ -1,10 +1,12 @@
 # src/merger.py
 import re
+import copy
 from collections import defaultdict
 from src.config import MAX_SOURCES_PER_CHANNEL
 from src.logo_matcher import get_logo_matcher
 from src.logger import logger
 from src.fixed_sources import CCTV_FIXED_SOURCES, ENABLE_FIXED_SOURCES
+from src.constants import CCTV_ORDER
 
 
 def normalize_channel_name(name: str) -> str:
@@ -41,13 +43,10 @@ def is_cctv5(name: str) -> bool:
 
 
 def get_cctv_standard_name(name: str) -> str:
-    """
-    获取央视频道的标准名称，优先精确匹配，避免误将 CCTV-15 判为 CCTV-1。
-    """
+    """获取央视频道的标准名称，优先精确匹配"""
     name_clean = re.sub(r'\s*\([^)]*\)', '', name)
     name_lower = name_clean.lower()
 
-    # 1. 如果已经是 "CCTV-数字" 格式，直接返回
     exact_match = re.match(r'^cctv[-\s]*(\d+)(?:\+|plus)?', name_lower)
     if exact_match:
         num = exact_match.group(1)
@@ -57,26 +56,22 @@ def get_cctv_standard_name(name: str) -> str:
                 if '+' in name_lower or 'plus' in name_lower:
                     return f"CCTV-{num_int}+"
                 return f"CCTV-{num_int}"
-        # 处理 4K/8K
         if '4k' in name_lower:
             return "CCTV-4K"
         if '8k' in name_lower:
             return "CCTV-8K"
 
-    # 2. 特殊处理 CCTV-5+ 和 CCTV-5
     if is_cctv5plus(name_clean):
         return "CCTV-5+"
     if is_cctv5(name_clean):
         return "CCTV-5"
 
-    # 3. 降级：正则搜索数字（但已由第一步规避）
     match = re.search(r'cctv[-\s]*(\d+)', name_lower)
     if match:
         num = int(match.group(1))
         if 1 <= num <= 17:
             return f"CCTV-{num}"
 
-    # 4. 中文 "央视数字"
     match = re.search(r'央视[-\s]*(\d+)', name_clean)
     if match:
         num = int(match.group(1))
@@ -109,14 +104,10 @@ def get_channel_quality_score(channel: dict) -> tuple:
 
 
 def merge_channels_by_name(valid_channels: list) -> list:
-    """
-    合并频道，修复央视频道分组错误：优先使用已标准化的名称。
-    """
+    """合并频道，修复央视频道分组错误"""
     groups = defaultdict(list)
     for ch in valid_channels:
         raw_name = ch["name"]
-        
-        # 优先使用已标准化的名称（如果已以 "CCTV-" 开头）
         if raw_name.startswith("CCTV-") and re.match(r'^CCTV-\d+', raw_name):
             norm_name = raw_name
         else:
@@ -159,22 +150,31 @@ def merge_channels_by_name(valid_channels: list) -> list:
             fixed_urls = [u for u in fixed_urls if u and u.strip()]
             if not fixed_urls:
                 continue
+
             all_sources_for_fixed = []
             for vch in valid_channels:
                 if vch["name"] == fixed_name or get_cctv_standard_name(vch["name"]) == fixed_name:
                     all_sources_for_fixed.append(vch)
             all_sources_for_fixed.sort(key=lambda x: x.get("latency", 9999))
+
             if fixed_name in merged_names:
-    for ch in merged:
-        if ch["name"] == fixed_name:
-            # 强制使用第一个固定源 URL
-            fixed_url = fixed_urls[0]  # 或从 all_sources_for_fixed 取最优
-            ch["url"] = fixed_url
-            ch["is_fixed"] = True
-            # 清空原有的 url 列表，只用固定源
-            ch["urls"] = list(dict.fromkeys([fixed_url] + fixed_urls))
-            logger.info(f"📌 固定源强制应用: {fixed_name} -> {fixed_url}")
-            break
+                # 更新现有频道
+                for ch in merged:
+                    if ch["name"] == fixed_name:
+                        candidate_urls = fixed_urls + [s["url"] for s in all_sources_for_fixed if s["url"] not in fixed_urls]
+                        unique_urls = []
+                        seen = set()
+                        for u in candidate_urls:
+                            if u not in seen:
+                                seen.add(u)
+                                unique_urls.append(u)
+                        candidates_with_lat = []
+                        for u in unique_urls:
+                            lat = 9999
+                            for s in all_sources_for_fixed:
+                                if s["url"] == u:
+                                    lat = s.get("latency", 9999)
+                                    break
                             candidates_with_lat.append((u, lat))
                         candidates_with_lat.sort(key=lambda x: x[1])
                         best_url = candidates_with_lat[0][0] if candidates_with_lat else fixed_urls[0]
@@ -186,8 +186,10 @@ def merge_channels_by_name(valid_channels: list) -> list:
                             ch["latency"] = 50
                         ch["video_codec"] = "h264"
                         ch["is_fixed"] = True
+                        logger.info(f"📌 固定源更新: {fixed_name} -> {best_url[:50]}...")
                         break
             else:
+                # 新增固定源频道
                 if all_sources_for_fixed:
                     best = all_sources_for_fixed[0]
                     all_urls = list(dict.fromkeys(fixed_urls + [s["url"] for s in all_sources_for_fixed]))
