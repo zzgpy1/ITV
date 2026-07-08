@@ -165,22 +165,16 @@ def merge_channels_by_name(valid_channels: list) -> list:
                     all_sources_for_fixed.append(vch)
             all_sources_for_fixed.sort(key=lambda x: x.get("latency", 9999))
             if fixed_name in merged_names:
-                for ch in merged:
-                    if ch["name"] == fixed_name:
-                        candidate_urls = fixed_urls + [s["url"] for s in all_sources_for_fixed if s["url"] not in fixed_urls]
-                        unique_urls = []
-                        seen = set()
-                        for u in candidate_urls:
-                            if u not in seen:
-                                seen.add(u)
-                                unique_urls.append(u)
-                        candidates_with_lat = []
-                        for u in unique_urls:
-                            lat = 9999
-                            for s in all_sources_for_fixed:
-                                if s["url"] == u:
-                                    lat = s.get("latency", 9999)
-                                    break
+    for ch in merged:
+        if ch["name"] == fixed_name:
+            # 强制使用第一个固定源 URL
+            fixed_url = fixed_urls[0]  # 或从 all_sources_for_fixed 取最优
+            ch["url"] = fixed_url
+            ch["is_fixed"] = True
+            # 清空原有的 url 列表，只用固定源
+            ch["urls"] = list(dict.fromkeys([fixed_url] + fixed_urls))
+            logger.info(f"📌 固定源强制应用: {fixed_name} -> {fixed_url}")
+            break
                             candidates_with_lat.append((u, lat))
                         candidates_with_lat.sort(key=lambda x: x[1])
                         best_url = candidates_with_lat[0][0] if candidates_with_lat else fixed_urls[0]
