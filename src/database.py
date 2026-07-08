@@ -442,24 +442,22 @@ class DatabaseCache:
         return None
 
     async def upsert_stable_source(self, channel_name: str, url: str, latency: int, video_codec: str = '', is_fixed: bool = False):
-        if not self._conn:
-            return
+    if not self._conn:
+        return
+    try:
         await self._conn.execute(
             '''INSERT OR REPLACE INTO stable_sources (channel_name, url, latency, video_codec, is_fixed, updated_at)
                VALUES (?, ?, ?, ?, ?, ?)''',
             (channel_name, url, latency, video_codec, 1 if is_fixed else 0, datetime.now().isoformat())
         )
         await self._conn.commit()
+    except Exception as e:
+        logger.warning(f"更新稳定源失败: {e}")
 
-    async def delete_stable_source(self, channel_name: str):
-        if not self._conn:
-            return
-        await self._conn.execute('DELETE FROM stable_sources WHERE channel_name = ?', (channel_name,))
-        await self._conn.commit()
-
-    async def get_all_stable_sources(self) -> Dict[str, Dict]:
-        if not self._conn:
-            return {}
+async def get_all_stable_sources(self) -> Dict[str, Dict]:
+    if not self._conn:
+        return {}
+    try:
         cursor = await self._conn.execute('SELECT channel_name, url, latency, video_codec, is_fixed, updated_at FROM stable_sources')
         rows = await cursor.fetchall()
         await cursor.close()
@@ -473,6 +471,9 @@ class DatabaseCache:
                 'updated_at': row[5]
             }
         return result
+    except Exception as e:
+        logger.warning(f"获取所有稳定源失败: {e}")
+        return {}
 
     # ---------- 其他 ----------
     async def close(self):
