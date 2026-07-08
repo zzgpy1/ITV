@@ -45,20 +45,19 @@ class StableManager:
         return True
 
     async def sync_fixed_sources(self):
-        """从 fixed_sources.py 同步固定源到数据库"""
-        if not ENABLE_FIXED_SOURCES:
-            return
-        await self._ensure_db()
-        for name, urls in CCTV_FIXED_SOURCES.items():
-            if isinstance(urls, list):
-                url = urls[0] if urls else None
-            else:
-                url = urls
-            if url:
-                existing = await self.db.get_stable_source(name)
-                if not existing or not existing.get('is_fixed'):
-                    await self.db.upsert_stable_source(name, url, 0, '', is_fixed=True)
-                    logger.info(f"📌 同步固定源: {name} -> {url[:50]}...")
+    """从 fixed_sources.py 同步固定源到数据库（强制覆盖）"""
+    if not ENABLE_FIXED_SOURCES:
+        return
+    await self._ensure_db()
+    for name, urls in CCTV_FIXED_SOURCES.items():
+        if isinstance(urls, list):
+            url = urls[0] if urls else None
+        else:
+            url = urls
+        if url:
+            # 强制覆盖：无论是否存在，都设置为固定源
+            await self.db.upsert_stable_source(name, url, 50, 'h264', is_fixed=True)
+            logger.info(f"📌 同步固定源: {name} -> {url[:50]}...")
 
     async def replace_source(self, channel_name: str, new_url: str, latency: int, video_codec: str = '') -> bool:
         """替换稳定源（保留固定标记）"""
