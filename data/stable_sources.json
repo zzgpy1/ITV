@@ -1,10 +1,10 @@
 {
   "CCTV-1": {
     "channel_name": "CCTV-1",
-    "url": "http://69.30.245.50/live/cctv1.m3u8",
+    "url": "http://45.192.97.170:8880/play/1.m3u8",
     "latency": 0,
     "video_codec": "",
-    "promoted_at": "2026-07-04T01:22:00.032573",
+    "promoted_at": "2026-07-09T02:49:55.607301",
     "is_fixed": true,
     "auto_optimize": true,
     "last_verified": null,
@@ -13,10 +13,10 @@
   },
   "CCTV-2": {
     "channel_name": "CCTV-2",
-    "url": "http://69.30.245.50/live/cctv2.m3u8",
+    "url": "http://45.192.97.170:8880/play/2.m3u8",
     "latency": 0,
     "video_codec": "",
-    "promoted_at": "2026-07-04T01:22:00.032974",
+    "promoted_at": "2026-07-09T02:49:55.607405",
     "is_fixed": true,
     "auto_optimize": true,
     "last_verified": null,
