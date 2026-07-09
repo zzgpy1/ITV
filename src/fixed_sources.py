@@ -4,15 +4,14 @@
 # 固定央视频道源（用户提供），每个频道可以指定多个备选源（列表）
 CCTV_FIXED_SOURCES = {
     "CCTV-1": [
-        "http://69.30.245.50/live/cctv1.m3u8",
         "http://45.192.97.170:8880/play/1.m3u8",
         "http://112.27.235.94:8000/hls/1/index.m3u8",
         "http://112.46.85.60:8009/hls/501/index.m3u8",
         "http://182.150.23.74:808/hls/1/index.m3u8"
     ],
     "CCTV-2": [
-        "http://69.30.245.50/live/cctv2.m3u8",
         "http://45.192.97.170:8880/play/2.m3u8",
+        "http://69.30.245.50/live/cctv2.m3u8",
         "http://112.27.235.94:8000/hls/2/index.m3u8",
         "http://182.150.23.74:808/hls/2/index.m3u8",
         "http://112.46.85.60:8009/hls/502/index.m3u8"
