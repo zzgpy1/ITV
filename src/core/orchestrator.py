@@ -1,5 +1,4 @@
 # src/core/orchestrator.py
-import asyncio
 from src.settings import settings
 from src.repositories import repo_factory
 from src.discoverers.source_discoverer import SourceDiscoverer
@@ -15,13 +14,16 @@ from src.logger import logger
 class Orchestrator:
     def __init__(self):
         self.discoverer = SourceDiscoverer()
-        self.speed_tester = SpeedTester()
+        # 先不创建 SpeedTester，等 init 后
+        self.speed_tester = None
         self.stable_manager = StableManager()
         self.quality_monitor = QualityMonitor(self.stable_manager)
         self.generator = OutputGenerator()
 
     async def run(self, skip_discover=False):
         await repo_factory.init()
+        # 现在 repo_factory 已初始化，可以创建 SpeedTester
+        self.speed_tester = SpeedTester()
         await self.stable_manager.init()
 
         if not skip_discover:
