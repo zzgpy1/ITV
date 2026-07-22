@@ -14,20 +14,16 @@ class Observer:
         sources = await self.source_repo.get_pending(limit)
         if not sources:
             return
-        # 转为测速格式
         channels = [{"name": s.channel_name, "url": s.url} for s in sources]
         valid = await test_channels_concurrent(channels)
-        # valid 已经更新了候选池统计（在 speed_tester 中调用了 update_latency）
-        # 但我们需要将有效的源加入候选池（如果还没有）
+        # valid 已经更新了候选池统计，但需要将有效的源标记为已加入候选池
         for ch in valid:
             key = make_key(ch['name'], ch['url'])
-            # 检查是否已在候选池
-            # 由于我们未提供 get 方法，简单插入（存在则忽略）
-            cand = Candidate(source_key=key, channel_name=ch['name'], url=ch['url'])
-            await self.cand_repo.add(cand)
-            # 标记源池为已处理
+            # 确保在候选池中存在（如果不存在则添加）
+            # 但 test_channels_concurrent 内部调用了 update_latency，如果记录不存在会插入占位记录，所以无需再插入
+            # 只需更新源池状态
             await self.source_repo.update_status(key, 'observed')
-        # 提升稳定候选
+        # 获取所有稳定候选（用于后续提升）
         stable_candidates = await self.cand_repo.get_stable_candidates()
-        # 判断条件（由外部调用 promote）
+        logger.info(f"观察完成，有效 {len(valid)} 个，稳定候选 {len(stable_candidates)} 个")
         return stable_candidates
