@@ -1,53 +1,29 @@
-name: IPTV 源智能更新与整理
+name: IPTV 自治更新
 
 on:
   schedule:
     - cron: '0 */6 * * *'
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  update-iptv:
+  update:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
           sudo apt-get update && sudo apt-get install -y ffmpeg
-
-      - name: Run update
+      - name: Run
         run: python -m src.run
-        env:
-          AUTONOMOUS_MODE: true
-          OPEN_RTMP: false   # Actions 中禁用推流
-          ENABLE_DEMO_FILTER: true
-          ENABLE_ALIAS: true
-          ENABLE_BLACKLIST: true
-          DATABASE_ENABLE: true
-          FFMPEG_ENABLE: true
-          MAX_WORKERS: 20
-          TIMEOUT: 8
-
-      - name: Commit and push
+      - name: Commit
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "bot@github.com"
           git add .
-          if ! git diff --staged --quiet; then
-            git commit -m "Auto update IPTV list $(date '+%Y-%m-%d %H:%M:%S')"
-            git push origin main
-          else
-            echo "No changes"
-          fi
+          git commit -m "Auto update $(date '+%Y-%m-%d %H:%M')" || echo "No changes"
+          git push
