@@ -1,7 +1,8 @@
 # src/settings.py
 from pathlib import Path
 from typing import List
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     root_dir: Path = Field(default=".")
