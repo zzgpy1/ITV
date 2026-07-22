@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 from src.logger import logger
 from src.settings import settings
+from src.database import db  # 添加这行
 from src.repositories import repo_factory
 from src.services.fetcher import fetch_all_sources
 from src.services.parser import parse_and_dedupe
@@ -37,7 +38,6 @@ class Orchestrator:
         sources = await self._get_sources()
         raw_contents = await fetch_all_sources(sources)
         channels_dict = parse_and_dedupe(raw_contents)
-        # 将新频道加入 source_pool
         for ch in channels_dict.values():
             src = Source(
                 channel_name=ch['name'],
@@ -54,11 +54,8 @@ class Orchestrator:
         if not pending:
             logger.info("📭 无待测速源")
             return
-        # 转换为测速格式
         channels = [{"name": s.channel_name, "url": s.url} for s in pending]
-        # 执行测速（结果写入 candidate_pool）
         valid = await test_channels_concurrent(channels)
-        # 更新 source_pool 状态
         for ch in valid:
             key = Source(channel_name=ch['name'], url=ch['url'], source_url='').get_key()
             await repo_factory.source_repo.update_status(key, 'verified', latency=ch.get('latency', 0), success=True)
@@ -69,13 +66,11 @@ class Orchestrator:
         stable_candidates = await repo_factory.candidate_repo.get_stable_candidates()
         promoted = 0
         for cand in stable_candidates:
-            # 检查是否存在固定源
             existing = await repo_factory.stable_repo.get(cand.channel_name)
             if existing and existing.is_fixed:
                 continue
             if existing and existing.latency < cand.avg_latency:
                 continue
-            # 提升
             stable = StableSource(
                 channel_name=cand.channel_name,
                 url=cand.url,
@@ -86,20 +81,16 @@ class Orchestrator:
                 promoted_at=datetime.now()
             )
             await repo_factory.stable_repo.upsert(stable)
-            # 更新候选状态
             await repo_factory.candidate_repo.update_status(cand.source_key, 'promoted', datetime.now())
             promoted += 1
         logger.info(f"✅ 提升阶段完成，{promoted} 个源成为稳定源")
 
     async def quality_phase(self):
         logger.info("📊 质量检查阶段...")
-        # 检查所有稳定源
         stables = await repo_factory.stable_repo.get_all()
         for stable in stables:
-            # 简化的检查：使用快速探测
             ok, latency = await self.quality_mon.check_channel(stable.channel_name, stable.url)
             if ok:
-                # 重置失败计数
                 if stable.fail_count > 0:
                     await repo_factory.stable_repo.update_fail_count(stable.channel_name, 0, 'active')
             else:
@@ -107,12 +98,10 @@ class Orchestrator:
                 status = 'degraded' if new_fail < 3 else 'failed'
                 await repo_factory.stable_repo.update_fail_count(stable.channel_name, new_fail, status)
                 if status == 'failed' and settings.auto_replace_failed:
-                    # 从候选池寻找替代
                     await self._replace_failed(stable.channel_name)
         logger.info("✅ 质量检查完成")
 
     async def _replace_failed(self, channel_name: str):
-        # 查找候选池中该频道的最佳替代
         candidates = await repo_factory.candidate_repo.get_stable_candidates()
         best = None
         for c in candidates:
@@ -144,7 +133,6 @@ class Orchestrator:
         logger.info("✅ 输出生成完成")
 
     async def _get_sources(self):
-        # 从 subscribe.txt 读取
         from src.subscribe_manager import SubscribeManager
         mgr = SubscribeManager()
         urls = mgr.get_all_subscribe_urls()
