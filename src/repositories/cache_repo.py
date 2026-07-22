@@ -1,9 +1,9 @@
 # src/repositories/cache_repo.py
-from src.repositories.base import BaseRepository
+from src.repositories.base import BaseRepo
 from datetime import datetime, timedelta
 from typing import Optional
 
-class CacheRepo(BaseRepository):
+class CacheRepo(BaseRepo):
     async def get(self, key: str, cache_type: str = "raw") -> Optional[str]:
         row = await self._fetchone(
             "SELECT data, updated_at, ttl_hours FROM cache WHERE cache_key = ? AND cache_type = ?",
