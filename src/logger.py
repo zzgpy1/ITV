@@ -18,8 +18,8 @@ def setup_logger(name: str = "IPTV") -> logging.Logger:
     console.setFormatter(formatter)
     logger.addHandler(console)
 
-    # 文件日志
-    log_dir = settings.output_dir / "logs"
+    # 文件日志 - 关键修复：显式转换为 Path
+    log_dir = Path(settings.output_dir) / "logs"   # 此处强制转换
     log_dir.mkdir(parents=True, exist_ok=True)
     file_handler = RotatingFileHandler(
         log_dir / "run.log", maxBytes=10*1024*1024, backupCount=3, encoding='utf-8'
