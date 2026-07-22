@@ -1,0 +1,11 @@
+version: '3'
+services:
+  iptv:
+    build: .
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+      - ./config:/app/config
+    environment:
+      - IPTV_AUTONOMOUS_MODE=true
+    restart: unless-stopped
