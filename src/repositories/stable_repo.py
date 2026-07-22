@@ -1,9 +1,9 @@
 # src/repositories/stable_repo.py
-from src.repositories.base import BaseRepository
+from src.repositories.base import BaseRepo
 from datetime import datetime
 from typing import Dict, Optional
 
-class StableRepo(BaseRepository):
+class StableRepo(BaseRepo):
     async def get(self, channel_name: str) -> Optional[Dict]:
         row = await self._fetchone(
             "SELECT channel_name, url, latency, video_codec, is_fixed, auto_optimize, fail_count, status FROM stable_sources WHERE channel_name = ?",
