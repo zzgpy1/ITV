@@ -1,9 +1,9 @@
 # src/repositories/candidate_repo.py
-from src.repositories.base import BaseRepository
+from src.repositories.base import BaseRepo
 from datetime import datetime
 from typing import List, Dict
 
-class CandidateRepo(BaseRepository):
+class CandidateRepo(BaseRepo):
     async def add(self, source_key: str, channel_name: str, url: str):
         await self._execute(
             """INSERT OR REPLACE INTO candidate_pool
