@@ -1,8 +1,9 @@
+import os
 from pathlib import Path
-from pydantic import Field
-from pydantic.v1 import BaseSettings  # 使用 V1 兼容层，无需 pydantic-settings
+from typing import List
+from pydantic import BaseModel, Field
 
-class Settings(BaseSettings):
+class Settings(BaseModel):
     # 路径
     root_dir: Path = Field(default=".")
     data_dir: Path = Field(default="data")
@@ -10,69 +11,69 @@ class Settings(BaseSettings):
     config_dir: Path = Field(default="config")
     
     # 性能
-    max_workers: int = Field(default=20, env="IPTV_MAX_WORKERS")
-    timeout: int = Field(default=8, env="IPTV_TIMEOUT")
-    http_timeout: int = Field(default=8, env="IPTV_HTTP_TIMEOUT")
+    max_workers: int = Field(default=20)
+    timeout: int = Field(default=8)
+    http_timeout: int = Field(default=8)
     
     # ffmpeg
-    ffmpeg_enable: bool = Field(default=True, env="IPTV_FFMPEG_ENABLE")
-    ffmpeg_mode: str = Field(default="deep", env="IPTV_FFMPEG_MODE")
-    ffprobe_cache_hours: int = Field(default=168, env="IPTV_FFPROBE_CACHE_HOURS")
+    ffmpeg_enable: bool = Field(default=True)
+    ffmpeg_mode: str = Field(default="deep")
+    ffprobe_cache_hours: int = Field(default=168)
     
     # 缓存
-    cache_hours: int = Field(default=24, env="IPTV_CACHE_HOURS")
-    cache_raw_hours: int = Field(default=48, env="IPTV_CACHE_RAW_HOURS")
-    cache_speed_hours: int = Field(default=24, env="IPTV_CACHE_SPEED_HOURS")
+    cache_hours: int = Field(default=24)
+    cache_raw_hours: int = Field(default=48)
+    cache_speed_hours: int = Field(default=24)
     
     # 功能开关
-    enable_demo_filter: bool = Field(default=True, env="IPTV_ENABLE_DEMO_FILTER")
-    enable_alias: bool = Field(default=True, env="IPTV_ENABLE_ALIAS")
-    enable_blacklist: bool = Field(default=True, env="IPTV_ENABLE_BLACKLIST")
-    enable_database: bool = Field(default=True, env="IPTV_DATABASE_ENABLE")
-    enable_json_output: bool = Field(default=True, env="IPTV_ENABLE_JSON_OUTPUT")
-    enable_lite_version: bool = Field(default=True, env="IPTV_ENABLE_LITE_VERSION")
+    enable_demo_filter: bool = Field(default=True)
+    enable_alias: bool = Field(default=True)
+    enable_blacklist: bool = Field(default=True)
+    enable_database: bool = Field(default=True)
+    enable_json_output: bool = Field(default=True)
+    enable_lite_version: bool = Field(default=True)
     
     # 合并
-    max_sources_per_channel: int = Field(default=3, env="IPTV_MAX_SOURCES_PER_CHANNEL")
+    max_sources_per_channel: int = Field(default=3)
     
     # 测速
-    max_retry_before_blacklist: int = Field(default=2, env="IPTV_MAX_RETRY_BEFORE_BLACKLIST")
-    slow_speed_threshold: int = Field(default=3000, env="IPTV_SLOW_SPEED_THRESHOLD")
-    download_chunk_size: int = Field(default=262144, env="IPTV_DOWNLOAD_CHUNK_SIZE")
+    max_retry_before_blacklist: int = Field(default=2)
+    slow_speed_threshold: int = Field(default=3000)
+    download_chunk_size: int = Field(default=262144)
     
     # 自治模式
-    autonomous_mode: bool = Field(default=True, env="IPTV_AUTONOMOUS_MODE")
-    auto_update_stable: bool = Field(default=True, env="IPTV_AUTO_UPDATE_STABLE")
-    auto_replace_failed: bool = Field(default=True, env="IPTV_AUTO_REPLACE_FAILED")
-    quality_check_interval: int = Field(default=24, env="IPTV_QUALITY_CHECK_INTERVAL")
-    candidate_observation_hours: int = Field(default=24, env="IPTV_CANDIDATE_OBSERVATION_HOURS")
-    candidate_min_success: int = Field(default=3, env="IPTV_CANDIDATE_MIN_SUCCESS")
-    candidate_min_success_rate: float = Field(default=0.5, env="IPTV_CANDIDATE_MIN_SUCCESS_RATE")
-    candidate_max_latency: int = Field(default=3000, env="IPTV_CANDIDATE_MAX_LATENCY")
-    auto_promote_threshold: int = Field(default=3, env="IPTV_AUTO_PROMOTE_THRESHOLD")
+    autonomous_mode: bool = Field(default=True)
+    auto_update_stable: bool = Field(default=True)
+    auto_replace_failed: bool = Field(default=True)
+    quality_check_interval: int = Field(default=24)
+    candidate_observation_hours: int = Field(default=24)
+    candidate_min_success: int = Field(default=3)
+    candidate_min_success_rate: float = Field(default=0.5)
+    candidate_max_latency: int = Field(default=3000)
+    auto_promote_threshold: int = Field(default=3)
     
     # 固定源优化
-    enable_fixed_optimization: bool = Field(default=True, env="IPTV_ENABLE_FIXED_OPTIMIZATION")
-    fixed_optimization_threshold: int = Field(default=200, env="IPTV_FIXED_OPTIMIZATION_THRESHOLD")
+    enable_fixed_optimization: bool = Field(default=True)
+    fixed_optimization_threshold: int = Field(default=200)
     
     # 订阅源
-    subscribe_file: Path = Field(default="config/subscribe.txt", env="IPTV_SUBSCRIBE_FILE")
-    whitelist_file: Path = Field(default="config/whitelist.txt", env="IPTV_WHITELIST_FILE")
-    blacklist_file: Path = Field(default="config/blacklist.txt", env="IPTV_BLACKLIST_FILE")
-    alias_file: Path = Field(default="config/alias.txt", env="IPTV_ALIAS_FILE")
-    demo_file: Path = Field(default="config/demo.txt", env="IPTV_DEMO_FILE")
+    subscribe_file: Path = Field(default="config/subscribe.txt")
+    whitelist_file: Path = Field(default="config/whitelist.txt")
+    blacklist_file: Path = Field(default="config/blacklist.txt")
+    alias_file: Path = Field(default="config/alias.txt")
+    demo_file: Path = Field(default="config/demo.txt")
     
     # 代理
-    enable_github_proxy: bool = Field(default=False, env="IPTV_ENABLE_GITHUB_PROXY")
-    github_raw_proxies: list = Field(default=[
+    enable_github_proxy: bool = Field(default=False)
+    github_raw_proxies: List[str] = Field(default=[
         "https://ghproxy.net/",
         "https://gh-proxy.19860519.xyz/",
         "https://raw.kkgithub.com/"
-    ], env="IPTV_GITHUB_RAW_PROXIES")
-    github_proxy_timeout: int = Field(default=15, env="IPTV_GITHUB_PROXY_TIMEOUT")
+    ])
+    github_proxy_timeout: int = Field(default=15)
     
     # 默认源
-    raw_sources: list = Field(default=[
+    raw_sources: List[str] = Field(default=[
         "https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/cn.m3u",
         "https://raw.githubusercontent.com/iptv-org/iptv/gh-pages/countries/cn.m3u",
         "https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.txt",
@@ -82,11 +83,41 @@ class Settings(BaseSettings):
         "https://raw.githubusercontent.com/CCSH/IPTV/refs/heads/main/live.txt",
         "https://raw.githubusercontent.com/kakaxi-1/IPTV/main/iptv.txt",
     ])
-    direct_sources: list = Field(default=["https://tv.19860519.xyz/abc123"])
-    
+    direct_sources: List[str] = Field(default=["https://tv.19860519.xyz/abc123"])
+
     class Config:
-        env_file = ".env"
-        env_prefix = "IPTV_"
         extra = "ignore"
 
-settings = Settings()
+def _parse_env() -> dict:
+    """从环境变量读取配置，覆盖默认值"""
+    env_vars = {}
+    for field_name, field_info in Settings.__fields__.items():
+        env_name = f"IPTV_{field_name.upper()}"
+        value = os.environ.get(env_name)
+        if value is not None:
+            # 根据字段类型进行转换
+            if field_info.type_ == bool:
+                env_vars[field_name] = value.lower() in ('true', '1', 'yes')
+            elif field_info.type_ == int:
+                try:
+                    env_vars[field_name] = int(value)
+                except ValueError:
+                    pass  # 保持默认
+            elif field_info.type_ == float:
+                try:
+                    env_vars[field_name] = float(value)
+                except ValueError:
+                    pass
+            elif field_info.type_ == Path:
+                env_vars[field_name] = Path(value)
+            elif field_info.type_ == list:
+                if value:
+                    env_vars[field_name] = [item.strip() for item in value.split(',') if item.strip()]
+                else:
+                    env_vars[field_name] = []
+            else:
+                env_vars[field_name] = value
+    return env_vars
+
+# 使用默认值创建实例，再用环境变量覆盖
+settings = Settings(**_parse_env())
