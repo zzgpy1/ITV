@@ -62,29 +62,24 @@ class CandidateRepository:
 
     async def update_latency(self, key: str, latency: int, success: bool):
         db = await get_db()
-        # 先检查是否存在记录，若不存在则插入占位记录（仅当更新时发现影响0行时插入）
-        # 使用 UPSERT 语法（SQLite 3.24+）
+        now = datetime.now().isoformat()
         await db._conn.execute(
             """INSERT INTO candidate_pool (source_key, channel_name, url, status, discovered_at, check_count, success_count, fail_count, total_latency, avg_latency, last_check)
                VALUES (?, '', '', 'observing', ?, 0, 0, 0, 0, 0, ?)
-               ON CONFLICT(source_key) DO NOTHING""",
-            (key, datetime.now().isoformat(), datetime.now().isoformat())
-        )
-        # 然后更新
-        await db._conn.execute(
-            """UPDATE candidate_pool
-               SET check_count = check_count + 1,
+               ON CONFLICT(source_key) DO UPDATE SET
+                   check_count = check_count + 1,
                    success_count = success_count + ?,
                    fail_count = fail_count + ?,
                    total_latency = total_latency + ?,
                    avg_latency = (total_latency + ?) / (success_count + ?),
                    last_check = ?
-               WHERE source_key = ?""",
-            (1 if success else 0, 0 if success else 1,
+            """,
+            (key, now, now,
+             1 if success else 0, 0 if success else 1,
              latency if success else 0,
              latency if success else 0,
              1 if success else 0,
-             datetime.now().isoformat(), key)
+             now)
         )
         await db._conn.commit()
 
