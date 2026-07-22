@@ -1,6 +1,5 @@
 import aiosqlite
 from pathlib import Path
-from contextlib import asynccontextmanager
 from src.settings import settings
 
 
@@ -12,6 +11,8 @@ class Database:
     async def init(self):
         settings.data_dir.mkdir(parents=True, exist_ok=True)
         self._conn = await aiosqlite.connect(str(self.db_path))
+        # 启用 WAL 模式，提高并发性能
+        await self._conn.execute("PRAGMA journal_mode=WAL")
         await self._create_tables()
         return self
 
@@ -88,7 +89,6 @@ class Database:
                 fail_count INTEGER DEFAULT 1
             )
         """)
-        # 索引
         await self._conn.execute("CREATE INDEX IF NOT EXISTS idx_source_status ON source_pool(status)")
         await self._conn.execute("CREATE INDEX IF NOT EXISTS idx_candidate_status ON candidate_pool(status)")
         await self._conn.execute("CREATE INDEX IF NOT EXISTS idx_stable_channel ON stable_sources(channel_name)")
@@ -97,17 +97,6 @@ class Database:
     async def close(self):
         if self._conn:
             await self._conn.close()
-
-    @asynccontextmanager
-    async def transaction(self):
-        """手动管理事务，避免重复启动线程"""
-        await self._conn.execute("BEGIN")
-        try:
-            yield self._conn
-            await self._conn.commit()
-        except Exception:
-            await self._conn.rollback()
-            raise
 
 
 _db: Database = None
