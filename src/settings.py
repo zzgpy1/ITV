@@ -1,7 +1,7 @@
+import yaml
 from pathlib import Path
-from typing import List
-from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic import BaseSettings, Field
+from typing import List, Optional
 
 
 class Settings(BaseSettings):
@@ -79,7 +79,6 @@ class Settings(BaseSettings):
     ]
 
     class Config:
-        env_file = ".env"
         env_prefix = "IPTV_"
         extra = "ignore"
 
@@ -88,4 +87,23 @@ class Settings(BaseSettings):
         return list(self.raw_sources) + list(self.direct_sources)
 
 
-settings = Settings()
+def load_settings() -> Settings:
+    """从 config/config.yaml 加载配置，环境变量覆盖"""
+    settings = Settings()
+    yaml_path = Path("config/config.yaml")
+    if yaml_path.exists():
+        try:
+            with open(yaml_path, 'r', encoding='utf-8') as f:
+                data = yaml.safe_load(f)
+            if data:
+                # 更新 settings 属性
+                for key, value in data.items():
+                    if hasattr(settings, key):
+                        setattr(settings, key, value)
+        except Exception as e:
+            print(f"加载 config.yaml 失败: {e}")
+    # 环境变量会自动覆盖（因为 BaseSettings 会读取环境变量）
+    return settings
+
+
+settings = load_settings()
