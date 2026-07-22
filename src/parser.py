@@ -1,7 +1,8 @@
 # src/parser.py
 import re
-from typing import List, Dict, Optional
+from typing import List, Dict
 from src.alias_matcher import get_alias_matcher
+from src.logger import logger
 
 def parse_m3u(content: str) -> List[Dict]:
     channels = []
@@ -52,7 +53,7 @@ def parse_txt(content: str) -> List[Dict]:
                 channels.append({"name": name.strip(), "url": url.strip(), "group_title": "", "tvg_id": "", "tvg_logo": ""})
     return channels
 
-def apply_alias(channels):
+def apply_alias(channels: List[Dict]) -> List[Dict]:
     matcher = get_alias_matcher()
     if matcher:
         for ch in channels:
