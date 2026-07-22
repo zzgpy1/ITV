@@ -96,21 +96,23 @@ def _parse_env() -> dict:
         value = os.environ.get(env_name)
         if value is not None:
             # 根据字段类型进行转换
-            if field_info.type_ == bool:
+            # 使用 field_info.annotation 获取类型
+            field_type = field_info.annotation
+            if field_type == bool:
                 env_vars[field_name] = value.lower() in ('true', '1', 'yes')
-            elif field_info.type_ == int:
+            elif field_type == int:
                 try:
                     env_vars[field_name] = int(value)
                 except ValueError:
                     pass
-            elif field_info.type_ == float:
+            elif field_type == float:
                 try:
                     env_vars[field_name] = float(value)
                 except ValueError:
                     pass
-            elif field_info.type_ == Path:
+            elif field_type == Path:
                 env_vars[field_name] = Path(value)
-            elif field_info.type_ == list:
+            elif field_type == list:
                 if value:
                     env_vars[field_name] = [item.strip() for item in value.split(',') if item.strip()]
                 else:
@@ -124,7 +126,7 @@ settings = Settings(**_parse_env())
 
 # ===== 关键修复：强制将所有 Path 字段转换为 Path 对象 =====
 for field_name, field_info in settings.__fields__.items():
-    if field_info.type_ == Path:
+    if field_info.annotation == Path:
         current_value = getattr(settings, field_name)
         if current_value is not None and not isinstance(current_value, Path):
             setattr(settings, field_name, Path(current_value))
