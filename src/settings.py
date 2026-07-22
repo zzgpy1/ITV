@@ -1,5 +1,6 @@
 from pathlib import Path
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings  # 关键改动
 
 class Settings(BaseSettings):
     # 路径
@@ -15,7 +16,7 @@ class Settings(BaseSettings):
     
     # ffmpeg
     ffmpeg_enable: bool = Field(default=True, env="IPTV_FFMPEG_ENABLE")
-    ffmpeg_mode: str = Field(default="deep", env="IPTV_FFMPEG_MODE")  # deep|quick|off
+    ffmpeg_mode: str = Field(default="deep", env="IPTV_FFMPEG_MODE")
     ffprobe_cache_hours: int = Field(default=168, env="IPTV_FFPROBE_CACHE_HOURS")
     
     # 缓存
@@ -70,7 +71,7 @@ class Settings(BaseSettings):
     ], env="IPTV_GITHUB_RAW_PROXIES")
     github_proxy_timeout: int = Field(default=15, env="IPTV_GITHUB_PROXY_TIMEOUT")
     
-    # 默认源（若 subscribe.txt 不存在则使用）
+    # 默认源
     raw_sources: list = Field(default=[
         "https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/cn.m3u",
         "https://raw.githubusercontent.com/iptv-org/iptv/gh-pages/countries/cn.m3u",
