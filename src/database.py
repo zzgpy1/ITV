@@ -100,8 +100,14 @@ class Database:
 
     @asynccontextmanager
     async def transaction(self):
-        async with self._conn:
+        """手动管理事务，避免重复启动线程"""
+        await self._conn.execute("BEGIN")
+        try:
             yield self._conn
+            await self._conn.commit()
+        except Exception:
+            await self._conn.rollback()
+            raise
 
 
 _db: Database = None
