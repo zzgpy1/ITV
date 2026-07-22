@@ -16,12 +16,20 @@ def channel_key(name: str, url: str) -> str:
 
 class SpeedTester:
     def __init__(self):
-        self.candidate_repo = repo_factory.candidate
-        self.history_repo = repo_factory.history
-        self.cache_repo = repo_factory.cache
+        # 延迟获取 repo，避免在 init 时未初始化
+        self._cache_repo = None
+        self._candidate_repo = None
+        self._history_repo = None
+
+    async def _ensure_repos(self):
+        if self._cache_repo is None:
+            self._cache_repo = repo_factory.cache
+            self._candidate_repo = repo_factory.candidate
+            self._history_repo = repo_factory.history
 
     async def test_batch(self, channels: List[Dict]) -> List[Dict]:
         """测速并返回有效频道列表，同时更新候选池和缓存"""
+        await self._ensure_repos()
         semaphore = asyncio.Semaphore(settings.max_workers)
         connector = aiohttp.TCPConnector(limit=settings.max_workers, limit_per_host=5)
         timeout = aiohttp.ClientTimeout(total=settings.http_timeout + 5)
@@ -45,7 +53,7 @@ class SpeedTester:
             key = channel_key(name, url)
 
             # 检查缓存
-            cached = await self.cache_repo.get(key, "speed")
+            cached = await self._cache_repo.get(key, "speed")
             if cached:
                 import json
                 data = json.loads(cached)
@@ -60,13 +68,13 @@ class SpeedTester:
                 channel["latency"] = latency
                 channel["video_codec"] = video_codec
                 # 更新候选池和缓存
-                await self.candidate_repo.update_latency(key, latency, True)
-                await self.history_repo.add(key, url, latency, True)
-                await self.cache_repo.set(key, f'{{"latency": {latency}, "video_codec": "{video_codec}"}}', "speed", settings.cache_speed_hours)
+                await self._candidate_repo.update_latency(key, latency, True)
+                await self._history_repo.add(key, url, latency, True)
+                await self._cache_repo.set(key, f'{{"latency": {latency}, "video_codec": "{video_codec}"}}', "speed", settings.cache_speed_hours)
                 return channel
             else:
-                await self.candidate_repo.update_latency(key, latency, False)
-                await self.history_repo.add(key, url, latency, False)
+                await self._candidate_repo.update_latency(key, latency, False)
+                await self._history_repo.add(key, url, latency, False)
                 return None
 
     async def _probe(self, session: aiohttp.ClientSession, url: str) -> Tuple[bool, int, str]:
@@ -90,7 +98,7 @@ class SpeedTester:
             # 简单视频检测
             if data.startswith(b'#EXTM3U') or b'#EXTINF' in data:
                 is_valid = True
-                codec = "h264"  # 假定
+                codec = "h264"
             elif any(data.startswith(sig) for sig in [b'\x00\x00\x00\x18ftyp', b'\x00\x00\x00\x1cftyp', b'\x1a\x45\xdf\xa3', b'\x47\x40\x00', b'FLV']):
                 is_valid = True
                 codec = "h264"
