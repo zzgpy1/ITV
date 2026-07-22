@@ -15,11 +15,12 @@ class SourceRepository:
         async with db.transaction() as conn:
             await conn.execute(
                 """INSERT OR REPLACE INTO source_pool
-                   (source_key, channel_name, url, source_url, discovered_at, status, fail_count, success_count, latency)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                   (source_key, channel_name, url, source_url, discovered_at, status, fail_count, success_count, latency, video_codec)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (source.source_key, source.channel_name, source.url,
                  source.source_url, source.discovered_at.isoformat(),
-                 source.status, source.fail_count, source.success_count, source.latency)
+                 source.status, source.fail_count, source.success_count,
+                 source.latency, source.video_codec)
             )
 
     async def get_pending(self, limit: int = 1000) -> List[Source]:
@@ -30,13 +31,22 @@ class SourceRepository:
         )
         rows = await cursor.fetchall()
         await cursor.close()
-        return [Source(
-            source_key=r[0], channel_name=r[1], url=r[2],
-            source_url=r[3], discovered_at=datetime.fromisoformat(r[4]),
-            last_check=datetime.fromisoformat(r[5]) if r[5] else None,
-            status=r[6], fail_count=r[7], success_count=r[8], latency=r[9],
-            video_codec=r[10] if len(r) > 10 else ""
-        ) for r in rows]
+        result = []
+        for r in rows:
+            result.append(Source(
+                source_key=r[0],
+                channel_name=r[1],
+                url=r[2],
+                source_url=r[3] if len(r) > 3 else "",
+                discovered_at=datetime.fromisoformat(r[4]) if r[4] else datetime.now(),
+                last_check=datetime.fromisoformat(r[5]) if r[5] else None,
+                status=r[6] if len(r) > 6 else "pending",
+                fail_count=r[7] if len(r) > 7 else 0,
+                success_count=r[8] if len(r) > 8 else 0,
+                latency=r[9] if len(r) > 9 else 0,
+                video_codec=r[10] if len(r) > 10 else ""
+            ))
+        return result
 
     async def update_status(self, key: str, status: str):
         db = await get_db()
@@ -59,6 +69,17 @@ class CandidateRepository:
                  candidate.status, candidate.discovered_at.isoformat(),
                  datetime.now().isoformat())
             )
+
+    async def get_by_key(self, key: str) -> Optional[Candidate]:
+        db = await get_db()
+        cursor = await db._conn.execute(
+            "SELECT * FROM candidate_pool WHERE source_key = ?", (key,)
+        )
+        row = await cursor.fetchone()
+        await cursor.close()
+        if not row:
+            return None
+        return self._row_to_candidate(row)
 
     async def update_latency(self, key: str, latency: int, success: bool):
         db = await get_db()
@@ -116,12 +137,18 @@ class CandidateRepository:
 
     def _row_to_candidate(self, row) -> Candidate:
         return Candidate(
-            source_key=row[0], channel_name=row[1], url=row[2],
-            status=row[3], check_count=row[4], success_count=row[5],
-            fail_count=row[6], total_latency=row[7], avg_latency=row[8],
+            source_key=row[0],
+            channel_name=row[1],
+            url=row[2],
+            status=row[3] if len(row) > 3 else "observing",
+            check_count=row[4] if len(row) > 4 else 0,
+            success_count=row[5] if len(row) > 5 else 0,
+            fail_count=row[6] if len(row) > 6 else 0,
+            total_latency=row[7] if len(row) > 7 else 0,
+            avg_latency=row[8] if len(row) > 8 else 0,
             last_check=datetime.fromisoformat(row[9]) if row[9] else None,
-            discovered_at=datetime.fromisoformat(row[10]),
-            promoted_at=datetime.fromisoformat(row[11]) if row[11] else None
+            discovered_at=datetime.fromisoformat(row[10]) if row[10] else datetime.now(),
+            promoted_at=datetime.fromisoformat(row[11]) if len(row) > 11 and row[11] else None
         )
 
 
@@ -137,11 +164,16 @@ class StableRepository:
         if not row:
             return None
         return Stable(
-            channel_name=row[0], url=row[1], latency=row[2], video_codec=row[3],
-            is_fixed=bool(row[4]), auto_optimize=bool(row[5]),
-            promoted_at=datetime.fromisoformat(row[6]),
+            channel_name=row[0],
+            url=row[1],
+            latency=row[2],
+            video_codec=row[3],
+            is_fixed=bool(row[4]) if len(row) > 4 else False,
+            auto_optimize=bool(row[5]) if len(row) > 5 else False,
+            promoted_at=datetime.fromisoformat(row[6]) if row[6] else datetime.now(),
             last_verified=datetime.fromisoformat(row[7]) if row[7] else None,
-            fail_count=row[8], status=row[9]
+            fail_count=row[8] if len(row) > 8 else 0,
+            status=row[9] if len(row) > 9 else "active"
         )
 
     async def upsert(self, stable: Stable):
@@ -153,10 +185,12 @@ class StableRepository:
                     promoted_at, last_verified, fail_count, status)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (stable.channel_name, stable.url, stable.latency, stable.video_codec,
-                 1 if stable.is_fixed else 0, 1 if stable.auto_optimize else 0,
+                 1 if stable.is_fixed else 0,
+                 1 if stable.auto_optimize else 0,
                  stable.promoted_at.isoformat(),
                  stable.last_verified.isoformat() if stable.last_verified else None,
-                 stable.fail_count, stable.status)
+                 stable.fail_count,
+                 stable.status)
             )
 
     async def get_all(self) -> Dict[str, Stable]:
@@ -167,11 +201,16 @@ class StableRepository:
         result = {}
         for r in rows:
             stable = Stable(
-                channel_name=r[0], url=r[1], latency=r[2], video_codec=r[3],
-                is_fixed=bool(r[4]), auto_optimize=bool(r[5]),
-                promoted_at=datetime.fromisoformat(r[6]),
+                channel_name=r[0],
+                url=r[1],
+                latency=r[2],
+                video_codec=r[3],
+                is_fixed=bool(r[4]) if len(r) > 4 else False,
+                auto_optimize=bool(r[5]) if len(r) > 5 else False,
+                promoted_at=datetime.fromisoformat(r[6]) if r[6] else datetime.now(),
                 last_verified=datetime.fromisoformat(r[7]) if r[7] else None,
-                fail_count=r[8], status=r[9]
+                fail_count=r[8] if len(r) > 8 else 0,
+                status=r[9] if len(r) > 9 else "active"
             )
             result[stable.channel_name] = stable
         return result
