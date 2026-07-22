@@ -1,6 +1,6 @@
 from pathlib import Path
 from pydantic import Field
-from pydantic_settings import BaseSettings  # 关键改动
+from pydantic.v1 import BaseSettings  # 使用 V1 兼容层，无需 pydantic-settings
 
 class Settings(BaseSettings):
     # 路径
