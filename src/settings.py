@@ -1,6 +1,6 @@
 from pathlib import Path
-from typing import List, Optional
-from pydantic import BaseSettings, Field
+from typing import List
+from pydantic_settings import BaseSettings, Field
 
 
 class Settings(BaseSettings):
@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     timeout: int = 8
     http_timeout: int = 8
     ffmpeg_enable: bool = True
-    ffmpeg_mode: str = "deep"  # deep / quick / off
+    ffmpeg_mode: str = "deep"
     ffprobe_cache_hours: int = 168
 
     cache_hours: int = 24
@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     enable_incremental_fetch: bool = True
     enable_json_output: bool = True
     enable_lite_version: bool = True
-    demo_match_mode: str = "contains"  # contains / exact
+    demo_match_mode: str = "contains"
 
     max_sources_per_channel: int = 3
     max_retry_before_blacklist: int = 2
