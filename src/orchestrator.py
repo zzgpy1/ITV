@@ -24,12 +24,17 @@ class Orchestrator:
         await self.stable_mgr.sync_fixed_sources()
         # 质量检查并替换
         await self.quality_monitor.check_all()
-        # 生成最终输出（需要从稳定源和合并后的频道生成，此处简化）
-        # 实际应从数据库读取稳定源并转为频道列表
-        # 示例：从稳定源生成输出
+        # 生成最终输出（从稳定源）
         stables = await self.stable_mgr.stable_repo.get_all()
-        channels = [{"name": name, "url": s.url, "latency": s.latency, "video_codec": s.video_codec} for name, s in stables.items()]
-        # demo 筛选
+        channels = []
+        for name, s in stables.items():
+            channels.append({
+                "name": name,
+                "url": s.url,
+                "latency": s.latency,
+                "video_codec": s.video_codec,
+                "demo_category": "其他"  # 临时，会被 demo_filter 覆盖
+            })
         demo_order = parse_demo_order()
         ordered = filter_and_order_by_demo(channels)
         await generate_outputs(ordered, demo_order)
