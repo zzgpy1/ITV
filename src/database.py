@@ -9,7 +9,9 @@ class Database:
     async def init(self):
         if self._conn is not None:
             return
-        db_path = settings.data_dir / "iptv_cache.db"
+        # 关键修复：显式转换为 Path
+        db_path = Path(settings.data_dir) / "iptv_cache.db"
+        settings.data_dir = Path(settings.data_dir)  # 确保后续一致
         settings.data_dir.mkdir(parents=True, exist_ok=True)
         self._conn = await aiosqlite.connect(str(db_path))
         await self._create_tables()
