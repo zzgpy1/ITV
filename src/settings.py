@@ -102,7 +102,7 @@ def _parse_env() -> dict:
                 try:
                     env_vars[field_name] = int(value)
                 except ValueError:
-                    pass  # 保持默认
+                    pass
             elif field_info.type_ == float:
                 try:
                     env_vars[field_name] = float(value)
@@ -121,3 +121,10 @@ def _parse_env() -> dict:
 
 # 使用默认值创建实例，再用环境变量覆盖
 settings = Settings(**_parse_env())
+
+# ===== 关键修复：强制将所有 Path 字段转换为 Path 对象 =====
+for field_name, field_info in settings.__fields__.items():
+    if field_info.type_ == Path:
+        current_value = getattr(settings, field_name)
+        if current_value is not None and not isinstance(current_value, Path):
+            setattr(settings, field_name, Path(current_value))
