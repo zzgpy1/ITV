@@ -61,3 +61,11 @@ class CandidateRepo(BaseRepository):
         if row:
             return {"check_count": row[0], "success_count": row[1], "fail_count": row[2], "avg_latency": row[3]}
         return {"check_count": 0, "success_count": 0, "fail_count": 0, "avg_latency": 0}
+
+    async def get_all_for_output(self, limit: int = 500) -> List[Dict]:
+        """获取所有候选源用于输出补充"""
+        rows = await self._fetchall(
+            "SELECT source_key, channel_name, url, avg_latency FROM candidate_pool WHERE status IN ('stable', 'observing') LIMIT ?",
+            (limit,)
+        )
+        return [{"key": r[0], "name": r[1], "url": r[2], "latency": r[3] or 9999} for r in rows]
