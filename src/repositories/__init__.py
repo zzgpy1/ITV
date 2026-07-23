@@ -15,17 +15,22 @@ class RepoFactory:
         self.stable: StableRepo = None
         self.history: HistoryRepo = None
         self.cache: CacheRepo = None
+        self._initialized = False
 
     async def init(self):
+        if self._initialized:
+            return
         self._conn = await db.connect()
         self.source = SourceRepo(self._conn)
         self.candidate = CandidateRepo(self._conn)
         self.stable = StableRepo(self._conn)
         self.history = HistoryRepo(self._conn)
         self.cache = CacheRepo(self._conn)
+        self._initialized = True
 
     async def close(self):
         await db.close()
+        self._initialized = False
 
 
 repo_factory = RepoFactory()
