@@ -34,3 +34,11 @@ class SourceRepo(BaseRepository):
             "UPDATE source_pool SET status = 'processed' WHERE source_key = ?",
             (source_key,)
         )
+
+    async def get_verified(self, limit: int = 500) -> List[Dict]:
+        """获取已验证的源"""
+        rows = await self._fetchall(
+            "SELECT source_key, channel_name, url FROM source_pool WHERE status = 'verified' LIMIT ?",
+            (limit,)
+        )
+        return [{"key": r[0], "name": r[1], "url": r[2]} for r in rows]
