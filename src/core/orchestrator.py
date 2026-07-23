@@ -39,29 +39,30 @@ class Orchestrator:
 
     async def observe_phase(self):
         logger.info("📊 观察候选源...")
+        # 获取已有稳定源
         stable = await repo_factory.stable.get_all()
         stable_names = set(stable.keys())
-        
+
+        # 只取那些还没有稳定源的频道
         pending = await repo_factory.candidate.get_observing(limit=5000)
         pending_by_channel = {}
         for p in pending:
             name = p["name"]
             if name not in stable_names:
-                if name not in pending_by_channel:
-                    pending_by_channel[name] = []
-                pending_by_channel[name].append(p)
-        
+                pending_by_channel.setdefault(name, []).append(p)
+
+        # 限制总数：最多 1000 个候选，每个频道最多取 3 个
         max_batch = 1000
         to_test = []
         for name, sources in pending_by_channel.items():
             to_test.extend(sources[:3])
             if len(to_test) >= max_batch:
                 break
-        
+
         if not to_test:
             logger.info("没有需要观察的候选源（或已有稳定源）")
             return
-        
+
         logger.info(f"本次观察 {len(to_test)} 个候选源（覆盖 {len(pending_by_channel)} 个频道）")
         await self.speed_tester.test_batch(to_test)
 
