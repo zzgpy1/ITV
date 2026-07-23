@@ -3,6 +3,7 @@ import asyncio
 import aiohttp
 import time
 import hashlib
+import json
 from typing import List, Dict, Tuple
 from tqdm.asyncio import tqdm
 from src.settings import settings
@@ -17,26 +18,21 @@ def channel_key(name: str, url: str) -> str:
 
 
 class SpeedTester:
-    def __init__(self):
-        self._candidate_repo = None
-        self._history_repo = None
-        self._cache_repo = None
-        self._source_repo = None
-
-    async def _ensure_repos(self):
-        """确保 repository 已初始化"""
-        if self._cache_repo is None:
-            self._cache_repo = repo_factory.cache
-            self._candidate_repo = repo_factory.candidate
-            self._history_repo = repo_factory.history
-            self._source_repo = repo_factory.source
+    """测速器 - 每次使用时从 repo_factory 获取 repository"""
+    
+    async def _get_repos(self):
+        """获取 repository 实例，确保已初始化"""
+        # 如果 repo_factory 未初始化，等待初始化
+        if repo_factory.cache is None:
+            await repo_factory.init()
+        return repo_factory.cache, repo_factory.candidate, repo_factory.history, repo_factory.source
 
     async def test_batch(self, channels: List[Dict], source_mode: bool = True) -> List[Dict]:
         """测速并返回有效频道列表"""
-        await self._ensure_repos()
-
         if not channels:
             return []
+
+        cache_repo, candidate_repo, history_repo, source_repo = await self._get_repos()
 
         semaphore = asyncio.Semaphore(settings.max_workers)
         connector = aiohttp.TCPConnector(limit=settings.max_workers, limit_per_host=5)
@@ -44,7 +40,11 @@ class SpeedTester:
 
         valid = []
         async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
-            tasks = [self._test_one(session, ch, semaphore, source_mode) for ch in channels]
+            tasks = [
+                self._test_one(session, ch, semaphore, source_mode,
+                               cache_repo, candidate_repo, history_repo, source_repo)
+                for ch in channels
+            ]
             pbar = tqdm(total=len(tasks), desc="🚀 测速")
             for coro in asyncio.as_completed(tasks):
                 result = await coro
@@ -54,32 +54,38 @@ class SpeedTester:
             pbar.close()
         return valid
 
-    async def _test_one(self, session: aiohttp.ClientSession, channel: Dict,
-                        semaphore: asyncio.Semaphore, source_mode: bool):
+    async def _test_one(
+        self,
+        session: aiohttp.ClientSession,
+        channel: Dict,
+        semaphore: asyncio.Semaphore,
+        source_mode: bool,
+        cache_repo,
+        candidate_repo,
+        history_repo,
+        source_repo
+    ):
         async with semaphore:
-            await self._ensure_repos()
-
             name = channel.get("name", "未知")
             url = channel.get("url", "")
             key = channel.get("key") or channel_key(name, url)
 
             # 检查缓存
-            cached = await self._cache_repo.get(key, "speed")
-            if cached:
-                import json
-                try:
+            try:
+                cached = await cache_repo.get(key, "speed")
+                if cached:
                     data = json.loads(cached)
                     if data.get("latency", 9999) < settings.slow_speed_threshold:
                         channel["latency"] = data["latency"]
                         channel["video_codec"] = data.get("video_codec", "")
                         # 更新候选池
-                        await self._candidate_repo.update_latency(key, data["latency"], True)
-                        await self._history_repo.add(key, url, data["latency"], True)
+                        await candidate_repo.update_latency(key, data["latency"], True)
+                        await history_repo.add(key, url, data["latency"], True)
                         if source_mode:
-                            await self._source_repo.update_status(key, "verified", data["latency"], True)
+                            await source_repo.update_status(key, "verified", data["latency"], True)
                         return channel
-                except (json.JSONDecodeError, KeyError):
-                    pass
+            except (json.JSONDecodeError, KeyError, AttributeError):
+                pass
 
             ok, latency, codec = await self._probe(session, url)
 
@@ -87,22 +93,25 @@ class SpeedTester:
                 channel["latency"] = latency
                 channel["video_codec"] = codec
                 # 更新候选池
-                await self._candidate_repo.update_latency(key, latency, True)
-                await self._history_repo.add(key, url, latency, True)
-                import json
-                await self._cache_repo.set(key, json.dumps({"latency": latency, "video_codec": codec}),
-                                          "speed", settings.cache_speed_hours)
+                await candidate_repo.update_latency(key, latency, True)
+                await history_repo.add(key, url, latency, True)
+                await cache_repo.set(key, json.dumps({"latency": latency, "video_codec": codec}),
+                                     "speed", settings.cache_speed_hours)
                 if source_mode:
-                    await self._source_repo.update_status(key, "verified", latency, True)
+                    await source_repo.update_status(key, "verified", latency, True)
                 return channel
             else:
-                await self._candidate_repo.update_latency(key, latency, False)
-                await self._history_repo.add(key, url, latency, False)
+                await candidate_repo.update_latency(key, latency, False)
+                await history_repo.add(key, url, latency, False)
                 if source_mode:
-                    await self._source_repo.update_status(key, "failed", 0, False)
+                    await source_repo.update_status(key, "failed", 0, False)
                 return None
 
     async def _probe(self, session: aiohttp.ClientSession, url: str) -> Tuple[bool, int, str]:
+        """探测单个 URL 是否有效"""
+        if not url or not url.startswith(('http://', 'https://')):
+            return False, 0, ""
+
         try:
             start = time.time()
             async with session.head(url, timeout=5, allow_redirects=True, headers=HEADERS) as resp:
@@ -132,7 +141,8 @@ class SpeedTester:
             # 检查是否返回了 HTML 错误页面
             data_lower = data.lower()
             error_keywords = [b'<html', b'<!doctype', b'403', b'forbidden',
-                              b'access denied', b'404', b'not found']
+                              b'access denied', b'404', b'not found',
+                              b'请勿滥用', b'该资源暂不可用']
             for kw in error_keywords:
                 if kw in data_lower:
                     return False, total_latency, ""
