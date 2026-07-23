@@ -30,7 +30,7 @@ class OutputGenerator:
         if settings.enable_lite_version:
             self._generate_lite(channels, output_dir / "tv_lite.m3u")
 
-        logger.info("✅ 输出生成完成")
+        logger.info(f"✅ 输出已生成到: {output_dir}")
 
     def _get_url(self, ch: dict) -> str:
         url = ch.get("url")
@@ -120,6 +120,7 @@ class OutputGenerator:
         logger.info(f"✅ 精简版已生成: {path}")
 
 
+# 兼容旧接口
 def generate_outputs_from_demo(ordered_channels: List[dict], demo_order: List[Tuple[str, str]]) -> None:
     if not ordered_channels:
         logger.warning("无频道数据，跳过输出生成")
