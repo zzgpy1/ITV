@@ -31,3 +31,8 @@ Thumbs.db
 # 环境变量
 .env
 .env.local
+
+# 但保留 .m3u, .txt, .json
+!output/*.m3u
+!output/*.txt
+!output/*.json
