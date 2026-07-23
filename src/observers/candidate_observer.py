@@ -18,7 +18,6 @@ class CandidateObserver:
         """观察候选池，标记稳定的源"""
         await self._ensure_init()
 
-        # 获取所有正在观察的候选源
         observing = await self.candidate_repo.get_observing()
         if not observing:
             logger.info("📭 没有正在观察的候选源")
@@ -34,7 +33,6 @@ class CandidateObserver:
             fail_count = stats.get("fail_count", 0)
             avg_latency = stats.get("avg_latency", 9999)
 
-            # 判断是否达到稳定标准
             min_success = settings.candidate_min_success
             min_rate = settings.candidate_min_success_rate
             max_latency = settings.candidate_max_latency
