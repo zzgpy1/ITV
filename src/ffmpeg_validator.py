@@ -4,7 +4,6 @@ import subprocess
 import json
 import atexit
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
 from src.settings import settings
 from src.repositories import repo_factory
 from src.logger import logger
@@ -15,7 +14,7 @@ _thread_pool = None
 def get_thread_pool():
     global _thread_pool
     if _thread_pool is None:
-        _thread_pool = ThreadPoolExecutor(max_workers=settings.max_workers)
+        _thread_pool = ThreadPoolExecutor(max_workers=min(settings.max_workers, 10))
         atexit.register(lambda: _thread_pool.shutdown(wait=False))
     return _thread_pool
 
@@ -48,7 +47,8 @@ def validate_with_ffprobe_sync(url: str, timeout: int) -> dict:
             if s.get("codec_type") == "video":
                 return {"valid": True, "has_video": True, "video_codec": s.get("codec_name", "").lower()}
         return {"valid": False, "has_video": False, "video_codec": ""}
-    except Exception:
+    except Exception as e:
+        logger.debug(f"ffprobe 验证失败 {url[:60]}...: {e}")
         return {"valid": False, "has_video": False, "video_codec": ""}
 
 
@@ -66,14 +66,17 @@ async def validate_batch(channels: list) -> list:
     need_validate = []
 
     for ch in channels:
-        cached = await cache_repo.get(ch["url"], "ffprobe")
+        cached = await cache_repo.get(ch.get("url", ""), "ffprobe")
         if cached:
-            import json
-            data = json.loads(cached)
-            if data.get("valid"):
-                ch["video_codec"] = data.get("video_codec", "")
-                valid.append(ch)
-            continue
+            try:
+                import json
+                data = json.loads(cached)
+                if data.get("valid", False):
+                    ch["video_codec"] = data.get("video_codec", "")
+                    valid.append(ch)
+                    continue
+            except (json.JSONDecodeError, KeyError):
+                pass
         need_validate.append(ch)
 
     if not need_validate:
@@ -82,22 +85,26 @@ async def validate_batch(channels: list) -> list:
 
     logger.info(f"🔍 ffmpeg 深度验证: {len(need_validate)} 个频道")
 
-    semaphore = asyncio.Semaphore(settings.max_workers)
+    semaphore = asyncio.Semaphore(min(settings.max_workers, 10))
 
     async def validate_one(ch):
         async with semaphore:
             result = await asyncio.get_event_loop().run_in_executor(
                 get_thread_pool(), validate_with_ffprobe_sync, ch["url"], settings.timeout
             )
+            import json
             await cache_repo.set(ch["url"], json.dumps(result), "ffprobe", settings.ffprobe_cache_hours)
-            if result.get("valid"):
+            if result.get("valid", False):
                 ch["video_codec"] = result.get("video_codec", "")
                 return ch
             return None
 
     tasks = [validate_one(ch) for ch in need_validate]
-    results = await asyncio.gather(*tasks)
-    valid.extend([r for r in results if r is not None])
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    for r in results:
+        if r and isinstance(r, dict):
+            valid.append(r)
 
     logger.info(f"✅ ffmpeg 验证完成: 通过 {len(valid)}/{len(channels)} 个频道")
     return valid
