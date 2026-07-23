@@ -26,7 +26,6 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: main  # 强制 checkout main 分支
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -86,23 +85,15 @@ jobs:
         run: |
           echo "📁 输出文件列表:"
           ls -la output/ 2>/dev/null || echo "output/ 目录不存在"
-          echo ""
-          echo "📊 文件大小:"
-          du -sh output/* 2>/dev/null || echo "无输出文件"
 
       - name: Commit and push to main
         run: |
-          # 确保在 main 分支
-          git checkout main || git checkout -b main
-          
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 检查是否有变更
           if [[ -n $(git status --porcelain) ]]; then
-            echo "📝 检测到变更，准备提交..."
+            echo "📝 检测到变更，准备提交到 main..."
             git add output/ data/ || true
-            git add *.m3u *.txt 2>/dev/null || true
             git add -A
 
             if [[ -n $(git status --porcelain) ]]; then
@@ -110,12 +101,43 @@ jobs:
               git pull origin main --rebase || true
               git push origin main
               echo "✅ 推送成功到 main 分支"
-            else
-              echo "✅ 无实际更改需要提交"
             fi
           else
             echo "✅ 无变更需要提交"
           fi
+
+      - name: Sync to gh-pages branch
+        if: always()
+        run: |
+          echo "📤 同步 output/ 到 gh-pages 分支..."
+          
+          # 切换到 gh-pages 分支（如果不存在则创建）
+          git fetch origin gh-pages 2>/dev/null || true
+          if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
+            git checkout gh-pages
+          else
+            git checkout --orphan gh-pages
+            git rm -rf . 2>/dev/null || true
+          fi
+          
+          # 从 main 分支复制 output 目录
+          git checkout main -- output/
+          
+          # 添加并提交
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          if [[ -n $(git status --porcelain) ]]; then
+            git add output/
+            git commit -m "🔄 同步 output 到 gh-pages - $(date '+%Y-%m-%d %H:%M:%S')"
+            git push origin gh-pages
+            echo "✅ 同步成功到 gh-pages 分支"
+          else
+            echo "✅ 无变更需要同步"
+          fi
+          
+          # 切回 main 分支
+          git checkout main
 
       - name: Upload output artifacts
         uses: actions/upload-artifact@v4
