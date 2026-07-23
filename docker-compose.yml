@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  iptv-collector:
+    build: .
+    container_name: iptv-collector
+    restart: unless-stopped
+    environment:
+      - IPTV_MAX_WORKERS=20
+      - IPTV_TIMEOUT=8
+      - IPTV_HTTP_TIMEOUT=8
+      - IPTV_FFMPEG_ENABLE=true
+      - IPTV_FFMPEG_MODE=deep
+      - IPTV_AUTONOMOUS_MODE=true
+      - IPTV_ENABLE_DEMO_FILTER=true
+      - IPTV_ENABLE_ALIAS=true
+      - IPTV_ENABLE_BLACKLIST=true
+      - IPTV_ENABLE_JSON_OUTPUT=true
+      - IPTV_ENABLE_LITE_VERSION=true
+      - IPTV_CANDIDATE_MIN_SUCCESS=3
+      - IPTV_CANDIDATE_MIN_SUCCESS_RATE=0.5
+      - IPTV_CANDIDATE_MAX_LATENCY=3000
+    volumes:
+      - ./output:/app/output
+      - ./data:/app/data
+      - ./config:/app/config
+      - ./logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
