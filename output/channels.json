@@ -1,7 +1,7 @@
 {
   "version": "2.0",
   "total": 363,
-  "generated": "2026-07-23T13:57:36.787801",
+  "generated": "2026-07-23T19:17:16.568985",
   "channels": [
     {
       "name": "CCTV-1",
@@ -228,7 +228,7 @@
       "urls": [
         "http://192.151.150.154/live/cctv8k.m3u8"
       ],
-      "latency": 228,
+      "latency": 806,
       "codec": "h264",
       "category": "📺央视频道",
       "logo": "https://epg.112114.xyz/logo/cctv8k.png"
@@ -239,7 +239,7 @@
         "https://amg00405-rakutentv-cgtn-rakuten-i9tar.amagi.tv/master.m3u8",
         "http://217.20.112.199:8080/cgtn/index.m3u8"
       ],
-      "latency": 428,
+      "latency": 584,
       "codec": "h264",
       "category": "📺央视频道",
       "logo": "https://epg.112114.xyz/logo/cgtn.png"
@@ -249,7 +249,7 @@
       "urls": [
         "https://amg00405-rakutentv-cgtndocumentary-rakuten-0ql8j.amagi.tv/master.m3u8"
       ],
-      "latency": 461,
+      "latency": 508,
       "codec": "h264",
       "category": "📺央视频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/CGTN Documentary.png"
@@ -836,7 +836,7 @@
       "urls": [
         "https://live.wjyanghu.com/live/CH1.m3u8"
       ],
-      "latency": 1383,
+      "latency": 1586,
       "codec": "h264",
       "category": "☘️江苏频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/武进新闻 [Not 24/7].png"
@@ -846,7 +846,7 @@
       "urls": [
         "https://live.wjyanghu.com/live/CH2.m3u8"
       ],
-      "latency": 1325,
+      "latency": 1387,
       "codec": "h264",
       "category": "☘️江苏频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/武进生活 [Not 24/7].png"
@@ -856,7 +856,7 @@
       "urls": [
         "http://live.ahsz.tv/video/s10001-szzh/index.m3u8"
       ],
-      "latency": 779,
+      "latency": 9999,
       "codec": "h264",
       "category": "☘️江苏频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/宿州新闻综合 [Not 24/7].png"
@@ -906,7 +906,7 @@
       "urls": [
         "https://ali-m-l.cztv.com/channels/lantian/channel002/1080p.m3u8"
       ],
-      "latency": 446,
+      "latency": 345,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/浙江钱江.png"
@@ -916,7 +916,7 @@
       "urls": [
         "https://ali-m-l.cztv.com/channels/lantian/channel003/1080p.m3u8"
       ],
-      "latency": 885,
+      "latency": 700,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/浙江经济.png"
@@ -926,7 +926,7 @@
       "urls": [
         "https://ali-m-l.cztv.com/channels/lantian/channel006/1080p.m3u8"
       ],
-      "latency": 441,
+      "latency": 765,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/浙江民生.png"
@@ -936,7 +936,7 @@
       "urls": [
         "https://ali-m-l.cztv.com/channels/lantian/channel007/1080p.m3u8"
       ],
-      "latency": 1183,
+      "latency": 689,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/浙江新闻.png"
@@ -946,7 +946,7 @@
       "urls": [
         "https://ali-m-l.cztv.com/channels/lantian/channel004/1080p.m3u8"
       ],
-      "latency": 467,
+      "latency": 807,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/浙江教科.png"
@@ -956,7 +956,7 @@
       "urls": [
         "https://ali-m-l.cztv.com/channels/lantian/channel010/1080p.m3u8"
       ],
-      "latency": 445,
+      "latency": 1009,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/浙江国际.png"
@@ -966,7 +966,7 @@
       "urls": [
         "https://ali-m-l.cztv.com/channels/lantian/channel012/1080p.m3u8"
       ],
-      "latency": 455,
+      "latency": 342,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/之江纪录.png"
@@ -986,7 +986,7 @@
       "urls": [
         "https://l.cztvcloud.com/channels/lantian/SXshangyu1/720p.m3u8"
       ],
-      "latency": 9999,
+      "latency": 1659,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/上虞1新闻综合 [Not 24/7].png"
@@ -996,7 +996,7 @@
       "urls": [
         "https://l.cztvcloud.com/channels/lantian/SXshengzhou1/720p.m3u8"
       ],
-      "latency": 557,
+      "latency": 1029,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/嵊州综合 [Not 24/7].png"
@@ -1006,7 +1006,7 @@
       "urls": [
         "https://l.cztvcloud.com/channels/lantian/SXxinchang1/720p.m3u8"
       ],
-      "latency": 9999,
+      "latency": 1102,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/新昌新聞綜合 [Not 24/7].png"
@@ -1016,7 +1016,7 @@
       "urls": [
         "https://l.cztvcloud.com/channels/lantian/SXxiaoshan1/720p.m3u8"
       ],
-      "latency": 1854,
+      "latency": 846,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/萧山新闻综合 [Not 24/7].png"
@@ -1026,7 +1026,7 @@
       "urls": [
         "https://l.cztvcloud.com/channels/lantian/SXxiaoshan2/720p.m3u8"
       ],
-      "latency": 1025,
+      "latency": 416,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/蕭山生活頻道 [Not 24/7].png"
@@ -1036,7 +1036,7 @@
       "urls": [
         "https://l.cztvcloud.com/channels/lantian/SXyuyao1/720p.m3u8"
       ],
-      "latency": 1771,
+      "latency": 864,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/余姚新闻综合.png"
@@ -1046,7 +1046,7 @@
       "urls": [
         "https://l.cztvcloud.com/channels/lantian/SXyuyao3/720p.m3u8"
       ],
-      "latency": 552,
+      "latency": 430,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/余姚姚江文化.png"
@@ -1446,7 +1446,7 @@
       "urls": [
         "http://222.179.155.21:1935/ch1.m3u8"
       ],
-      "latency": 1045,
+      "latency": 916,
       "codec": "h264",
       "category": "☘️重庆频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/江津新闻综合.png"
@@ -1456,7 +1456,7 @@
       "urls": [
         "http://183.64.181.25:40023/rongchang01.m3u8"
       ],
-      "latency": 9999,
+      "latency": 1131,
       "codec": "h264",
       "category": "☘️重庆频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/荣昌综合 [Not 24/7].png"
@@ -1526,7 +1526,7 @@
       "urls": [
         "https://tmpstream.hyrtv.cn/xwzh/sd/live.m3u8"
       ],
-      "latency": 2366,
+      "latency": 9999,
       "codec": "h264",
       "category": "☘️四川频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/河综合.png"
@@ -1536,7 +1536,7 @@
       "urls": [
         "https://stream2.jlntv.cn/jlyb/sd/live.m3u8"
       ],
-      "latency": 1530,
+      "latency": 1347,
       "codec": "h264",
       "category": "☘️四川频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/延边新闻综合 [Geo-blocked].png"
@@ -1686,7 +1686,7 @@
       "urls": [
         "https://l.cztvcloud.com/channels/lantian/SXxinchang2/720p.m3u8"
       ],
-      "latency": 1091,
+      "latency": 483,
       "codec": "h264",
       "category": "☘️陕西频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/新昌休闲影视 [Not 24/7].png"
@@ -1746,7 +1746,7 @@
       "urls": [
         "https://stream2.jlntv.cn/baicheng1/sd/live.m3u8"
       ],
-      "latency": 2639,
+      "latency": 984,
       "codec": "h264",
       "category": "☘️新疆频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/白城新闻综合 [Geo-blocked].png"
@@ -2009,7 +2009,7 @@
       "urls": [
         "https://stream2.jlntv.cn/jlcc/sd/live.m3u8"
       ],
-      "latency": 1176,
+      "latency": 464,
       "codec": "h264",
       "category": "☘️吉林频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/长春综合 [Geo-blocked].png"
@@ -2019,7 +2019,7 @@
       "urls": [
         "https://stream2.jlntv.cn/naxw/sd/live.m3u8"
       ],
-      "latency": 899,
+      "latency": 481,
       "codec": "h264",
       "category": "☘️吉林频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/农安新闻综合 [Geo-blocked].png"
@@ -2029,7 +2029,7 @@
       "urls": [
         "https://stream2.jlntv.cn/jilin1/sd/live.m3u8"
       ],
-      "latency": 1239,
+      "latency": 470,
       "codec": "h264",
       "category": "☘️吉林频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/吉林市新闻综合 [Geo-blocked].png"
@@ -2039,7 +2039,7 @@
       "urls": [
         "https://stream2.jlntv.cn/sptv/sd/live.m3u8"
       ],
-      "latency": 1098,
+      "latency": 604,
       "codec": "h264",
       "category": "☘️吉林频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/四平新闻综合 [Geo-blocked].png"
@@ -2049,7 +2049,7 @@
       "urls": [
         "https://stream2.jlntv.cn/tonghua1/sd/live.m3u8"
       ],
-      "latency": 780,
+      "latency": 478,
       "codec": "h264",
       "category": "☘️吉林频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/通化新闻 [Geo-blocked].png"
@@ -2059,7 +2059,7 @@
       "urls": [
         "https://stream2.jlntv.cn/baishan1/sd/live.m3u8"
       ],
-      "latency": 2668,
+      "latency": 871,
       "codec": "h264",
       "category": "☘️吉林频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/白山新闻综合 [Geo-blocked].png"
@@ -2069,7 +2069,7 @@
       "urls": [
         "https://stream2.jlntv.cn/sytv/sd/live.m3u8"
       ],
-      "latency": 1476,
+      "latency": 574,
       "codec": "h264",
       "category": "☘️吉林频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/松原新闻综合 [Geo-blocked].png"
@@ -2079,7 +2079,7 @@
       "urls": [
         "https://stream2.jlntv.cn/qg/sd/live.m3u8"
       ],
-      "latency": 1364,
+      "latency": 473,
       "codec": "h264",
       "category": "☘️吉林频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/前郭综合 [Geo-blocked].png"
@@ -2309,7 +2309,7 @@
       "urls": [
         "https://video.bread-tv.com:8091/hls-live24/online/index.m3u8"
       ],
-      "latency": 1131,
+      "latency": 838,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/Bread TV面包台.png"
@@ -2339,7 +2339,7 @@
       "urls": [
         "http://play1-qk.nmtv.cn/live/1735546697341033.m3u8"
       ],
-      "latency": 2090,
+      "latency": 2120,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/Chifeng Comprehensive News Chanel.png"
@@ -2379,7 +2379,7 @@
       "urls": [
         "https://tencentplaybusiness.gztv.com/live/zonghes.m3u8"
       ],
-      "latency": 2120,
+      "latency": 1545,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/Guangzhou TV.png"
@@ -2389,7 +2389,7 @@
       "urls": [
         "https://stream.hrbtv.net/xwzh/playlist.m3u8?_upt=ef41dd531755913594"
       ],
-      "latency": 2458,
+      "latency": 1892,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/Harbin Comprehensive News Channel.png"
@@ -2399,7 +2399,7 @@
       "urls": [
         "https://stream.hrbtv.net/yspd/playlist.m3u8"
       ],
-      "latency": 2247,
+      "latency": 1913,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/Harbin Movie Channel.png"
@@ -2409,7 +2409,7 @@
       "urls": [
         "https://event.pull.hebtv.com/live/live101.m3u8"
       ],
-      "latency": 1896,
+      "latency": 1433,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/Hebei TV.png"
@@ -2419,7 +2419,7 @@
       "urls": [
         "http://hlsal-ldvt.qing.mgtv.com/nn_live/nn_x64/dWlwPTEyNy4wLjAuMSZ1aWQ9cWluZy1jbXMmbm5fdGltZXpvbmU9OCZjZG5leF9pZD1hbF9obHNfbGR2dCZ1dWlkPTliODY4NmU5ZTM2YzYwMmMmZT02OTE0NjA0JnY9MSZpZD1ITldTWkdTVCZzPTcwN2RiYTc2YzJjNmJmMTQ4MmUyZGYzOWU2NWM3YWFi/HNWSZGST.m3u8"
       ],
-      "latency": 2171,
+      "latency": 2236,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/Hunan TV.png"
@@ -2539,7 +2539,7 @@
       "urls": [
         "http://play1-qk.nmtv.cn/live/1769652018126032.m3u8"
       ],
-      "latency": 1460,
+      "latency": 1037,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/Nei Monggol TV [Not 24/7].png"
@@ -2659,7 +2659,7 @@
       "urls": [
         "http://stream2.jlntv.cn/sptv/sd/live.m3u8?_upt=f27750421743154598"
       ],
-      "latency": 2938,
+      "latency": 769,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/Siping TV.png"
@@ -2689,7 +2689,7 @@
       "urls": [
         "http://lsfb.avap.jilintv.cn/zqvk7vpj/channel/43ea5771aa44421591f9dfd2b71f1b9b/index.m3u8"
       ],
-      "latency": 1474,
+      "latency": 1234,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/Tonghua TV.png"
@@ -2699,7 +2699,7 @@
       "urls": [
         "https://voa-ingest.akamaized.net/hls/live/2033878/tvmc08/playlist.m3u8"
       ],
-      "latency": 129,
+      "latency": 411,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/VOA美国之音.png"
@@ -2719,7 +2719,7 @@
       "urls": [
         "http://110.153.180.106:55555/out_3/index.m3u8"
       ],
-      "latency": 989,
+      "latency": 803,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/Xinjiang TV 2.png"
@@ -2729,7 +2729,7 @@
       "urls": [
         "http://110.153.180.106:55555/out_2/index.m3u8"
       ],
-      "latency": 967,
+      "latency": 816,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/Xinjiang TV 3.png"
@@ -2739,7 +2739,7 @@
       "urls": [
         "http://120.70.60.179:9901/tsfile/live/1002_1.m3u8?authid=0&key=txiptv&playlive=1"
       ],
-      "latency": 673,
+      "latency": 548,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/Xinjiang TV 8.png"
@@ -2759,7 +2759,7 @@
       "urls": [
         "https://ali-m-l.cztv.com/channels/lantian/channel10/1080p.m3u8"
       ],
-      "latency": 446,
+      "latency": 339,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/Zhejiang TV International.png"
@@ -2779,7 +2779,7 @@
       "urls": [
         "https://l.cztvcloud.com/channels/lantian/SXshangyu3/720p.m3u8"
       ],
-      "latency": 9999,
+      "latency": 1358,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/上虞3新商都 [Not 24/7].png"
@@ -2789,7 +2789,7 @@
       "urls": [
         "https://l.cztvcloud.com/channels/lantian/SXshangyu2/720p.m3u8"
       ],
-      "latency": 9999,
+      "latency": 889,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/上虞經濟文化 [Not 24/7].png"
@@ -2839,7 +2839,7 @@
       "urls": [
         "https://jwcdnqx.hebyun.com.cn/live/xlzh/1500k/tzwj_video.m3u8"
       ],
-      "latency": 1926,
+      "latency": 1474,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/兴隆综合.png"
@@ -3191,7 +3191,7 @@
       "urls": [
         "http://222.179.155.21:1935/ch0.m3u8"
       ],
-      "latency": 2885,
+      "latency": 881,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/江津经济生活.png"
@@ -3251,7 +3251,7 @@
       "urls": [
         "http://live.shaoxing.com.cn/video/s10001-sxtv3/index.m3u8"
       ],
-      "latency": 1980,
+      "latency": 862,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/浙江 Ⅰ 绍兴影视.png"
@@ -3261,7 +3261,7 @@
       "urls": [
         "http://live.shaoxing.com.cn/video/s10001-sxtv1/index.m3u8"
       ],
-      "latency": 747,
+      "latency": 661,
       "codec": "h264",
       "category": "☘️浙江频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/浙江 Ⅰ 绍兴综合.png"
@@ -3431,7 +3431,7 @@
       "urls": [
         "http://live.zohi.tv/video/s10001-fztv-1/index.m3u8"
       ],
-      "latency": 9999,
+      "latency": 2158,
       "codec": "h264",
       "category": "☘️福建频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/福州广电视台新闻综合频道.png"
@@ -3441,7 +3441,7 @@
       "urls": [
         "http://live.zohi.tv/video/s10001-fztv-3/index.m3u8"
       ],
-      "latency": 1966,
+      "latency": 1951,
       "codec": "h264",
       "category": "☘️福建频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/福州广电视台都市生活频道.png"
@@ -3451,7 +3451,7 @@
       "urls": [
         "http://live.zohi.tv/video/s10001-fztv-4/index.m3u8"
       ],
-      "latency": 956,
+      "latency": 844,
       "codec": "h264",
       "category": "☘️福建频道",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/福州电视台少儿频道.png"
@@ -3611,7 +3611,7 @@
       "urls": [
         "https://stream2.jlntv.cn/liaoyuan1/sd/live.m3u8"
       ],
-      "latency": 709,
+      "latency": 471,
       "codec": "h264",
       "category": "其他",
       "logo": "https://raw.githubusercontent.com/iptv-org/iptv/master/resources/辽新闻综合 [Geo-blocked].png"
