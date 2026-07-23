@@ -85,55 +85,79 @@ jobs:
         run: |
           echo "📁 输出文件列表:"
           ls -la output/ 2>/dev/null || echo "output/ 目录不存在"
+          echo ""
+          echo "📊 文件大小:"
+          du -sh output/* 2>/dev/null || echo "无输出文件"
 
       - name: Commit and push to main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # 确保在 main 分支
+          git checkout main || git checkout -b main
+
+          # 添加所有变更
+          git add output/ data/ || true
+          git add -A
+
           if [[ -n $(git status --porcelain) ]]; then
             echo "📝 检测到变更，准备提交到 main..."
-            git add output/ data/ || true
-            git add -A
-
-            if [[ -n $(git status --porcelain) ]]; then
-              git commit -m "🤖 自动更新 IPTV 列表 - $(date '+%Y-%m-%d %H:%M:%S')"
-              git pull origin main --rebase || true
-              git push origin main
-              echo "✅ 推送成功到 main 分支"
-            fi
+            git commit -m "🤖 自动更新 IPTV 列表 - $(date '+%Y-%m-%d %H:%M:%S')"
+            git pull origin main --rebase || true
+            git push origin main
+            echo "✅ 推送成功到 main 分支"
           else
             echo "✅ 无变更需要提交"
           fi
 
-      - name: Sync to gh-pages branch
+      - name: Sync output to gh-pages
         if: always()
         run: |
           echo "📤 同步 output/ 到 gh-pages 分支..."
           
-          # 切换到 gh-pages 分支（如果不存在则创建）
-          git fetch origin gh-pages 2>/dev/null || true
-          if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
-            git checkout gh-pages
-          else
-            git checkout --orphan gh-pages
-            git rm -rf . 2>/dev/null || true
-          fi
-          
-          # 从 main 分支复制 output 目录
-          git checkout main -- output/
-          
-          # 添加并提交
+          # 配置 git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          if [[ -n $(git status --porcelain) ]]; then
-            git add output/
-            git commit -m "🔄 同步 output 到 gh-pages - $(date '+%Y-%m-%d %H:%M:%S')"
-            git push origin gh-pages
-            echo "✅ 同步成功到 gh-pages 分支"
+          # 获取最新的 main 分支
+          git fetch origin main
+          
+          # 切换到 gh-pages 分支（如果不存在则创建）
+          if git ls-remote --heads origin gh-pages | grep -q gh-pages; then
+            git checkout gh-pages
+            git pull origin gh-pages --rebase || true
           else
-            echo "✅ 无变更需要同步"
+            # 创建空的 gh-pages 分支
+            git checkout --orphan gh-pages
+            git rm -rf . 2>/dev/null || true
+            # 创建一个占位文件确保分支非空
+            echo "# IPTV Output" > README.md
+            git add README.md
+            git commit -m "初始化 gh-pages 分支"
+            git push origin gh-pages
+          fi
+          
+          # 从 main 分支复制 output 目录
+          echo "📂 从 main 分支复制 output 目录..."
+          git fetch origin main
+          git checkout main -- output/ 2>/dev/null || {
+            echo "⚠️ main 分支没有 output 目录，跳过复制"
+          }
+          
+          # 如果 output 目录存在，添加并提交
+          if [[ -d "output" ]] && [[ -n "$(ls -A output 2>/dev/null)" ]]; then
+            echo "📝 提交 output 到 gh-pages..."
+            git add output/
+            if [[ -n $(git status --porcelain) ]]; then
+              git commit -m "🔄 同步 output 到 gh-pages - $(date '+%Y-%m-%d %H:%M:%S')"
+              git push origin gh-pages
+              echo "✅ 同步成功到 gh-pages 分支"
+            else
+              echo "✅ gh-pages 已是最新，无需提交"
+            fi
+          else
+            echo "⚠️ output 目录为空或不存在，跳过 gh-pages 同步"
           fi
           
           # 切回 main 分支
