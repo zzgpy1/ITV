@@ -1,38 +1,151 @@
-name: IPTV 智能更新
+name: IPTV 源智能更新与整理
 
 on:
   schedule:
+    # 每 6 小时运行一次（UTC 时间 0, 6, 12, 18）
     - cron: '0 */6 * * *'
   workflow_dispatch:
+    inputs:
+      skip_discover:
+        description: '跳过发现阶段（使用已有源池）'
+        type: boolean
+        default: false
+        required: false
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
-  update:
+  update-iptv:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          python-version: '3.10'
-      - name: Install deps
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
+          # 安装 ffmpeg 用于深度验证
           sudo apt-get update && sudo apt-get install -y ffmpeg
-      - name: Run
-        run: python -m src.run
+
+      - name: Verify installation
+        run: |
+          python -c "import aiohttp, aiosqlite, tqdm, pypinyin, pydantic; print('✅ 所有依赖已安装')"
+          ffmpeg -version | head -1
+
+      - name: Run IPTV update
+        run: |
+          python -m src.run
         env:
-          IPTV_AUTONOMOUS_MODE: true
+          # ===== 性能配置 =====
+          IPTV_MAX_WORKERS: 20
+          IPTV_TIMEOUT: 8
+          IPTV_HTTP_TIMEOUT: 8
+
+          # ===== ffmpeg =====
           IPTV_FFMPEG_ENABLE: true
-      - name: Commit and push
+          IPTV_FFMPEG_MODE: deep
+          IPTV_FFPROBE_CACHE_HOURS: 168
+
+          # ===== 缓存 =====
+          IPTV_CACHE_HOURS: 24
+          IPTV_CACHE_RAW_HOURS: 48
+          IPTV_CACHE_SPEED_HOURS: 24
+
+          # ===== 功能开关 =====
+          IPTV_ENABLE_DEMO_FILTER: true
+          IPTV_ENABLE_ALIAS: true
+          IPTV_ENABLE_BLACKLIST: true
+          IPTV_ENABLE_JSON_OUTPUT: true
+          IPTV_ENABLE_LITE_VERSION: true
+          IPTV_DEMO_MATCH_MODE: contains
+
+          # ===== 合并 =====
+          IPTV_MAX_SOURCES_PER_CHANNEL: 3
+
+          # ===== 测速与黑名单 =====
+          IPTV_MAX_RETRY_BEFORE_BLACKLIST: 2
+          IPTV_SLOW_SPEED_THRESHOLD: 3000
+          IPTV_DOWNLOAD_CHUNK_SIZE: 262144
+
+          # ===== 自治模式 =====
+          IPTV_AUTONOMOUS_MODE: true
+          IPTV_AUTO_UPDATE_STABLE: true
+          IPTV_AUTO_REPLACE_FAILED: true
+          IPTV_QUALITY_CHECK_INTERVAL: 24
+          IPTV_CANDIDATE_OBSERVATION_HOURS: 24
+          IPTV_CANDIDATE_MIN_SUCCESS: 3
+          IPTV_CANDIDATE_MIN_SUCCESS_RATE: 0.5
+          IPTV_CANDIDATE_MAX_LATENCY: 3000
+          IPTV_AUTO_PROMOTE_THRESHOLD: 3
+
+          # ===== 固定源优化 =====
+          IPTV_ENABLE_FIXED_OPTIMIZATION: true
+          IPTV_FIXED_OPTIMIZATION_THRESHOLD: 200
+
+          # ===== 代理 =====
+          IPTV_ENABLE_GITHUB_PROXY: false
+          IPTV_GITHUB_PROXY_TIMEOUT: 15
+
+      - name: Show output files
+        run: |
+          echo "📁 输出文件列表:"
+          ls -la output/ 2>/dev/null || echo "output/ 目录不存在"
+          echo ""
+          echo "📊 文件大小:"
+          du -sh output/* 2>/dev/null || echo "无输出文件"
+
+      - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          if ! git diff --staged --quiet; then
-            git commit -m "Auto update $(date '+%Y-%m-%d %H:%M:%S')"
+
+          # 检查是否有变更
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "📝 检测到变更，准备提交..."
+            git add .
+            git commit -m "🤖 自动更新 IPTV 列表 - $(date '+%Y-%m-%d %H:%M:%S')"
+
+            # 尝试拉取最新再推送
+            git pull origin main --rebase || true
             git push origin main
+
+            echo "✅ 推送成功"
           else
-            echo "No changes"
+            echo "✅ 无变更需要提交"
           fi
+
+      - name: Upload output artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: iptv-output
+          path: |
+            output/*.m3u
+            output/*.txt
+            output/*.json
+            data/*.db
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: iptv-logs
+          path: output/run.log
+          retention-days: 3
+          if-no-files-found: ignore
