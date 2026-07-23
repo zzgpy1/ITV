@@ -88,14 +88,19 @@ jobs:
           echo ""
           echo "📊 文件大小:"
           du -sh output/* 2>/dev/null || echo "无输出文件"
+          echo ""
+          echo "📄 查看 tv.txt 前 20 行:"
+          head -20 output/tv.txt 2>/dev/null || echo "tv.txt 不存在"
 
       - name: Commit and push to main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # 确保在 main 分支
           git checkout main || git checkout -b main
 
+          # 添加所有变更（包括 output/ 和 data/）
           git add output/ data/ || true
           git add -A
 
@@ -117,8 +122,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
+          # 先确保 main 分支最新
           git fetch origin main
           
+          # 切换到 gh-pages 分支
           if git ls-remote --heads origin gh-pages | grep -q gh-pages; then
             git checkout gh-pages
             git pull origin gh-pages --rebase || true
@@ -131,22 +138,39 @@ jobs:
             git push origin gh-pages
           fi
           
-          git fetch origin main
-          git checkout main -- output/ 2>/dev/null || echo "⚠️ main 分支没有 output 目录"
+          # 从 main 分支检出 output 目录（使用完整路径）
+          echo "📂 从 main 分支复制 output 目录..."
           
+          # 方法1: 使用 git checkout 从 main 分支检出
+          if git ls-tree -r main --name-only | grep -q "^output/"; then
+            git checkout main -- output/
+            echo "✅ 从 main 分支检出 output 目录成功"
+          else
+            echo "⚠️ main 分支没有 output 目录，跳过检出"
+          fi
+          
+          # 如果 output 目录存在且有文件，提交到 gh-pages
           if [[ -d "output" ]] && [[ -n "$(ls -A output 2>/dev/null)" ]]; then
+            echo "📝 提交 output 到 gh-pages..."
             git add output/
             if [[ -n $(git status --porcelain) ]]; then
               git commit -m "🔄 同步 output 到 gh-pages - $(date '+%Y-%m-%d %H:%M:%S')"
               git push origin gh-pages
               echo "✅ 同步成功到 gh-pages 分支"
             else
-              echo "✅ gh-pages 已是最新"
+              echo "✅ gh-pages 已是最新，无需提交"
             fi
           else
-            echo "⚠️ output 目录为空"
+            echo "⚠️ output 目录为空或不存在，跳过 gh-pages 同步"
+            # 如果 output 目录不存在，创建占位文件
+            mkdir -p output
+            echo "# 暂无输出" > output/placeholder.txt
+            git add output/
+            git commit -m "创建 output 占位目录" || true
+            git push origin gh-pages || true
           fi
           
+          # 切回 main 分支
           git checkout main
 
       - name: Upload output artifacts
