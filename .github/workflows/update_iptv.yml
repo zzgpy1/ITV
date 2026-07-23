@@ -26,6 +26,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main  # 强制 checkout main 分支
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -89,8 +90,11 @@ jobs:
           echo "📊 文件大小:"
           du -sh output/* 2>/dev/null || echo "无输出文件"
 
-      - name: Commit and push changes
+      - name: Commit and push to main
         run: |
+          # 确保在 main 分支
+          git checkout main || git checkout -b main
+          
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
@@ -105,7 +109,7 @@ jobs:
               git commit -m "🤖 自动更新 IPTV 列表 - $(date '+%Y-%m-%d %H:%M:%S')"
               git pull origin main --rebase || true
               git push origin main
-              echo "✅ 推送成功"
+              echo "✅ 推送成功到 main 分支"
             else
               echo "✅ 无实际更改需要提交"
             fi
