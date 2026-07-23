@@ -30,93 +30,117 @@ class Orchestrator:
         logger.info("=" * 50)
 
         # 1. 初始化数据库和 repositories
+        logger.info("📂 初始化数据库...")
         await repo_factory.init()
         await self.stable_manager.init()
+        logger.info("✅ 数据库初始化完成")
 
-        # ===== 阶段1: 传统采集 =====
-        logger.info("📡 阶段1: 传统采集")
-        if not skip_discover:
-            sources = await self.discoverer.discover()
-            if sources:
-                for src in sources:
-                    await repo_factory.source.add(src["key"], src["name"], src["url"], src["source_url"])
-                    await repo_factory.candidate.add(src["key"], src["name"], src["url"])
-                logger.info(f"✅ 采集完成: {len(sources)} 个频道加入候选池")
-            else:
-                logger.warning("⚠️ 未发现任何频道")
-        else:
-            logger.info("⏭️ 跳过发现阶段")
-
-        # ===== 阶段2: 测速与验证 =====
-        logger.info("🚀 阶段2: 测速与验证")
-        pending = await repo_factory.source.get_pending(limit=3000)
-
-        if pending:
-            logger.info(f"🔍 测速 {len(pending)} 个待验证源")
-            # 确保 speed_tester 使用已初始化的 repo
-            valid = await self.speed_tester.test_batch(pending, source_mode=True)
-            if valid:
-                logger.info(f"✅ 测速通过: {len(valid)} 个频道")
-            else:
-                logger.warning("⚠️ 测速未通过任何频道")
-        else:
-            logger.info("📭 没有待验证的源")
-
-        # ===== 阶段3: ffmpeg 深度验证 =====
-        if settings.ffmpeg_enable:
-            logger.info("🎬 阶段3: ffmpeg 深度验证")
-            # 获取已验证但未深度验证的源
-            try:
-                rows = await repo_factory.source._fetchall(
-                    "SELECT source_key, channel_name, url FROM source_pool WHERE status = 'verified' LIMIT 500"
-                )
-                if rows:
-                    channels = [{"key": r[0], "name": r[1], "url": r[2]} for r in rows]
-                    validated = await validate_batch(channels)
-                    logger.info(f"✅ ffmpeg 验证通过: {len(validated)} 个频道")
+        try:
+            # ===== 阶段1: 传统采集 =====
+            logger.info("📡 阶段1: 传统采集")
+            if not skip_discover:
+                sources = await self.discoverer.discover()
+                if sources:
+                    for src in sources:
+                        await repo_factory.source.add(
+                            src["key"], src["name"], src["url"], src["source_url"]
+                        )
+                        await repo_factory.candidate.add(src["key"], src["name"], src["url"])
+                    logger.info(f"✅ 采集完成: {len(sources)} 个频道加入候选池")
                 else:
-                    logger.info("📭 没有需要深度验证的频道")
-            except Exception as e:
-                logger.warning(f"⚠️ ffmpeg 验证跳过: {e}")
+                    logger.warning("⚠️ 未发现任何频道")
+            else:
+                logger.info("⏭️ 跳过发现阶段")
 
-        # ===== 阶段4: 观察候选池 =====
-        logger.info("🔍 阶段4: 观察候选池")
-        await self.observer.observe()
+            # ===== 阶段2: 测速与验证 =====
+            logger.info("🚀 阶段2: 测速与验证")
+            pending = await repo_factory.source.get_pending(limit=3000)
 
-        # ===== 阶段5: 提升稳定源 =====
-        logger.info("⬆️ 阶段5: 提升稳定源")
-        stable_candidates = await repo_factory.candidate.get_stable_candidates()
-        promoted = 0
-        if stable_candidates:
-            for cand in stable_candidates:
-                # 检查是否已存在
-                existing = await repo_factory.stable.get(cand["name"])
-                if existing and existing.get("is_fixed", False):
-                    continue
-                if existing and existing.get("latency", 9999) < cand.get("latency", 9999):
-                    continue
-                if await self.stable_manager.promote_candidate(
-                    cand["name"], cand["url"], cand.get("latency", 0), "h264"
-                ):
-                    await repo_factory.candidate.promote(cand["key"])
-                    promoted += 1
-            logger.info(f"✅ 提升完成: {promoted} 个稳定源")
-        else:
-            logger.info("📭 没有稳定的候选源")
+            if pending:
+                logger.info(f"🔍 测速 {len(pending)} 个待验证源")
+                try:
+                    valid = await self.speed_tester.test_batch(pending, source_mode=True)
+                    if valid:
+                        logger.info(f"✅ 测速通过: {len(valid)} 个频道")
+                    else:
+                        logger.warning("⚠️ 测速未通过任何频道")
+                except Exception as e:
+                    logger.error(f"❌ 测速阶段失败: {e}")
+                    import traceback
+                    traceback.print_exc()
+            else:
+                logger.info("📭 没有待验证的源")
 
-        # ===== 阶段6: 质量检查 =====
-        if settings.auto_replace_failed:
-            logger.info("🔎 阶段6: 质量检查")
+            # ===== 阶段3: ffmpeg 深度验证 =====
+            if settings.ffmpeg_enable:
+                logger.info("🎬 阶段3: ffmpeg 深度验证")
+                try:
+                    rows = await repo_factory.source._fetchall(
+                        "SELECT source_key, channel_name, url FROM source_pool WHERE status = 'verified' LIMIT 500"
+                    )
+                    if rows:
+                        channels = [{"key": r[0], "name": r[1], "url": r[2]} for r in rows]
+                        validated = await validate_batch(channels)
+                        logger.info(f"✅ ffmpeg 验证通过: {len(validated)} 个频道")
+                    else:
+                        logger.info("📭 没有需要深度验证的频道")
+                except Exception as e:
+                    logger.warning(f"⚠️ ffmpeg 验证跳过: {e}")
+
+            # ===== 阶段4: 观察候选池 =====
+            logger.info("🔍 阶段4: 观察候选池")
             try:
-                critical = await self.quality_monitor.check_all_active_sources()
-                if critical:
-                    logger.info(f"⚠️ {len(critical)} 个源需要替换")
+                await self.observer.observe()
             except Exception as e:
-                logger.warning(f"⚠️ 质量检查跳过: {e}")
+                logger.warning(f"⚠️ 观察候选池失败: {e}")
 
-        # ===== 阶段7: 生成输出 =====
-        logger.info("📁 阶段7: 生成输出")
-        await self._generate_output()
+            # ===== 阶段5: 提升稳定源 =====
+            logger.info("⬆️ 阶段5: 提升稳定源")
+            try:
+                stable_candidates = await repo_factory.candidate.get_stable_candidates()
+                promoted = 0
+                if stable_candidates:
+                    for cand in stable_candidates:
+                        existing = await repo_factory.stable.get(cand["name"])
+                        if existing and existing.get("is_fixed", False):
+                            continue
+                        if existing and existing.get("latency", 9999) < cand.get("latency", 9999):
+                            continue
+                        if await self.stable_manager.promote_candidate(
+                            cand["name"], cand["url"], cand.get("latency", 0), "h264"
+                        ):
+                            await repo_factory.candidate.promote(cand["key"])
+                            promoted += 1
+                    logger.info(f"✅ 提升完成: {promoted} 个稳定源")
+                else:
+                    logger.info("📭 没有稳定的候选源")
+            except Exception as e:
+                logger.warning(f"⚠️ 提升稳定源失败: {e}")
+
+            # ===== 阶段6: 质量检查 =====
+            if settings.auto_replace_failed:
+                logger.info("🔎 阶段6: 质量检查")
+                try:
+                    critical = await self.quality_monitor.check_all_active_sources()
+                    if critical:
+                        logger.info(f"⚠️ {len(critical)} 个源需要替换")
+                except Exception as e:
+                    logger.warning(f"⚠️ 质量检查跳过: {e}")
+
+            # ===== 阶段7: 生成输出 =====
+            logger.info("📁 阶段7: 生成输出")
+            try:
+                await self._generate_output()
+            except Exception as e:
+                logger.error(f"❌ 生成输出失败: {e}")
+                import traceback
+                traceback.print_exc()
+
+        except Exception as e:
+            logger.error(f"❌ 运行失败: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
 
         # ===== 统计 =====
         logger.info("=" * 50)
@@ -128,8 +152,8 @@ class Orchestrator:
             )
             for row in source_stats:
                 logger.info(f"  源池 {row[0]}: {row[1]}")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"获取源池统计失败: {e}")
 
         try:
             candidate_stats = await repo_factory.candidate._fetchall(
@@ -137,8 +161,8 @@ class Orchestrator:
             )
             for row in candidate_stats:
                 logger.info(f"  候选池 {row[0]}: {row[1]}")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"获取候选池统计失败: {e}")
 
         stable_all = await repo_factory.stable.get_all()
         fixed_count = sum(1 for s in stable_all.values() if s.get("is_fixed", False))
@@ -179,7 +203,7 @@ class Orchestrator:
 
         # Demo 筛选
         demo_order = parse_demo_order_with_categories() if settings.enable_demo_filter else []
-        if demo_order:
+        if demo_order and merged:
             ordered, _ = filter_and_order_by_demo(merged)
         else:
             ordered = merged
