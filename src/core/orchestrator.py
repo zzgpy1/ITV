@@ -1,4 +1,5 @@
 # src/core/orchestrator.py
+import asyncio
 from src.settings import settings
 from src.repositories import repo_factory
 from src.discoverers.source_discoverer import SourceDiscoverer
@@ -14,16 +15,13 @@ from src.logger import logger
 class Orchestrator:
     def __init__(self):
         self.discoverer = SourceDiscoverer()
-        # 先不创建 SpeedTester，等 init 后
-        self.speed_tester = None
+        self.speed_tester = SpeedTester()
         self.stable_manager = StableManager()
         self.quality_monitor = QualityMonitor(self.stable_manager)
         self.generator = OutputGenerator()
 
     async def run(self, skip_discover=False):
         await repo_factory.init()
-        # 现在 repo_factory 已初始化，可以创建 SpeedTester
-        self.speed_tester = SpeedTester()
         await self.stable_manager.init()
 
         if not skip_discover:
@@ -40,11 +38,35 @@ class Orchestrator:
             await repo_factory.candidate.add(src["key"], src["name"], src["url"])
 
     async def observe_phase(self):
-        pending = await repo_factory.candidate.get_observing()
-        if pending:
-            await self.speed_tester.test_batch(pending)
+        logger.info("📊 观察候选源...")
+        stable = await repo_factory.stable.get_all()
+        stable_names = set(stable.keys())
+        
+        pending = await repo_factory.candidate.get_observing(limit=5000)
+        pending_by_channel = {}
+        for p in pending:
+            name = p["name"]
+            if name not in stable_names:
+                if name not in pending_by_channel:
+                    pending_by_channel[name] = []
+                pending_by_channel[name].append(p)
+        
+        max_batch = 1000
+        to_test = []
+        for name, sources in pending_by_channel.items():
+            to_test.extend(sources[:3])
+            if len(to_test) >= max_batch:
+                break
+        
+        if not to_test:
+            logger.info("没有需要观察的候选源（或已有稳定源）")
+            return
+        
+        logger.info(f"本次观察 {len(to_test)} 个候选源（覆盖 {len(pending_by_channel)} 个频道）")
+        await self.speed_tester.test_batch(to_test)
 
     async def promote_phase(self):
+        logger.info("⬆️ 提升稳定源...")
         stable_candidates = await repo_factory.candidate.get_stable_candidates()
         for cand in stable_candidates:
             existing = await repo_factory.stable.get(cand["name"])
@@ -57,6 +79,7 @@ class Orchestrator:
             logger.info(f"✅ 提升: {cand['name']}")
 
     async def quality_check_phase(self):
+        logger.info("🔎 质量检查...")
         await self.quality_monitor.check_all_active_sources()
         if settings.auto_replace_failed:
             critical = self.quality_monitor.get_critical_sources()
