@@ -27,12 +27,11 @@ class StableManager:
             else:
                 url = urls
             if url:
-                existing = await self.stable_repo.get(name)
                 await self.stable_repo.upsert(
                     name, url, 50, "h264",
                     is_fixed=True, auto_optimize=True
                 )
-                logger.info(f"📌 固定源同步: {name} -> {url[:50]}...")
+                logger.info(f"📌 固定源同步: {name}")
 
     async def get_stable_sources(self):
         await self._ensure_init()
@@ -42,7 +41,7 @@ class StableManager:
         await self._ensure_init()
         existing = await self.stable_repo.get(channel_name)
         if existing and existing.get("is_fixed", False):
-            logger.warning(f"⚠️ {channel_name} 是固定源，拒绝自动提升")
+            logger.debug(f"⚠️ {channel_name} 是固定源，拒绝自动提升")
             return False
         await self.stable_repo.upsert(channel_name, url, latency, video_codec)
         logger.info(f"✅ {channel_name} 已提升为稳定源")
