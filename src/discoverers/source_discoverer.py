@@ -1,4 +1,3 @@
-# src/discoverers/source_discoverer.py
 from src.fetcher import fetch_all_sources
 from src.parser import parse_and_dedupe
 from src.settings import settings
@@ -13,17 +12,17 @@ class SourceDiscoverer:
         logger.info(f"拉取 {len(urls)} 个订阅源")
         raw = await fetch_all_sources(urls, use_cache=True)
         channels = parse_and_dedupe(raw)
-        
-        # === 新增：过滤只保留国内频道 ===
-        filtered = {}
+
+        # === 过滤：只保留国内频道 ===
         kept_categories = {"央视", "卫视", "地方", "港澳台"}
+        filtered = {}
         for key, ch in channels.items():
             cat = classify_channel(ch)
             if cat in kept_categories:
                 filtered[key] = ch
-        logger.info(f"国内频道过滤: {len(channels)} -> {len(filtered)} (保留 {kept_categories})")
+        logger.info(f"国内频道过滤: {len(channels)} -> {len(filtered)}")
         channels = filtered
-        
+
         result = []
         for key, ch in channels.items():
             result.append({
