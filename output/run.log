@@ -1,0 +1,77 @@
+2026-07-23 10:44:30,771 - IPTVCollector - INFO - ==================================================
+2026-07-23 10:44:30,772 - IPTVCollector - INFO - 🚀 IPTV 智能管理平台启动
+2026-07-23 10:44:30,772 - IPTVCollector - INFO - ==================================================
+2026-07-23 10:44:30,772 - IPTVCollector - INFO - 📂 初始化数据库...
+2026-07-23 10:44:30,778 - IPTVCollector - INFO - 📌 固定源同步: CCTV-1 -> http://45.192.97.170:8880/play/1.m3u8...
+2026-07-23 10:44:30,778 - IPTVCollector - INFO - 📌 固定源同步: CCTV-2 -> http://45.192.97.170:8880/play/2.m3u8...
+2026-07-23 10:44:30,779 - IPTVCollector - INFO - 📌 固定源同步: CCTV-3 -> http://69.30.245.50/live/cctv3.m3u8...
+2026-07-23 10:44:30,779 - IPTVCollector - INFO - 📌 固定源同步: CCTV-4 -> http://69.30.245.50/live/cctv4.m3u8...
+2026-07-23 10:44:30,780 - IPTVCollector - INFO - 📌 固定源同步: CCTV-5 -> http://69.30.245.50/live/cctv5.m3u8...
+2026-07-23 10:44:30,780 - IPTVCollector - INFO - 📌 固定源同步: CCTV-5+ -> http://45.192.97.170:8880/play/6.m3u8...
+2026-07-23 10:44:30,781 - IPTVCollector - INFO - 📌 固定源同步: CCTV-6 -> http://69.30.245.50/live/cctv6.m3u8...
+2026-07-23 10:44:30,782 - IPTVCollector - INFO - 📌 固定源同步: CCTV-7 -> http://69.30.245.50/live/cctv7.m3u8...
+2026-07-23 10:44:30,782 - IPTVCollector - INFO - 📌 固定源同步: CCTV-8 -> http://69.30.245.50/live/cctv8.m3u8...
+2026-07-23 10:44:30,783 - IPTVCollector - INFO - 📌 固定源同步: CCTV-9 -> http://69.30.245.50/live/cctv9.m3u8...
+2026-07-23 10:44:30,783 - IPTVCollector - INFO - 📌 固定源同步: CCTV-10 -> http://69.30.245.50/live/cctv10.m3u8...
+2026-07-23 10:44:30,784 - IPTVCollector - INFO - 📌 固定源同步: CCTV-11 -> http://45.192.97.170:8880/play/12.m3u8...
+2026-07-23 10:44:30,784 - IPTVCollector - INFO - 📌 固定源同步: CCTV-12 -> http://45.192.97.170:8880/play/13.m3u8...
+2026-07-23 10:44:30,785 - IPTVCollector - INFO - 📌 固定源同步: CCTV-13 -> http://45.192.97.170:8880/play/14.m3u8...
+2026-07-23 10:44:30,785 - IPTVCollector - INFO - 📌 固定源同步: CCTV-14 -> http://45.192.97.170:8880/play/15.m3u8...
+2026-07-23 10:44:30,786 - IPTVCollector - INFO - 📌 固定源同步: CCTV-15 -> http://45.192.97.170:8880/play/16.m3u8...
+2026-07-23 10:44:30,786 - IPTVCollector - INFO - 📌 固定源同步: CCTV-16 -> http://183.11.239.36:808/hls/169/index.m3u8...
+2026-07-23 10:44:30,787 - IPTVCollector - INFO - 📌 固定源同步: CCTV-17 -> http://45.192.97.170:8880/play/17.m3u8...
+2026-07-23 10:44:30,787 - IPTVCollector - INFO - 📌 固定源同步: CCTV4欧洲 -> http://45.192.97.170:8880/play/18.m3u8...
+2026-07-23 10:44:30,788 - IPTVCollector - INFO - 📌 固定源同步: CCTV4美洲 -> http://45.192.97.170:8880/play/19.m3u8...
+2026-07-23 10:44:30,788 - IPTVCollector - INFO - ✅ 数据库初始化完成
+2026-07-23 10:44:30,788 - IPTVCollector - INFO - 📡 阶段1: 传统采集
+2026-07-23 10:44:30,788 - IPTVCollector - INFO - 📡 拉取 9 个订阅源
+2026-07-23 10:44:30,788 - IPTVCollector - INFO - 🔄 拉取: https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/cn.m3u
+2026-07-23 10:44:30,789 - IPTVCollector - INFO - 🔄 拉取: https://raw.githubusercontent.com/iptv-org/iptv/gh-pages/countries/cn.m3u
+2026-07-23 10:44:30,789 - IPTVCollector - INFO - 🔄 拉取: https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.txt
+2026-07-23 10:44:30,789 - IPTVCollector - INFO - 🔄 拉取: https://raw.githubusercontent.com/zzgpy1/iptv-api/master/output/result.txt
+2026-07-23 10:44:30,789 - IPTVCollector - INFO - 🔄 拉取: https://raw.githubusercontent.com/zzgpy1/Collect-IPTV/main/best_sorted.m3u
+2026-07-23 10:44:30,789 - IPTVCollector - INFO - 🔄 拉取: https://raw.githubusercontent.com/zzgpy1/ipv6-iptv/master/tv/iptv4.txt
+2026-07-23 10:44:30,790 - IPTVCollector - INFO - 🔄 拉取: https://raw.githubusercontent.com/CCSH/IPTV/refs/heads/main/live.txt
+2026-07-23 10:44:30,790 - IPTVCollector - INFO - 🔄 拉取: https://raw.githubusercontent.com/kakaxi-1/IPTV/main/iptv.txt
+2026-07-23 10:44:30,790 - IPTVCollector - INFO - 🔄 拉取: https://tv.19860519.xyz/abc123
+2026-07-23 10:44:31,656 - IPTVCollector - INFO - ✅ 已加载别名规则：精确 885，正则 22
+2026-07-23 10:44:31,671 - IPTVCollector - INFO - ✅ 解析完成，去重后共 1326 个频道
+2026-07-23 10:44:31,671 - IPTVCollector - INFO - ✅ 发现 1326 个频道
+2026-07-23 10:44:32,193 - IPTVCollector - INFO - ✅ 采集完成: 1326 个频道加入候选池
+2026-07-23 10:44:32,193 - IPTVCollector - INFO - 🚀 阶段2: 测速与验证
+2026-07-23 10:44:32,195 - IPTVCollector - INFO - 🔍 测速 1326 个待验证源
+2026-07-23 10:46:52,357 - IPTVCollector - INFO - ✅ 测速通过: 579 个频道
+2026-07-23 10:46:52,357 - IPTVCollector - INFO - 🎬 阶段3: ffmpeg 深度验证
+2026-07-23 10:46:52,494 - IPTVCollector - INFO - 🔍 ffmpeg 深度验证: 500 个频道
+2026-07-23 10:50:37,433 - IPTVCollector - INFO - ✅ ffmpeg 验证完成: 通过 385/500 个频道
+2026-07-23 10:50:37,433 - IPTVCollector - INFO - ✅ ffmpeg 验证通过: 385 个频道
+2026-07-23 10:50:37,433 - IPTVCollector - INFO - 🔍 阶段4: 观察候选池
+2026-07-23 10:50:37,435 - IPTVCollector - INFO - 🔍 检查 1000 个候选源的状态
+2026-07-23 10:50:37,622 - IPTVCollector - INFO - 📊 观察完成: 0 个源达到稳定标准
+2026-07-23 10:50:37,622 - IPTVCollector - INFO - ⬆️ 阶段5: 提升稳定源
+2026-07-23 10:50:37,623 - IPTVCollector - INFO - 📭 没有稳定的候选源
+2026-07-23 10:50:37,623 - IPTVCollector - INFO - 🔎 阶段6: 质量检查
+2026-07-23 10:50:37,624 - IPTVCollector - INFO - 🔍 检查 20 个稳定源的质量
+2026-07-23 10:50:37,624 - IPTVCollector - INFO - 📁 阶段7: 生成输出
+2026-07-23 10:50:37,626 - IPTVCollector - INFO - 📌 已使用 20 个固定优质源
+2026-07-23 10:50:37,626 - IPTVCollector - INFO - 📊 合并完成: 共 20 个频道
+2026-07-23 10:50:37,629 - IPTVCollector - INFO - ✅ 已加载 144 条黑名单规则
+2026-07-23 10:50:37,630 - IPTVCollector - INFO - 🛡️ 黑名单过滤：20 -> 20 个频道
+2026-07-23 10:50:37,632 - IPTVCollector - INFO - 📋 从 demo.txt 解析到 3541 个有序频道
+2026-07-23 10:50:37,634 - IPTVCollector - INFO - 📋 从 demo.txt 解析到 3541 个有序频道
+2026-07-23 10:50:37,635 - IPTVCollector - INFO - 🎯 Demo 筛选：原始 20 -> 20 个频道
+2026-07-23 10:50:37,637 - IPTVCollector - INFO - ✅ M3U 文件已生成: output/tv.m3u
+2026-07-23 10:50:37,637 - IPTVCollector - INFO - ✅ TXT 文件已生成: output/tv.txt
+2026-07-23 10:50:37,639 - IPTVCollector - INFO - ✅ 多源 M3U 文件已生成: output/tv_multi.m3u
+2026-07-23 10:50:37,639 - IPTVCollector - INFO - ✅ JSON 文件已生成: output/channels.json
+2026-07-23 10:50:37,640 - IPTVCollector - INFO - ✅ 精简版已生成: output/tv_lite.m3u
+2026-07-23 10:50:37,640 - IPTVCollector - INFO - ✅ 输出已生成到: output
+2026-07-23 10:50:37,640 - IPTVCollector - INFO - ==================================================
+2026-07-23 10:50:37,640 - IPTVCollector - INFO - 📊 运行统计
+2026-07-23 10:50:37,640 - IPTVCollector - INFO - ==================================================
+2026-07-23 10:50:37,641 - IPTVCollector - INFO -   源池 failed: 747
+2026-07-23 10:50:37,641 - IPTVCollector - INFO -   源池 verified: 579
+2026-07-23 10:50:37,642 - IPTVCollector - INFO -   候选池 observing: 1326
+2026-07-23 10:50:37,643 - IPTVCollector - INFO -   稳定源总数: 20 (固定源: 20)
+2026-07-23 10:50:37,643 - IPTVCollector - INFO - ==================================================
+2026-07-23 10:50:37,643 - IPTVCollector - INFO - 🎉 全部完成!

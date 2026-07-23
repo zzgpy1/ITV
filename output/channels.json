@@ -1,0 +1,214 @@
+{
+  "version": "2.0",
+  "total": 20,
+  "generated": "2026-07-23T10:50:37.639626",
+  "channels": [
+    {
+      "name": "CCTV-1",
+      "urls": [
+        "http://45.192.97.170:8880/play/1.m3u8",
+        "http://112.27.235.94:8000/hls/1/index.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv1.png"
+    },
+    {
+      "name": "CCTV-2",
+      "urls": [
+        "http://45.192.97.170:8880/play/2.m3u8",
+        "http://112.27.235.94:8000/hls/2/index.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv2.png"
+    },
+    {
+      "name": "CCTV-3",
+      "urls": [
+        "http://69.30.245.50/live/cctv3.m3u8",
+        "http://45.192.97.170:8880/play/3.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv3.png"
+    },
+    {
+      "name": "CCTV-4",
+      "urls": [
+        "http://69.30.245.50/live/cctv4.m3u8",
+        "http://45.192.97.170:8880/play/18.m3u8",
+        "http://45.192.97.170:8880/play/19.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv4.png"
+    },
+    {
+      "name": "CCTV-5",
+      "urls": [
+        "http://69.30.245.50/live/cctv5.m3u8",
+        "http://45.192.97.170:8880/play/5.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv5.png"
+    },
+    {
+      "name": "CCTV-5+",
+      "urls": [
+        "http://45.192.97.170:8880/play/6.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv5plus.png"
+    },
+    {
+      "name": "CCTV-6",
+      "urls": [
+        "http://69.30.245.50/live/cctv6.m3u8",
+        "http://45.192.97.170:8880/play/7.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv6.png"
+    },
+    {
+      "name": "CCTV-7",
+      "urls": [
+        "http://69.30.245.50/live/cctv7.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv7.png"
+    },
+    {
+      "name": "CCTV-8",
+      "urls": [
+        "http://69.30.245.50/live/cctv8.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv8.png"
+    },
+    {
+      "name": "CCTV-9",
+      "urls": [
+        "http://69.30.245.50/live/cctv9.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv9.png"
+    },
+    {
+      "name": "CCTV-10",
+      "urls": [
+        "http://69.30.245.50/live/cctv10.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv10.png"
+    },
+    {
+      "name": "CCTV-11",
+      "urls": [
+        "http://45.192.97.170:8880/play/12.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv11.png"
+    },
+    {
+      "name": "CCTV-12",
+      "urls": [
+        "http://45.192.97.170:8880/play/13.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv12.png"
+    },
+    {
+      "name": "CCTV-13",
+      "urls": [
+        "http://45.192.97.170:8880/play/14.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv13.png"
+    },
+    {
+      "name": "CCTV-14",
+      "urls": [
+        "http://45.192.97.170:8880/play/15.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv14.png"
+    },
+    {
+      "name": "CCTV-15",
+      "urls": [
+        "http://45.192.97.170:8880/play/16.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv15.png"
+    },
+    {
+      "name": "CCTV-16",
+      "urls": [
+        "http://183.11.239.36:808/hls/169/index.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv16.png"
+    },
+    {
+      "name": "CCTV-17",
+      "urls": [
+        "http://45.192.97.170:8880/play/17.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv17.png"
+    },
+    {
+      "name": "CCTV4欧洲",
+      "urls": [
+        "http://45.192.97.170:8880/play/18.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv4.png"
+    },
+    {
+      "name": "CCTV4美洲",
+      "urls": [
+        "http://45.192.97.170:8880/play/19.m3u8"
+      ],
+      "latency": 50,
+      "codec": "h264",
+      "category": "📺央视频道",
+      "logo": "https://epg.112114.xyz/logo/cctv4.png"
+    }
+  ]
+}
