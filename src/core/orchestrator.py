@@ -29,7 +29,6 @@ class Orchestrator:
         logger.info("🚀 IPTV 智能管理平台启动")
         logger.info("=" * 50)
 
-        # 初始化数据库
         await repo_factory.init()
         await self.stable_manager.init()
 
@@ -146,65 +145,61 @@ class Orchestrator:
         await repo_factory.close()
 
     async def _generate_output(self):
-        """生成输出文件 - 从稳定源和候选池合并数据"""
+        """生成输出文件 - 从稳定源、候选池和源池合并数据"""
+        
+        # 1. 收集稳定源
         stable = await repo_factory.stable.get_all()
         channels = []
-
-        # 1. 收集稳定源
-        if stable:
-            for name, info in stable.items():
-                url = info.get("url")
-                if url:
-                    channels.append({
-                        "name": name,
-                        "url": url,
-                        "latency": info.get("latency", 9999),
-                        "video_codec": info.get("video_codec", ""),
-                        "is_fixed": info.get("is_fixed", False)
-                    })
-            logger.info(f"📊 从稳定源获取: {len(channels)} 个频道")
-
-        # 2. 如果稳定源太少，从候选池补充
-        if len(channels) < 30:
-            logger.info(f"📊 稳定源数量较少 ({len(channels)})，从候选池补充...")
-            existing_names = {c["name"] for c in channels}
-
-            # 获取候选池中稳定的或观察中的源
-            rows = await repo_factory.candidate._fetchall(
-                "SELECT source_key, channel_name, url, avg_latency FROM candidate_pool WHERE status IN ('stable', 'observing') LIMIT 500"
+        existing_names = set()
+        
+        for name, info in stable.items():
+            url = info.get("url")
+            if url:
+                channels.append({
+                    "name": name,
+                    "url": url,
+                    "latency": info.get("latency", 9999),
+                    "video_codec": info.get("video_codec", ""),
+                    "is_fixed": info.get("is_fixed", False)
+                })
+                existing_names.add(name)
+        
+        logger.info(f"📊 稳定源: {len(channels)} 个频道")
+        
+        # 2. 从候选池获取所有候选源
+        logger.info("📊 从候选池补充频道...")
+        candidate_rows = await repo_factory.candidate._fetchall(
+            "SELECT source_key, channel_name, url, avg_latency, status FROM candidate_pool LIMIT 500"
+        )
+        
+        added_from_candidate = 0
+        for row in candidate_rows:
+            name = row[1]
+            if name not in existing_names and row[2]:
+                channels.append({
+                    "name": name,
+                    "url": row[2],
+                    "latency": row[3] or 9999,
+                    "video_codec": "h264",
+                    "is_fixed": False
+                })
+                existing_names.add(name)
+                added_from_candidate += 1
+        
+        if added_from_candidate > 0:
+            logger.info(f"✅ 从候选池补充: {added_from_candidate} 个频道")
+        
+        # 3. 如果频道太少，从源池获取已验证的源
+        if len(channels) < 50:
+            logger.info("📊 从源池补充已验证的频道...")
+            source_rows = await repo_factory.source._fetchall(
+                "SELECT source_key, channel_name, url FROM source_pool WHERE status = 'verified' LIMIT 300"
             )
-
-            added = 0
-            for row in rows:
+            
+            added_from_source = 0
+            for row in source_rows:
                 name = row[1]
-                if name not in existing_names:
-                    channels.append({
-                        "name": name,
-                        "url": row[2],
-                        "latency": row[3] or 9999,
-                        "video_codec": "h264",
-                        "is_fixed": False
-                    })
-                    existing_names.add(name)
-                    added += 1
-
-            if added > 0:
-                logger.info(f"✅ 从候选池补充: {added} 个频道")
-                logger.info(f"📊 补充后总数: {len(channels)} 个频道")
-
-        # 3. 如果还是太少，从源池获取
-        if len(channels) < 30:
-            logger.info(f"📊 频道数量仍然较少 ({len(channels)})，从源池获取已验证的源...")
-            existing_names = {c["name"] for c in channels}
-
-            rows = await repo_factory.source._fetchall(
-                "SELECT source_key, channel_name, url FROM source_pool WHERE status = 'verified' LIMIT 200"
-            )
-
-            added = 0
-            for row in rows:
-                name = row[1]
-                if name not in existing_names:
+                if name not in existing_names and row[2]:
                     channels.append({
                         "name": name,
                         "url": row[2],
@@ -213,36 +208,60 @@ class Orchestrator:
                         "is_fixed": False
                     })
                     existing_names.add(name)
-                    added += 1
-
-            if added > 0:
-                logger.info(f"✅ 从源池补充: {added} 个频道")
-                logger.info(f"📊 补充后总数: {len(channels)} 个频道")
-
+                    added_from_source += 1
+            
+            if added_from_source > 0:
+                logger.info(f"✅ 从源池补充: {added_from_source} 个频道")
+        
+        # 4. 如果频道仍然太少，从源池获取所有pending和verified的源
+        if len(channels) < 30:
+            logger.info("📊 从源池获取所有可用频道...")
+            all_rows = await repo_factory.source._fetchall(
+                "SELECT source_key, channel_name, url FROM source_pool WHERE status IN ('pending', 'verified') LIMIT 500"
+            )
+            
+            added_all = 0
+            for row in all_rows:
+                name = row[1]
+                if name not in existing_names and row[2]:
+                    channels.append({
+                        "name": name,
+                        "url": row[2],
+                        "latency": 9999,
+                        "video_codec": "h264",
+                        "is_fixed": False
+                    })
+                    existing_names.add(name)
+                    added_all += 1
+            
+            if added_all > 0:
+                logger.info(f"✅ 从源池补充所有可用: {added_all} 个频道")
+        
         if not channels:
             logger.warning("⚠️ 没有频道数据，跳过输出")
             return
-
-        # 4. 合并频道
-        logger.info(f"📊 开始合并 {len(channels)} 个频道...")
+        
+        logger.info(f"📊 总共 {len(channels)} 个频道参与合并")
+        
+        # 5. 合并频道
         merged = merge_channels_by_name(channels)
-
-        # 5. 黑名单过滤
+        
+        # 6. 黑名单过滤
         if settings.enable_blacklist:
             blacklist = get_blacklist_filter()
             merged = blacklist.filter_channels(merged)
-
-        # 6. Demo 筛选
+        
+        # 7. Demo 筛选
         demo_order = parse_demo_order_with_categories() if settings.enable_demo_filter else []
         if demo_order and merged:
             ordered, _ = filter_and_order_by_demo(merged)
         else:
             ordered = merged
-
+        
         if not ordered:
             logger.warning("⚠️ 筛选后无频道")
             return
-
+        
         logger.info(f"📊 最终输出 {len(ordered)} 个频道")
         self.generator.generate_all(ordered, demo_order)
 
