@@ -18,13 +18,26 @@ def channel_key(name: str, url: str) -> str:
 
 class SpeedTester:
     def __init__(self):
-        self.candidate_repo = repo_factory.candidate
-        self.history_repo = repo_factory.history
-        self.cache_repo = repo_factory.cache
-        self.source_repo = repo_factory.source
+        self._candidate_repo = None
+        self._history_repo = None
+        self._cache_repo = None
+        self._source_repo = None
+
+    async def _ensure_repos(self):
+        """确保 repository 已初始化"""
+        if self._cache_repo is None:
+            self._cache_repo = repo_factory.cache
+            self._candidate_repo = repo_factory.candidate
+            self._history_repo = repo_factory.history
+            self._source_repo = repo_factory.source
 
     async def test_batch(self, channels: List[Dict], source_mode: bool = True) -> List[Dict]:
         """测速并返回有效频道列表"""
+        await self._ensure_repos()
+
+        if not channels:
+            return []
+
         semaphore = asyncio.Semaphore(settings.max_workers)
         connector = aiohttp.TCPConnector(limit=settings.max_workers, limit_per_host=5)
         timeout = aiohttp.ClientTimeout(total=settings.http_timeout + 5)
@@ -44,37 +57,49 @@ class SpeedTester:
     async def _test_one(self, session: aiohttp.ClientSession, channel: Dict,
                         semaphore: asyncio.Semaphore, source_mode: bool):
         async with semaphore:
+            await self._ensure_repos()
+
             name = channel.get("name", "未知")
             url = channel.get("url", "")
             key = channel.get("key") or channel_key(name, url)
 
             # 检查缓存
-            cached = await self.cache_repo.get(key, "speed")
+            cached = await self._cache_repo.get(key, "speed")
             if cached:
                 import json
-                data = json.loads(cached)
-                if data.get("latency", 9999) < settings.slow_speed_threshold:
-                    channel["latency"] = data["latency"]
-                    channel["video_codec"] = data.get("video_codec", "")
-                    return channel
+                try:
+                    data = json.loads(cached)
+                    if data.get("latency", 9999) < settings.slow_speed_threshold:
+                        channel["latency"] = data["latency"]
+                        channel["video_codec"] = data.get("video_codec", "")
+                        # 更新候选池
+                        await self._candidate_repo.update_latency(key, data["latency"], True)
+                        await self._history_repo.add(key, url, data["latency"], True)
+                        if source_mode:
+                            await self._source_repo.update_status(key, "verified", data["latency"], True)
+                        return channel
+                except (json.JSONDecodeError, KeyError):
+                    pass
 
             ok, latency, codec = await self._probe(session, url)
+
             if ok and latency < settings.slow_speed_threshold:
                 channel["latency"] = latency
                 channel["video_codec"] = codec
                 # 更新候选池
-                await self.candidate_repo.update_latency(key, latency, True)
-                await self.history_repo.add(key, url, latency, True)
-                await self.cache_repo.set(key, f'{{"latency": {latency}, "video_codec": "{codec}"}}',
+                await self._candidate_repo.update_latency(key, latency, True)
+                await self._history_repo.add(key, url, latency, True)
+                import json
+                await self._cache_repo.set(key, json.dumps({"latency": latency, "video_codec": codec}),
                                           "speed", settings.cache_speed_hours)
                 if source_mode:
-                    await self.source_repo.update_status(key, "verified", latency, True)
+                    await self._source_repo.update_status(key, "verified", latency, True)
                 return channel
             else:
-                await self.candidate_repo.update_latency(key, latency, False)
-                await self.history_repo.add(key, url, latency, False)
+                await self._candidate_repo.update_latency(key, latency, False)
+                await self._history_repo.add(key, url, latency, False)
                 if source_mode:
-                    await self.source_repo.update_status(key, "failed", 0, False)
+                    await self._source_repo.update_status(key, "failed", 0, False)
                 return None
 
     async def _probe(self, session: aiohttp.ClientSession, url: str) -> Tuple[bool, int, str]:
@@ -96,13 +121,26 @@ class SpeedTester:
             dl_time = time.time() - start_dl
             total_latency = head_latency + int(dl_time * 1000)
 
+            # 检测是否是有效的视频流
             if data.startswith(b'#EXTM3U') or b'#EXTINF' in data:
                 return True, total_latency, "h264"
             if any(data.startswith(sig) for sig in
-                   [b'\x00\x00\x00\x18ftyp', b'\x00\x00\x00\x1cftyp', b'\x1a\x45\xdf\xa3', b'\x47\x40\x00', b'FLV']):
+                   [b'\x00\x00\x00\x18ftyp', b'\x00\x00\x00\x1cftyp',
+                    b'\x1a\x45\xdf\xa3', b'\x47\x40\x00', b'FLV']):
                 return True, total_latency, "h264"
 
+            # 检查是否返回了 HTML 错误页面
+            data_lower = data.lower()
+            error_keywords = [b'<html', b'<!doctype', b'403', b'forbidden',
+                              b'access denied', b'404', b'not found']
+            for kw in error_keywords:
+                if kw in data_lower:
+                    return False, total_latency, ""
+
             return False, total_latency, ""
+        except asyncio.TimeoutError:
+            logger.debug(f"⏱️ 测速超时: {url[:60]}...")
+            return False, 0, ""
         except Exception as e:
-            logger.debug(f"测速失败 {url}: {e}")
+            logger.debug(f"测速失败 {url[:60]}...: {e}")
             return False, 0, ""
