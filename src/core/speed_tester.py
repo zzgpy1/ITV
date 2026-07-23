@@ -5,7 +5,6 @@ import time
 import json
 import hashlib
 from typing import List, Dict, Tuple
-from tqdm.asyncio import tqdm
 from src.settings import settings
 from src.repositories import repo_factory
 from src.logger import logger
@@ -23,14 +22,12 @@ class SpeedTester:
         self.cache_repo = None
 
     async def _ensure_repos(self):
-        """确保 repository 已初始化"""
         if self.candidate_repo is None:
             self.candidate_repo = repo_factory.candidate
             self.history_repo = repo_factory.history
             self.cache_repo = repo_factory.cache
 
     async def test_batch(self, channels: List[Dict]) -> List[Dict]:
-        """测速并返回有效频道列表，同时更新候选池和缓存"""
         if not channels:
             return []
 
@@ -40,16 +37,24 @@ class SpeedTester:
         timeout = aiohttp.ClientTimeout(total=settings.http_timeout + 5)
 
         valid = []
+        total = len(channels)
+        completed = 0
+        last_log = 0
+
         async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
             tasks = [self._test_one(session, ch, semaphore) for ch in channels]
-            pbar = tqdm(total=len(tasks), desc="🚀 测速")
+            # 使用 asyncio.as_completed 逐个处理
             for coro in asyncio.as_completed(tasks):
                 result = await coro
-                pbar.update(1)
+                completed += 1
                 if result:
                     valid.append(result)
-            pbar.close()
-        logger.info(f"测速完成: {len(valid)}/{len(channels)} 有效")
+                # 每完成 50 个输出一次进度
+                if completed - last_log >= 50 or completed == total:
+                    logger.info(f"⏳ 测速进度: {completed}/{total}  (有效: {len(valid)})")
+                    last_log = completed
+
+        logger.info(f"✅ 测速完成: {len(valid)}/{total} 有效")
         return valid
 
     async def _test_one(self, session: aiohttp.ClientSession, channel: Dict, semaphore: asyncio.Semaphore):
@@ -61,7 +66,7 @@ class SpeedTester:
 
             key = channel_key(name, url)
 
-            # 快速失败缓存：最近失败过则跳过（1小时内）
+            # 快速失败缓存（1小时内失败过跳过）
             fail_cache_key = f"fail_{key}"
             try:
                 fail_cached = await self.cache_repo.get(fail_cache_key, "fail")
@@ -70,7 +75,7 @@ class SpeedTester:
             except Exception:
                 pass
 
-            # 检查测速缓存
+            # 测速结果缓存
             try:
                 cached = await self.cache_repo.get(key, "speed")
                 if cached:
@@ -103,23 +108,19 @@ class SpeedTester:
                 try:
                     await self.candidate_repo.update_latency(key, latency, False)
                     await self.history_repo.add(key, url, latency, False)
-                    # 写入失败缓存，TTL 1小时
-                    await self.cache_repo.set(fail_cache_key, "1", "fail", 1)
+                    await self.cache_repo.set(fail_cache_key, "1", "fail", 1)  # 失败缓存1小时
                 except Exception as e:
                     logger.warning(f"更新失败缓存失败: {e}")
                 return None
 
     async def _probe(self, session: aiohttp.ClientSession, url: str) -> Tuple[bool, int, str]:
-        """探测单个URL，返回 (是否有效, 延迟ms, 视频编码)"""
         try:
             start = time.time()
-            # HEAD 快速检查
             async with session.head(url, timeout=5, allow_redirects=True, headers=HEADERS) as resp:
                 if resp.status != 200:
                     return False, 0, ""
             head_latency = int((time.time() - start) * 1000)
 
-            # GET 下载片段
             start_dl = time.time()
             async with session.get(url, timeout=settings.http_timeout,
                                    headers={**HEADERS, "Range": f"bytes=0-{settings.download_chunk_size-1}"}) as resp:
@@ -132,15 +133,12 @@ class SpeedTester:
             dl_time = time.time() - start_dl
             total_latency = head_latency + int(dl_time * 1000)
 
-            # 简单检测视频流
+            # 检测视频流
             is_valid = False
             codec = ""
-
-            # M3U8 检测
             if data.startswith(b'#EXTM3U') or b'#EXTINF' in data:
                 is_valid = True
                 codec = "h264"
-            # 常见容器格式
             elif any(data.startswith(sig) for sig in [
                 b'\x00\x00\x00\x18ftyp', b'\x00\x00\x00\x1cftyp',
                 b'\x1a\x45\xdf\xa3', b'\x47\x40\x00', b'FLV'
@@ -148,7 +146,6 @@ class SpeedTester:
                 is_valid = True
                 codec = "h264"
             else:
-                # 尝试检测是否是播放列表（文本）
                 try:
                     text = data.decode('utf-8', errors='ignore').lower()
                     if '#extm3u' in text or '#extinf' in text:
