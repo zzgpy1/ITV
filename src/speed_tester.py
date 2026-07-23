@@ -19,10 +19,9 @@ def channel_key(name: str, url: str) -> str:
 
 class SpeedTester:
     """测速器 - 每次使用时从 repo_factory 获取 repository"""
-    
+
     async def _get_repos(self):
         """获取 repository 实例，确保已初始化"""
-        # 如果 repo_factory 未初始化，等待初始化
         if repo_factory.cache is None:
             await repo_factory.init()
         return repo_factory.cache, repo_factory.candidate, repo_factory.history, repo_factory.source
@@ -78,7 +77,6 @@ class SpeedTester:
                     if data.get("latency", 9999) < settings.slow_speed_threshold:
                         channel["latency"] = data["latency"]
                         channel["video_codec"] = data.get("video_codec", "")
-                        # 更新候选池
                         await candidate_repo.update_latency(key, data["latency"], True)
                         await history_repo.add(key, url, data["latency"], True)
                         if source_mode:
@@ -92,7 +90,6 @@ class SpeedTester:
             if ok and latency < settings.slow_speed_threshold:
                 channel["latency"] = latency
                 channel["video_codec"] = codec
-                # 更新候选池
                 await candidate_repo.update_latency(key, latency, True)
                 await history_repo.add(key, url, latency, True)
                 await cache_repo.set(key, json.dumps({"latency": latency, "video_codec": codec}),
@@ -138,14 +135,19 @@ class SpeedTester:
                     b'\x1a\x45\xdf\xa3', b'\x47\x40\x00', b'FLV']):
                 return True, total_latency, "h264"
 
-            # 检查是否返回了 HTML 错误页面
-            data_lower = data.lower()
-            error_keywords = [b'<html', b'<!doctype', b'403', b'forbidden',
-                              b'access denied', b'404', b'not found',
-                              b'请勿滥用', b'该资源暂不可用']
-            for kw in error_keywords:
-                if kw in data_lower:
-                    return False, total_latency, ""
+            # 检查是否返回了 HTML 错误页面（使用字符串解码后检测）
+            try:
+                data_text = data.decode('utf-8', errors='ignore').lower()
+                error_keywords = [
+                    '<html', '<!doctype', '403', 'forbidden',
+                    'access denied', '404', 'not found',
+                    '请勿滥用', '该资源暂不可用'
+                ]
+                for kw in error_keywords:
+                    if kw in data_text:
+                        return False, total_latency, ""
+            except Exception:
+                pass
 
             return False, total_latency, ""
         except asyncio.TimeoutError:
