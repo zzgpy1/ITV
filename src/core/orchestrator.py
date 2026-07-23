@@ -212,7 +212,7 @@ class Orchestrator:
             logger.warning("⚠️ 筛选后无频道")
             return
 
-        # 生成输出
+        # 生成输出（已移除智能补充分类）
         self.generator.generate_all(ordered, demo_order)
 
 
