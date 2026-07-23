@@ -100,8 +100,9 @@ jobs:
           # 确保在 main 分支
           git checkout main || git checkout -b main
 
-          # 添加所有变更（包括 output/ 和 data/）
-          git add output/ data/ || true
+          # 强制添加 output 目录（即使被 .gitignore 忽略）
+          git add -f output/ || true
+          git add data/ || true
           git add -A
 
           if [[ -n $(git status --porcelain) ]]; then
@@ -122,7 +123,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # 先确保 main 分支最新
+          # 确保 main 分支最新
           git fetch origin main
           
           # 切换到 gh-pages 分支
@@ -138,18 +139,11 @@ jobs:
             git push origin gh-pages
           fi
           
-          # 从 main 分支检出 output 目录（使用完整路径）
+          # 从 main 分支检出 output 目录
           echo "📂 从 main 分支复制 output 目录..."
+          git checkout main -- output/ 2>/dev/null || echo "⚠️ 无法从 main 检出 output"
           
-          # 方法1: 使用 git checkout 从 main 分支检出
-          if git ls-tree -r main --name-only | grep -q "^output/"; then
-            git checkout main -- output/
-            echo "✅ 从 main 分支检出 output 目录成功"
-          else
-            echo "⚠️ main 分支没有 output 目录，跳过检出"
-          fi
-          
-          # 如果 output 目录存在且有文件，提交到 gh-pages
+          # 如果 output 目录存在，提交到 gh-pages
           if [[ -d "output" ]] && [[ -n "$(ls -A output 2>/dev/null)" ]]; then
             echo "📝 提交 output 到 gh-pages..."
             git add output/
@@ -161,10 +155,9 @@ jobs:
               echo "✅ gh-pages 已是最新，无需提交"
             fi
           else
-            echo "⚠️ output 目录为空或不存在，跳过 gh-pages 同步"
-            # 如果 output 目录不存在，创建占位文件
+            echo "⚠️ output 目录不存在或为空，创建占位文件"
             mkdir -p output
-            echo "# 暂无输出" > output/placeholder.txt
+            echo "# 暂无输出，请等待采集完成" > output/placeholder.txt
             git add output/
             git commit -m "创建 output 占位目录" || true
             git push origin gh-pages || true
