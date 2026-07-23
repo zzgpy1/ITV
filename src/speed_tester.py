@@ -135,7 +135,7 @@ class SpeedTester:
                     b'\x1a\x45\xdf\xa3', b'\x47\x40\x00', b'FLV']):
                 return True, total_latency, "h264"
 
-            # 检查是否返回了 HTML 错误页面（使用字符串解码后检测）
+            # 检查是否返回了 HTML 错误页面
             try:
                 data_text = data.decode('utf-8', errors='ignore').lower()
                 error_keywords = [
