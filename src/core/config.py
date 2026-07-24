@@ -2,10 +2,18 @@
 """统一配置管理"""
 
 import os
+import json
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
-import yaml
+
+# 尝试导入 yaml，如果失败则使用 json 后备
+try:
+    import yaml
+    HAS_YAML = True
+except ImportError:
+    HAS_YAML = False
+    import json
 
 
 @dataclass
@@ -58,8 +66,18 @@ class AppConfig:
     fixed_optimization_threshold: int = 200
     
     # IPTV 源
-    raw_sources: List[str] = field(default_factory=list)
-    direct_sources: List[str] = field(default_factory=list)
+    raw_sources: List[str] = field(default_factory=lambda: [
+        "https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/cn.m3u",
+        "https://raw.githubusercontent.com/iptv-org/iptv/gh-pages/countries/cn.m3u",
+        "https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.txt",
+        "https://raw.githubusercontent.com/zzgpy1/Collect-IPTV/main/best_sorted.m3u",
+        "https://raw.githubusercontent.com/zzgpy1/ipv6-iptv/master/tv/iptv4.txt",
+        "https://raw.githubusercontent.com/CCSH/IPTV/refs/heads/main/live.txt",
+        "https://raw.githubusercontent.com/kakaxi-1/IPTV/main/iptv.txt",
+    ])
+    direct_sources: List[str] = field(default_factory=lambda: [
+        "https://tv.19860519.xyz/abc123",
+    ])
     
     # 文件路径
     subscribe_file: Path = field(default_factory=lambda: Path("config/subscribe.txt"))
@@ -82,11 +100,15 @@ class AppConfig:
         config_path = config_path or Path("config/config.yaml")
         data = {}
         
-        # 1. 从 YAML 加载
+        # 1. 从 YAML 或 JSON 加载
         if config_path.exists():
             try:
-                with open(config_path, 'r', encoding='utf-8') as f:
-                    data = yaml.safe_load(f) or {}
+                if HAS_YAML:
+                    with open(config_path, 'r', encoding='utf-8') as f:
+                        data = yaml.safe_load(f) or {}
+                else:
+                    with open(config_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
             except Exception as e:
                 print(f"⚠️ 加载配置文件失败: {e}")
         
@@ -113,11 +135,13 @@ class AppConfig:
         for env_key, config_key in env_mapping.items():
             if env_key in os.environ:
                 value = os.environ[env_key]
-                if isinstance(getattr(cls, config_key, None), bool):
+                # 获取默认值类型
+                default_val = getattr(cls, config_key, None)
+                if isinstance(default_val, bool):
                     value = value.lower() in ('true', '1', 'yes')
-                elif isinstance(getattr(cls, config_key, None), int):
+                elif isinstance(default_val, int):
                     value = int(value)
-                elif isinstance(getattr(cls, config_key, None), float):
+                elif isinstance(default_val, float):
                     value = float(value)
                 data[config_key] = value
         
