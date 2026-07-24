@@ -3,6 +3,7 @@
 
 import asyncio
 import time
+from datetime import datetime
 import aiohttp
 from typing import Dict, List, Optional, Tuple
 
@@ -23,12 +24,17 @@ class SpeedTester:
         self.config = get_config()
         self.db = None
     
+    async def _ensure_db(self):
+        if self.db is None:
+            self.db = await get_db()
+    
     async def probe_channel(self, channel: Dict, session: aiohttp.ClientSession) -> Tuple[Dict, int, bool, float]:
         """探测单个频道"""
         url = channel["url"]
         
+        await self._ensure_db()
+        
         # 检查黑名单
-        self.db = await get_db()
         blacklisted = await self.db.fetch_one(
             "SELECT url FROM blacklist WHERE url = ?",
             (url,)
@@ -129,7 +135,7 @@ class SpeedTester:
         if not channels:
             return []
         
-        self.db = await get_db()
+        await self._ensure_db()
         config = get_config()
         semaphore = asyncio.Semaphore(config.max_workers)
         http_client = await get_http_client()
