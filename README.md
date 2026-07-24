@@ -1,20 +1,19 @@
-# IPTV 智能管理平台（自治版）
+# IPTV 智能整理平台
 
-自动采集、测速、验证、分类、合并并输出 M3U/TXT/JSON，支持自治模式自动替换失效源。
+全自动 IPTV 直播源采集、测速、验证、分类、合并与自治管理平台。
+
+## 功能特性
+
+- 多源聚合 – 同时拉取多个公开 IPTV 源，自动解析 M3U / TXT 格式
+- 双重测速 – HTTP 快速探测 + ffmpeg 深度验证
+- 智能分类 – 按央视、卫视、地方（省份）、港澳台自动归类
+- 固定源保护 – 用户可预设优质源，系统永不自动替换
+- 自治模式 – 源池 → 候选观察 → 稳定提升 → 质量监控
+- 多格式输出 – tv.m3u、tv.txt、tv_multi.m3u、channels.json
 
 ## 快速开始
-1. Fork 仓库
-2. 配置 `config/demo.txt` 和 `config/alias.txt`（可选）
-3. GitHub Actions 自动运行，或手动执行 `python -m src.run`
 
-## 输出文件
-- `output/tv.m3u` 标准 M3U
-- `output/tv.txt` TXT 格式
-- `output/tv_multi.m3u` 多源 M3U
-- `output/channels.json` JSON API
+### 使用 Docker
 
-## 配置
-所有配置通过环境变量或 `.env` 文件，默认值见 `src/settings.py`。
-
-## 免责声明
-仅供学习，请勿用于商业用途。
+```bash
+docker-compose up -d
