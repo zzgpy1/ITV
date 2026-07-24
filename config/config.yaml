@@ -1,0 +1,68 @@
+# config/config.yaml
+# IPTV 智能整理平台配置文件
+
+# ========== 路径配置 ==========
+root_dir: .
+data_dir: data
+output_dir: output
+
+# ========== 性能配置 ==========
+max_workers: 20
+timeout: 8
+http_timeout: 8
+
+# ========== 功能开关 ==========
+autonomous_mode: true
+enable_demo_filter: true
+enable_alias: true
+enable_blacklist: true
+database_enable: true
+ffmpeg_enable: true
+ffmpeg_mode: deep
+enable_json_output: true
+enable_lite_version: true
+
+# ========== 缓存 ==========
+cache_hours: 24
+cache_raw_hours: 48
+cache_speed_hours: 24
+ffprobe_cache_hours: 168
+
+# ========== 合并 ==========
+max_sources_per_channel: 3
+
+# ========== 测速 ==========
+slow_speed_threshold: 3000
+download_chunk_size: 262144
+max_retry_before_blacklist: 2
+
+# ========== 候选源 ==========
+candidate_min_success: 3
+candidate_min_success_rate: 0.5
+candidate_max_latency: 3000
+auto_promote_threshold: 3
+
+# ========== 固定源优化 ==========
+enable_fixed_optimization: true
+fixed_optimization_threshold: 200
+
+# ========== IPTV 源 ==========
+raw_sources:
+  - https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/cn.m3u
+  - https://raw.githubusercontent.com/iptv-org/iptv/gh-pages/countries/cn.m3u
+  - https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.txt
+  - https://raw.githubusercontent.com/zzgpy1/Collect-IPTV/main/best_sorted.m3u
+  - https://raw.githubusercontent.com/zzgpy1/ipv6-iptv/master/tv/iptv4.txt
+  - https://raw.githubusercontent.com/CCSH/IPTV/refs/heads/main/live.txt
+  - https://raw.githubusercontent.com/kakaxi-1/IPTV/main/iptv.txt
+
+direct_sources:
+  - https://tv.19860519.xyz/abc123
+
+# ========== 代理 ==========
+enable_github_proxy: false
+github_proxy_timeout: 15
+github_raw_proxies:
+  - https://ghproxy.net/
+  - https://gh-proxy.19860519.xyz/
+  - https://raw.kkgithub.com/
