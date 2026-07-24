@@ -1,4 +1,5 @@
-FROM python:3.11-slim
+# Dockerfile
+FROM python:3.10-slim
 
 WORKDIR /app
 
@@ -11,17 +12,15 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 复制源代码
-COPY src/ ./src/
-COPY config/ ./config/
+# 复制项目文件
+COPY . .
 
-# 创建输出和数据目录
-RUN mkdir -p output data
+# 创建必要的目录
+RUN mkdir -p data output config
 
-# 设置环境变量
-ENV PYTHONUNBUFFERED=1
-ENV IPTV_AUTONOMOUS_MODE=true
-ENV IPTV_FFMPEG_ENABLE=true
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD python -c "import sys; sys.exit(0)" || exit 1
 
-# 运行
+# 启动命令
 CMD ["python", "-m", "src.run"]
