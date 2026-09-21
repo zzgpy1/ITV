@@ -21,12 +21,14 @@ AD_PATTERNS = [r'ads?\.', r'adserver', r'doubleclick', r'googlead', r'googlesynd
 INVALID_CONTENT_PATTERNS = [r'<html', r'<!DOCTYPE', r'404 not found', r'access denied',
                             r'forbidden', r'请勿滥用', r'该资源暂不可用', r'live\.twitch\.tv/embed', r'youtube\.com']
 
+
 def is_suspicious_url(url: str) -> bool:
     url_lower = url.lower()
     for pattern in AD_PATTERNS:
         if re.search(pattern, url_lower):
             return True
     return False
+
 
 async def probe_channel_advanced(session: aiohttp.ClientSession, channel: dict, db):
     url = channel["url"]
@@ -97,19 +99,41 @@ async def probe_channel_advanced(session: aiohttp.ClientSession, channel: dict, 
         await db.save_speed_history(key, url, 0, False)
         return channel, 0, False, 0, False
 
+
 async def test_channels_concurrent(channels_dict: dict) -> list:
     db = await get_db_cache()
     channels = list(channels_dict.values())
     valid = []
     semaphore = asyncio.Semaphore(config.max_workers)
 
+    # === 新增：提前过滤黑名单并统计，避免静默丢弃 ===
+    blacklisted_urls = []
+    normal_channels = []
+    for ch in channels:
+        url = ch.get("url")
+        if not url or not isinstance(url, str):
+            continue
+        if await db.is_blacklisted(url):
+            blacklisted_urls.append(url)
+        else:
+            normal_channels.append(ch)
+
+    total_blacklist_in_db = await db.get_blacklist_count()
+    if blacklisted_urls:
+        logger.warning(
+            f"⛔ 黑名单跳过 {len(blacklisted_urls)}/{len(channels)} 个源"
+            f"（DB黑名单总数={total_blacklist_in_db}）"
+        )
+        # 打印前 5 个被跳过的 URL，便于诊断
+        for u in blacklisted_urls[:5]:
+            logger.warning(f"     - {u[:100]}")
+
+    if not normal_channels:
+        logger.warning("⚠️ 所有源都被黑名单拦截，无源可测速")
+        return []
+
     async with HttpClient.session_context() as session:
-        tasks = []
-        for ch in channels:
-            if await db.is_blacklisted(ch["url"]):
-                logger.debug(f"⛔ 黑名单跳过: {ch['url'][:80]}")
-                continue
-            tasks.append(probe_channel_advanced(session, ch, db))
+        tasks = [probe_channel_advanced(session, ch, db) for ch in normal_channels]
 
         async def probe_with_semaphore(task):
             async with semaphore:
@@ -130,5 +154,8 @@ async def test_channels_concurrent(channels_dict: dict) -> list:
                     valid.append(ch)
         pbar.close()
 
-    logger.info(f"📊 测速完成，有效频道: {len(valid)} 个")
+    logger.info(
+        f"📊 测速完成，有效频道: {len(valid)}/{len(normal_channels)}"
+        f"（黑名单跳过 {len(blacklisted_urls)}）"
+    )
     return valid
