@@ -6,9 +6,15 @@ from pathlib import Path
 from src.config_loader import config
 from src.logger import logger
 
+
 class DatabaseCache:
     _instance = None
     _conn = None
+
+    # 黑名单 TTL（小时）：过期后自动失效，允许自愈
+    BLACKLIST_TTL_HOURS = 6
+    # 失败次数阈值：达到此值才真正视为黑名单
+    BLACKLIST_FAIL_THRESHOLD = 3
 
     def __new__(cls):
         if cls._instance is None:
@@ -161,19 +167,50 @@ class DatabaseCache:
         await self._conn.executemany('''INSERT OR REPLACE INTO channel_cache VALUES (?,?,?,?,?,?)''', data)
         await self._conn.commit()
 
-    # ------- 黑名单 -------
+    # ------- 黑名单（带 TTL + 自动清理 + 失败阈值） -------
     async def add_to_blacklist(self, url: str, reason: str = "多次失败"):
         if not self._conn: return
-        await self._conn.execute('INSERT OR REPLACE INTO blacklist (url, reason, added_at, fail_count) VALUES (?,?,?,1)',
-                                 (url, reason, datetime.now().isoformat()))
+        await self._conn.execute(
+            'INSERT OR REPLACE INTO blacklist (url, reason, added_at, fail_count) VALUES (?,?,?,1)',
+            (url, reason, datetime.now().isoformat())
+        )
         await self._conn.commit()
 
     async def is_blacklisted(self, url: str) -> bool:
+        """
+        检查是否在黑名单中：
+        - 超过 BLACKLIST_TTL_HOURS 自动过期，返回 False（并顺手清理记录）
+        - 未达到 BLACKLIST_FAIL_THRESHOLD 失败次数，返回 False
+        """
         if not self._conn: return False
-        cursor = await self._conn.execute('SELECT url FROM blacklist WHERE url = ?', (url,))
+        cursor = await self._conn.execute(
+            'SELECT added_at, fail_count FROM blacklist WHERE url = ?', (url,)
+        )
         row = await cursor.fetchone()
         await cursor.close()
-        return row is not None
+        if not row:
+            return False
+
+        added_at_str, fail_count = row[0], row[1]
+        try:
+            added_at = datetime.fromisoformat(added_at_str)
+        except Exception:
+            return False
+
+        # 1) 超过 TTL → 自动过期
+        if datetime.now() - added_at > timedelta(hours=self.BLACKLIST_TTL_HOURS):
+            try:
+                await self._conn.execute('DELETE FROM blacklist WHERE url = ?', (url,))
+                await self._conn.commit()
+            except Exception:
+                pass
+            return False
+
+        # 2) 失败次数达到阈值才算真正黑名单
+        if fail_count is not None and fail_count >= self.BLACKLIST_FAIL_THRESHOLD:
+            return True
+
+        return False
 
     async def increment_fail_count(self, url: str) -> int:
         if not self._conn: return 0
@@ -181,12 +218,34 @@ class DatabaseCache:
         row = await cursor.fetchone()
         if row:
             new = row[0] + 1
-            await self._conn.execute('UPDATE blacklist SET fail_count=?, added_at=? WHERE url=?', (new, datetime.now().isoformat(), url))
+            await self._conn.execute(
+                'UPDATE blacklist SET fail_count=?, added_at=? WHERE url=?',
+                (new, datetime.now().isoformat(), url)
+            )
             await self._conn.commit()
             return new
         else:
             await self.add_to_blacklist(url, "首次失败")
             return 1
+
+    async def cleanup_blacklist(self) -> int:
+        """清理过期的黑名单记录，返回删除条数"""
+        if not self._conn: return 0
+        cutoff = (datetime.now() - timedelta(hours=self.BLACKLIST_TTL_HOURS)).isoformat()
+        cursor = await self._conn.execute('DELETE FROM blacklist WHERE added_at < ?', (cutoff,))
+        await self._conn.commit()
+        deleted = cursor.rowcount or 0
+        if deleted > 0:
+            logger.info(f"🧹 已清理 {deleted} 条过期黑名单（TTL={self.BLACKLIST_TTL_HOURS}h）")
+        return deleted
+
+    async def get_blacklist_count(self) -> int:
+        """获取当前黑名单总数（用于诊断）"""
+        if not self._conn: return 0
+        cursor = await self._conn.execute('SELECT COUNT(*) FROM blacklist')
+        row = await cursor.fetchone()
+        await cursor.close()
+        return row[0] if row else 0
 
     # ------- 候选池 -------
     async def add_to_candidate(self, channel_key: str, name: str, url: str, latency: int = 0):
@@ -327,7 +386,10 @@ class DatabaseCache:
             await self._conn.close()
             self._conn = None
 
+
 _db_cache = None
+
+
 async def get_db_cache() -> DatabaseCache:
     global _db_cache
     if _db_cache is None:
@@ -336,6 +398,7 @@ async def get_db_cache() -> DatabaseCache:
     elif _db_cache._conn is None:
         await _db_cache.init()
     return _db_cache
+
 
 def channel_key(name: str, url: str) -> str:
     return hashlib.md5(f"{name}|{url}".encode()).hexdigest()
