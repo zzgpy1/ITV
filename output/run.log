@@ -9925,3 +9925,310 @@
 2026-11-04 04:09:34,295 - IPTVCollector - INFO -   候选池总数: 2763, 观察中: 183, 稳定: 2567
 2026-11-04 04:09:34,295 - IPTVCollector - INFO -   本次新提升: 0
 2026-11-04 04:09:34,295 - IPTVCollector - INFO - 🎉 全部完成！
+2026-11-04 13:32:53,235 - IPTVCollector - INFO - 🚀 IPTV 智能整理平台启动
+2026-11-04 13:32:53,238 - IPTVCollector - INFO - ✅ 数据库缓存已启用: data/iptv_cache.db
+2026-11-04 13:32:53,242 - IPTVCollector - INFO - 🧹 已清理 813 条过期黑名单（TTL=6h）
+2026-11-04 13:32:53,242 - IPTVCollector - INFO - 📋 当前 DB 黑名单剩余: 0 条（TTL=6h，失败阈值=3）
+2026-11-04 13:32:53,244 - IPTVCollector - INFO - 📌 CCTV-1 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,245 - IPTVCollector - INFO - 📌 CCTV-2 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,246 - IPTVCollector - INFO - 📌 CCTV-3 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,247 - IPTVCollector - INFO - 📌 CCTV-4 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,248 - IPTVCollector - INFO - 📌 CCTV-5 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,249 - IPTVCollector - INFO - 📌 CCTV-5+ 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,250 - IPTVCollector - INFO - 📌 CCTV-6 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,251 - IPTVCollector - INFO - 📌 CCTV-7 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,252 - IPTVCollector - INFO - 📌 CCTV-8 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,254 - IPTVCollector - INFO - 📌 CCTV-9 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,255 - IPTVCollector - INFO - 📌 CCTV-10 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,256 - IPTVCollector - INFO - 📌 CCTV-11 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,257 - IPTVCollector - INFO - 📌 CCTV-12 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,258 - IPTVCollector - INFO - 📌 CCTV-13 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,260 - IPTVCollector - INFO - 📌 CCTV-14 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,261 - IPTVCollector - INFO - 📌 CCTV-15 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,262 - IPTVCollector - INFO - 📌 CCTV-16 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,263 - IPTVCollector - INFO - 📌 CCTV-17 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,265 - IPTVCollector - INFO - 📌 CCTV4欧洲 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,266 - IPTVCollector - INFO - 📌 CCTV4美洲 已设为固定源 (auto_optimize=True)
+2026-11-04 13:32:53,266 - IPTVCollector - INFO - 📌 固定源已同步到数据库
+2026-11-04 13:32:53,266 - IPTVCollector - INFO - 📋 使用 12 个源
+2026-11-04 13:32:53,305 - IPTVCollector - INFO - 📥 解析到 1505 个频道
+2026-11-04 13:35:31,616 - IPTVCollector - INFO - 📊 测速完成，有效频道: 583/1505（黑名单跳过 0）
+2026-11-04 13:35:31,616 - IPTVCollector - INFO - 📊 通过测速的频道数: 583
+2026-11-04 13:35:36,233 - IPTVCollector - INFO - 🔍 ffmpeg 深度验证: 0 个需验证，575 个来自缓存/HTTP
+2026-11-04 13:35:36,233 - IPTVCollector - INFO - ✅ ffmpeg 验证完成: 通过 575/583 个频道
+2026-11-04 13:35:36,233 - IPTVCollector - INFO - 📊 通过ffmpeg验证的频道数: 575
+2026-11-04 13:35:36,245 - IPTVCollector - INFO - 🔄 固定源自动优化: 新昌休闲影视 [Not 24/7] -> http://nn.7x9d.cn/地方台8563/海南.php?id=sepd...
+2026-11-04 13:35:36,246 - IPTVCollector - INFO - 🔄 固定源自动优化: 福州电视台少儿频道 -> http://nn.7x9d.cn/地方台8563/海南.php?id=sepd...
+2026-11-04 13:35:36,246 - IPTVCollector - INFO - 🔄 固定源自动优化: 海南自贸 -> http://nn.7x9d.cn/地方台8563/海南.php?id=sepd...
+2026-11-04 13:35:36,246 - IPTVCollector - INFO - 🔄 固定源自动优化: 河北农民 -> http://nn.7x9d.cn/地方台8563/海南.php?id=sepd...
+2026-11-04 13:35:36,246 - IPTVCollector - INFO - 📌 已使用 301 个固定源（含自动优化）
+2026-11-04 13:35:36,246 - IPTVCollector - INFO - 📊 合并完成: 共 424 个频道
+2026-11-04 13:35:36,246 - IPTVCollector - INFO - 📊 合并后的频道数: 424
+2026-11-04 13:35:36,283 - IPTVCollector - INFO - 📊 黑名单过滤后: 391
+2026-11-04 13:35:36,285 - IPTVCollector - INFO - 📋 从 demo.txt 解析到 3541 个有序频道
+2026-11-04 13:35:36,288 - IPTVCollector - INFO - 📋 从 demo.txt 解析到 3541 个有序频道
+2026-11-04 13:37:40,847 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 汪清
+2026-11-04 13:37:40,847 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 舒兰新闻
+2026-11-04 13:37:40,847 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 磐石
+2026-11-04 13:37:40,849 - IPTVCollector - INFO - 🌏 自动追加: 通化县 -> ☘️吉林频道
+2026-11-04 13:37:40,849 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Arirang
+2026-11-04 13:37:40,849 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 辉南新闻
+2026-11-04 13:37:40,849 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 2024年春晚
+2026-11-04 13:37:40,849 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Beautiful Life TV
+2026-11-04 13:37:40,850 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Angel TV Chinese
+2026-11-04 13:37:40,851 - IPTVCollector - INFO - 🌏 自动追加: 长白山电视台 -> ☘️吉林频道
+2026-11-04 13:37:40,851 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': CNA
+2026-11-04 13:37:40,851 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 龙井
+2026-11-04 13:37:40,852 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Dali TV
+2026-11-04 13:37:40,852 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': ABN China
+2026-11-04 13:37:40,852 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Good
+2026-11-04 13:37:40,852 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Good 2
+2026-11-04 13:37:40,852 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Anhui TV
+2026-11-04 13:37:40,852 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Baicheng TV [Geo-blocked]
+2026-11-04 13:37:40,852 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Newsmax
+2026-11-04 13:37:40,853 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Bread TV
+2026-11-04 13:37:40,853 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Pet Club TV
+2026-11-04 13:37:40,853 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': RT Arabic
+2026-11-04 13:37:40,853 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': RT DE
+2026-11-04 13:37:40,853 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': RT Español
+2026-11-04 13:37:40,853 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Supreme Master TV
+2026-11-04 13:37:40,854 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': RT Français
+2026-11-04 13:37:40,854 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Trace Sports
+2026-11-04 13:37:40,854 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 大立电视台
+2026-11-04 13:37:40,854 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': TVB News
+2026-11-04 13:37:40,854 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': TVB Plus
+2026-11-04 13:37:40,854 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Wild Earth
+2026-11-04 13:37:40,855 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': WionNews
+2026-11-04 13:37:40,855 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': RT News
+2026-11-04 13:37:40,855 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 倩女幽魂妖魔道
+2026-11-04 13:37:40,855 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 倩女幽魂道道道
+2026-11-04 13:37:40,855 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 倩女幽魂人间道
+2026-11-04 13:37:40,855 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Chaozhou Public Channel
+2026-11-04 13:37:40,855 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Chifeng Comprehensive News Chanel
+2026-11-04 13:37:40,856 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Chuxiong News Channel [Not 24/7]
+2026-11-04 13:37:40,856 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Guangdong Satellite TV
+2026-11-04 13:37:40,856 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Guangxi Variety & Travel Channel
+2026-11-04 13:37:40,856 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 新昌新聞綜合 [Not 24/7]
+2026-11-04 13:37:40,856 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Guangzhou TV
+2026-11-04 13:37:40,856 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Harbin Comprehensive News Channel
+2026-11-04 13:37:40,857 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Harbin Movie Channel
+2026-11-04 13:37:40,857 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Hebi News Channel [Not 24/7]
+2026-11-04 13:37:40,857 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Hunan Economy Channel
+2026-11-04 13:37:40,857 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Hunan TV
+2026-11-04 13:37:40,857 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 龙门飞甲
+2026-11-04 13:37:40,857 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 武进新闻 [Not 24/7]
+2026-11-04 13:37:40,857 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 武进生活 [Not 24/7]
+2026-11-04 13:37:40,857 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 伊犁经济法制
+2026-11-04 13:37:40,858 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 江津经济生活
+2026-11-04 13:37:40,858 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 玛纳斯
+2026-11-04 13:37:40,858 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 玛纳斯综合
+2026-11-04 13:37:40,858 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Kangba TV
+2026-11-04 13:37:40,858 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Lanzhou Culture & Tourism Channel
+2026-11-04 13:37:40,858 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 春晚2025
+2026-11-04 13:37:40,858 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 春晚2024
+2026-11-04 13:37:40,859 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 浙江钱江都市
+2026-11-04 13:37:40,859 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': QTV-1
+2026-11-04 13:37:40,859 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 钱江都市
+2026-11-04 13:37:40,859 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 蕭山生活頻道 [Not 24/7]
+2026-11-04 13:37:40,859 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 通海电视台
+2026-11-04 13:37:40,859 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 辽新闻综合 [Geo-blocked]
+2026-11-04 13:37:40,859 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': QTV-2
+2026-11-04 13:37:40,859 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 象山新闻综合
+2026-11-04 13:37:40,860 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 餘姚姚江文化 [Not 24/7]
+2026-11-04 13:37:40,860 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 靖江新闻綜合 [Not 24/7]
+2026-11-04 13:37:40,860 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 黄果树六角亭瀑布
+2026-11-04 13:37:40,861 - IPTVCollector - INFO - 🌏 自动追加: 鹤壁新闻综合 [Not 24/7] -> ☘️河南频道
+2026-11-04 13:37:40,862 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': CGTN Global Biz
+2026-11-04 13:37:40,862 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Discovering China
+2026-11-04 13:37:40,862 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': China Travel
+2026-11-04 13:37:40,862 - IPTVCollector - INFO - 🌏 自动追加: 福州广电视台都市生活频道 -> ☘️福建频道
+2026-11-04 13:37:40,863 - IPTVCollector - INFO - 🌏 自动追加: 福州电视台少儿频道 -> ☘️福建频道
+2026-11-04 13:37:40,863 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': CGTN Spanish
+2026-11-04 13:37:40,863 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Tonghua TV
+2026-11-04 13:37:40,863 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Dongguan Comprehensive News Channel
+2026-11-04 13:37:40,864 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Xinjiang TV 3
+2026-11-04 13:37:40,864 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Xinjiang TV 2
+2026-11-04 13:37:40,864 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': CGTN西语
+2026-11-04 13:37:40,864 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': CGTN阿语
+2026-11-04 13:37:40,864 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': CGTN记录
+2026-11-04 13:37:40,865 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 熊猫直
+2026-11-04 13:37:40,865 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 第一财经
+2026-11-04 13:37:40,865 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 双辽
+2026-11-04 13:37:40,865 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 九台
+2026-11-04 13:37:40,865 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 耀才财经
+2026-11-04 13:37:40,865 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': QTV-4
+2026-11-04 13:37:40,866 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': QTV-6
+2026-11-04 13:37:40,866 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 韩国电影2
+2026-11-04 13:37:40,866 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 韩国电影1
+2026-11-04 13:37:40,866 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': VoA TV China
+2026-11-04 13:37:40,866 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Siping TV
+2026-11-04 13:37:40,866 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Xinjiang TV 5
+2026-11-04 13:37:40,866 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Xinjiang TV 8
+2026-11-04 13:37:40,867 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': TV BRICS Chinese
+2026-11-04 13:37:40,867 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Zhejiang International Channel
+2026-11-04 13:37:40,867 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': FZTV3
+2026-11-04 13:37:40,867 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Bread TV面包台
+2026-11-04 13:37:40,867 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 江津新闻
+2026-11-04 13:37:40,867 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': CND Film Middle School Channel
+2026-11-04 13:37:40,868 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Hebei TV
+2026-11-04 13:37:40,868 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Nei Monggol TV [Not 24/7]
+2026-11-04 13:37:40,868 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Nei Monggol TV 2 Mongolian Culture Channel [Not 24/7]
+2026-11-04 13:37:40,868 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': VOA美国之音
+2026-11-04 13:37:40,868 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Jiangsu Public & News Channel
+2026-11-04 13:37:40,868 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': Zhejiang TV International
+2026-11-04 13:37:40,869 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 上虞經濟文化 [Not 24/7]
+2026-11-04 13:37:40,869 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 上虞1新闻综合 [Not 24/7]
+2026-11-04 13:37:40,869 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 兴隆综合
+2026-11-04 13:37:40,869 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 韩国EBS少儿
+2026-11-04 13:37:40,869 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': RT Doc-Русский
+2026-11-04 13:37:40,869 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 地理中国
+2026-11-04 13:37:40,869 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 人与自然
+2026-11-04 13:37:40,870 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 音乐欣赏
+2026-11-04 13:37:40,870 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': RT Documentary
+2026-11-04 13:37:40,870 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 1987年春晚
+2026-11-04 13:37:40,870 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 1988年春晚
+2026-11-04 13:37:40,870 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 1989年春晚
+2026-11-04 13:37:40,871 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 环球电视
+2026-11-04 13:37:40,871 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 浙江经济
+2026-11-04 13:37:40,871 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': CGTN-Documentary
+2026-11-04 13:37:40,871 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': CGTN纪录
+2026-11-04 13:37:40,871 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': CGTN英语
+2026-11-04 13:37:40,871 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': CGTN法语
+2026-11-04 13:37:40,871 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 中央电视塔东
+2026-11-04 13:37:40,872 - IPTVCollector - INFO - 🌏 自动追加: 福州广电视台新闻综合频道 -> ☘️福建频道
+2026-11-04 13:37:40,872 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': CHC电影
+2026-11-04 13:37:40,872 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': QTV-3
+2026-11-04 13:37:40,872 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': RT Balkan
+2026-11-04 13:37:40,873 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 云南大理崇圣寺三塔远景
+2026-11-04 13:37:40,873 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 六盘山红军长征景区
+2026-11-04 13:37:40,873 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 安徽黟县芦村远眺
+2026-11-04 13:37:40,873 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 恒山悬空寺全景
+2026-11-04 13:37:40,873 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 月牙泉
+2026-11-04 13:37:40,873 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 泰山太平岭
+2026-11-04 13:37:40,873 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 浙江教科影院
+2026-11-04 13:37:40,874 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 浙江教科影视
+2026-11-04 13:37:40,874 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 萧山新闻综合 [Not 24/7]
+2026-11-04 13:37:40,874 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 萧山生活频道
+2026-11-04 13:37:40,874 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 萧山综合
+2026-11-04 13:37:40,874 - IPTVCollector - INFO - 🌏 自动追加: 镇江二套社会民生 -> ☘️江苏频道
+2026-11-04 13:37:40,874 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 上虞新商都
+2026-11-04 13:37:40,875 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 余杭未来E频道
+2026-11-04 13:37:40,875 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 余杭综合频道
+2026-11-04 13:37:40,875 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 数码时代
+2026-11-04 13:37:40,875 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 浙江教育
+2026-11-04 13:37:40,875 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 浙江遂昌
+2026-11-04 13:37:40,875 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 浙江钱江频道
+2026-11-04 13:37:40,876 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 浙江民生休闲
+2026-11-04 13:37:40,876 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 浙江留学
+2026-11-04 13:37:40,876 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 衢江新闻综合
+2026-11-04 13:37:40,876 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 浙江生活
+2026-11-04 13:37:40,876 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 凤凰中文
+2026-11-04 13:37:40,876 - IPTVCollector - INFO - 📌 未分类频道追加到 '其他': 凤凰资讯
+2026-11-04 13:37:40,876 - IPTVCollector - INFO - 🌏 自动追加: 凤凰香港 -> 🌊港·澳·台
+2026-11-04 13:37:40,878 - IPTVCollector - INFO - 🌏 自动追加: 武汉一台新闻综合 -> ☘️湖北频道
+2026-11-04 13:37:40,878 - IPTVCollector - INFO - 🎯 Demo 筛选：原始 391 -> 匹配/分类后 391 个频道
+2026-11-04 13:37:40,878 - IPTVCollector - INFO - 📊 Demo筛选后: 391
+2026-11-04 13:37:44,642 - IPTVCollector - INFO - 📊 未匹配频道: 180 个，自动归类
+2026-11-04 13:37:44,651 - IPTVCollector - INFO - 📊 Demo 匹配: 211 个，未匹配: 180 个，总计: 391 个
+2026-11-04 13:37:44,651 - IPTVCollector - INFO -    📺央视频道: 30 个频道
+2026-11-04 13:37:44,651 - IPTVCollector - INFO -    📡卫视频道: 156 个频道
+2026-11-04 13:37:44,651 - IPTVCollector - INFO -    ☘️上海频道: 3 个频道
+2026-11-04 13:37:44,651 - IPTVCollector - INFO -    ☘️江苏频道: 16 个频道
+2026-11-04 13:37:44,652 - IPTVCollector - INFO -    ☘️浙江频道: 57 个频道
+2026-11-04 13:37:44,652 - IPTVCollector - INFO -    ☘️安徽频道: 7 个频道
+2026-11-04 13:37:44,652 - IPTVCollector - INFO -    ☘️福建频道: 7 个频道
+2026-11-04 13:37:44,652 - IPTVCollector - INFO -    ☘️山东频道: 2 个频道
+2026-11-04 13:37:44,652 - IPTVCollector - INFO -    ☘️重庆频道: 3 个频道
+2026-11-04 13:37:44,652 - IPTVCollector - INFO -    ☘️四川频道: 6 个频道
+2026-11-04 13:37:44,652 - IPTVCollector - INFO -    ☘️陕西频道: 1 个频道
+2026-11-04 13:37:44,652 - IPTVCollector - INFO -    ☘️甘肃频道: 2 个频道
+2026-11-04 13:37:44,652 - IPTVCollector - INFO -    ☘️青海频道: 2 个频道
+2026-11-04 13:37:44,652 - IPTVCollector - INFO -    ☘️新疆频道: 3 个频道
+2026-11-04 13:37:44,652 - IPTVCollector - INFO -    ☘️广东频道: 7 个频道
+2026-11-04 13:37:44,653 - IPTVCollector - INFO -    ☘️广西频道: 3 个频道
+2026-11-04 13:37:44,653 - IPTVCollector - INFO -    ☘️海南频道: 3 个频道
+2026-11-04 13:37:44,653 - IPTVCollector - INFO -    ☘️北京频道: 1 个频道
+2026-11-04 13:37:44,653 - IPTVCollector - INFO -    ☘️天津频道: 1 个频道
+2026-11-04 13:37:44,653 - IPTVCollector - INFO -    ☘️河北频道: 18 个频道
+2026-11-04 13:37:44,653 - IPTVCollector - INFO -    ☘️山西频道: 4 个频道
+2026-11-04 13:37:44,653 - IPTVCollector - INFO -    ☘️吉林频道: 27 个频道
+2026-11-04 13:37:44,653 - IPTVCollector - INFO -    ☘️黑龙江频道: 9 个频道
+2026-11-04 13:37:44,653 - IPTVCollector - INFO -    ☘️河南频道: 1 个频道
+2026-11-04 13:37:44,653 - IPTVCollector - INFO -    ☘️湖北频道: 2 个频道
+2026-11-04 13:37:44,653 - IPTVCollector - INFO -    ☘️湖南频道: 3 个频道
+2026-11-04 13:37:44,654 - IPTVCollector - INFO -    🌊港·澳·台: 17 个频道
+2026-11-04 13:37:44,655 - IPTVCollector - INFO - ✅ M3U 文件已生成: output/tv.m3u (391 个频道)
+2026-11-04 13:37:44,655 - IPTVCollector - INFO - ✅ TXT 文件已生成: output/tv.txt
+2026-11-04 13:37:44,656 - IPTVCollector - INFO - ✅ 多源 M3U 文件已生成: output/tv_multi.m3u
+2026-11-04 13:37:44,661 - IPTVCollector - INFO - ✅ JSON 文件已生成: output/channels.json
+2026-11-04 13:37:44,661 - IPTVCollector - INFO - ✅ 所有输出文件已生成
+2026-11-04 13:37:44,662 - IPTVCollector - INFO - 🚀 IPTV 自治系统启动
+2026-11-04 13:37:44,670 - IPTVCollector - INFO - ⏭️ 跳过发现阶段
+2026-11-04 13:37:44,671 - IPTVCollector - INFO - ==================================================
+阶段1.5: 测速候选源
+==================================================
+2026-11-04 13:37:44,671 - IPTVCollector - INFO - 📊 候选池中有 215 个源需要测速
+2026-11-04 13:37:44,671 - IPTVCollector - INFO - 🔍 开始测速 215 个候选源...
+2026-11-04 13:37:57,925 - IPTVCollector - INFO - 📊 测速完成，有效频道: 42/73（黑名单跳过 0）
+2026-11-04 13:37:57,925 - IPTVCollector - INFO - ✅ 测速完成: 42/215 个有效
+2026-11-04 13:37:57,925 - IPTVCollector - INFO - 📌 提升 42 个频道的稳定源...
+2026-11-04 13:37:57,927 - IPTVCollector - INFO - ✅ 亳州农村 已提升为稳定源
+2026-11-04 13:37:57,928 - IPTVCollector - INFO - ✅ 蕭山生活頻道 (720p) [Not 24/7] 已提升为稳定源
+2026-11-04 13:37:57,930 - IPTVCollector - INFO - ✅ 上虞文化影院 已提升为稳定源
+2026-11-04 13:37:57,931 - IPTVCollector - INFO - ✅ 长子综合 已提升为稳定源
+2026-11-04 13:37:57,932 - IPTVCollector - INFO - ✅ Zhejiang TV International 已提升为稳定源
+2026-11-04 13:37:57,934 - IPTVCollector - INFO - ✅ 可克达拉综合 已提升为稳定源
+2026-11-04 13:37:57,935 - IPTVCollector - INFO - ✅ 云霄综合 已提升为稳定源
+2026-11-04 13:37:57,937 - IPTVCollector - INFO - ✅ 三明新闻综合 已提升为稳定源
+2026-11-04 13:37:57,938 - IPTVCollector - INFO - ✅ 长影频道 已提升为稳定源
+2026-11-04 13:37:57,939 - IPTVCollector - INFO - ✅ 大宁综合 已提升为稳定源
+2026-11-04 13:37:57,941 - IPTVCollector - INFO - ✅ 福州广电视台新闻综合频道 已提升为稳定源
+2026-11-04 13:37:57,942 - IPTVCollector - INFO - ✅ 普陀电视台 已提升为稳定源
+2026-11-04 13:37:57,944 - IPTVCollector - INFO - ✅ Hebei TV (2160p) 已提升为稳定源
+2026-11-04 13:37:57,945 - IPTVCollector - INFO - ✅ 黑龙江新闻 已提升为稳定源
+2026-11-04 13:37:57,947 - IPTVCollector - INFO - ✅ 奎屯汉语 已提升为稳定源
+2026-11-04 13:37:57,948 - IPTVCollector - INFO - ✅ 哈尔滨娱乐 已提升为稳定源
+2026-11-04 13:37:57,951 - IPTVCollector - INFO - ✅ Jingmen Comprehensive News Channel 已提升为稳定源
+2026-11-04 13:37:57,952 - IPTVCollector - INFO - ✅ Lanzhou Comprehensive News Channel 已提升为稳定源
+2026-11-04 13:37:57,954 - IPTVCollector - INFO - ✅ 音乐现场 已提升为稳定源
+2026-11-04 13:37:57,956 - IPTVCollector - INFO - ✅ 萧山新闻综合 (720p) [Not 24/7] 已提升为稳定源
+2026-11-04 13:37:57,957 - IPTVCollector - INFO - ✅ 江夏新闻综合 已提升为稳定源
+2026-11-04 13:37:57,959 - IPTVCollector - INFO - ✅ 通海电视台 已提升为稳定源
+2026-11-04 13:37:57,960 - IPTVCollector - INFO - ✅ 安徽卫视 已提升为稳定源
+2026-11-04 13:37:57,962 - IPTVCollector - INFO - ✅ RT Balkan （塞尔维亚语） 已提升为稳定源
+2026-11-04 13:37:57,963 - IPTVCollector - INFO - ✅ Xizang TV Tibetan 已提升为稳定源
+2026-11-04 13:37:57,965 - IPTVCollector - INFO - ✅ 敦化一套 已提升为稳定源
+2026-11-04 13:37:57,966 - IPTVCollector - INFO - ✅ 飞碟之谜01 已提升为稳定源
+2026-11-04 13:37:57,967 - IPTVCollector - INFO - ✅ Dongguan Comprehensive News Channel 已提升为稳定源
+2026-11-04 13:37:57,969 - IPTVCollector - INFO - ✅ 武进生活 已提升为稳定源
+2026-11-04 13:37:57,970 - IPTVCollector - INFO - ✅ 新闻综合 已提升为稳定源
+2026-11-04 13:37:57,972 - IPTVCollector - INFO - ✅ 海南自贸 已提升为稳定源
+2026-11-04 13:37:57,973 - IPTVCollector - INFO - ✅ 海南文旅 已提升为稳定源
+2026-11-04 13:37:57,974 - IPTVCollector - INFO - ✅ 河北影视 已提升为稳定源
+2026-11-04 13:37:57,976 - IPTVCollector - INFO - ✅ 海宁新闻综合 已提升为稳定源
+2026-11-04 13:37:57,977 - IPTVCollector - INFO - ✅ 浙江生活 已提升为稳定源
+2026-11-04 13:37:57,978 - IPTVCollector - INFO - ✅ 荥经综合 已提升为稳定源
+2026-11-04 13:37:57,980 - IPTVCollector - INFO - ✅ 六安公共 已提升为稳定源
+2026-11-04 13:37:57,981 - IPTVCollector - INFO - ✅ 河北公共 已提升为稳定源
+2026-11-04 13:37:57,983 - IPTVCollector - INFO - ✅ Hunan TV 已提升为稳定源
+2026-11-04 13:37:57,984 - IPTVCollector - INFO - ✅ 雅安新闻综合 已提升为稳定源
+2026-11-04 13:37:57,986 - IPTVCollector - INFO - ✅ RT Français 已提升为稳定源
+2026-11-04 13:37:57,987 - IPTVCollector - INFO - ✅ Xinjiang TV 3 已提升为稳定源
+2026-11-04 13:37:57,988 - IPTVCollector - INFO - ==================================================
+阶段2: 从缓存观察候选源
+==================================================
+2026-11-04 13:37:58,009 - IPTVCollector - INFO -   📊 观察进度: 100/207，稳定 0 个
+2026-11-04 13:37:58,020 - IPTVCollector - INFO - ✅ 候选源稳定: Hunan TV (成功率 66.67%, 延迟 1596ms)
+2026-11-04 13:37:58,021 - IPTVCollector - INFO - ✅ 候选源稳定: Zhejiang TV International (成功率 66.67%, 延迟 1065ms)
+2026-11-04 13:37:58,026 - IPTVCollector - INFO -   📊 观察进度: 200/207，稳定 2 个
+2026-11-04 13:37:58,028 - IPTVCollector - INFO - ✅ 观察阶段完成: 2 个源达到稳定标准
+2026-11-04 13:37:58,028 - IPTVCollector - INFO - ==================================================
+阶段3: 提升稳定源
+==================================================
+2026-11-04 13:37:58,030 - IPTVCollector - INFO - ✅ Hunan TV 已提升为稳定源
+2026-11-04 13:37:58,031 - IPTVCollector - INFO - 📌 已提升: Hunan TV
+2026-11-04 13:37:58,031 - IPTVCollector - INFO - ✅ 提升阶段完成: 1 个源被提升
+2026-11-04 13:37:58,031 - IPTVCollector - INFO - 📊 自治模式统计:
+2026-11-04 13:37:58,032 - IPTVCollector - INFO -   候选池总数: 2763, 观察中: 205, 稳定: 2544
+2026-11-04 13:37:58,032 - IPTVCollector - INFO -   本次新提升: 1
+2026-11-04 13:37:58,032 - IPTVCollector - INFO - 🎉 全部完成！
