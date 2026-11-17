@@ -64,7 +64,7 @@ alias_file: config/alias.txt
 demo_file: config/demo.txt
 
 # ========== 代理 ==========
-enable_github_proxy: false
+enable_github_proxy: true
 github_raw_proxies:
   - https://ghproxy.net/
   - https://gh-proxy.19860519.xyz/
