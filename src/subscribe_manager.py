@@ -8,17 +8,20 @@ from src.logger import logger
 
 
 class SubscribeManager:
+    """
+    订阅源管理器：
+    - 优先读取 config/subscribe.txt
+    - 若 subscribe.txt 不存在或为空，回退到 config.yaml 的 source_groups（enabled=true）
+    """
+
     def __init__(self, subscribe_file: Optional[Path] = None):
         self.config = config
         self.subscribe_file = subscribe_file or self.config.subscribe_file
         self._url_pattern = re.compile(r'(https?://[^\s]+)')
-        self._kv_pattern = re.compile(r'(?P<key>\w+)=(?P<value>[^\s]+)')
-    
-    def parse(self) -> List[str]:
+
+    def _parse_subscribe_file(self) -> List[str]:
         if not self.subscribe_file.exists():
-            logger.debug(f"订阅文件不存在: {self.subscribe_file}")
             return []
-        
         urls = []
         with open(self.subscribe_file, 'r', encoding='utf-8') as f:
             for line in f:
@@ -26,15 +29,27 @@ class SubscribeManager:
                 if not line or line.startswith('#'):
                     continue
                 if line.startswith('[') and line.endswith(']'):
-                    continue  # 跳过节标记，后面直接取所有URL
+                    continue
                 match = self._url_pattern.search(line)
                 if match:
                     urls.append(match.group(0))
         return urls
-    
+
+    def parse(self) -> List[str]:
+        """返回所有订阅源 URL（含白名单）"""
+        urls = self._parse_subscribe_file()
+        if urls:
+            logger.info(f"📋 subscribe.txt 提供 {len(urls)} 个源")
+            return urls
+        # 回退到 source_groups
+        group_urls = self.config.get_enabled_group_sources()
+        if group_urls:
+            logger.info(f"📋 source_groups 提供 {len(group_urls)} 个启用源")
+        return group_urls
+
     def get_all_subscribe_urls(self) -> List[str]:
         return self.parse()
-    
+
     def get_whitelist(self) -> List[str]:
         if not self.subscribe_file.exists():
             return []
