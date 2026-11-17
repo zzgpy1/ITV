@@ -31,13 +31,13 @@ class Generator:
         if demo_order is None:
             demo_order = parse_demo_order_with_categories()
 
-        # 1) 别名前置标准化（必须先做，再做分类/匹配）
+        # 1) 别名前置标准化
         channels = self._normalize_with_alias(channels)
 
         # 2) 分类
         categorized = self._categorize_by_demo(channels, demo_order)
 
-        # 3) 生成
+        # 3) 输出
         self._generate_m3u(categorized, output_dir / "tv.m3u")
         self._generate_txt(categorized, output_dir / "tv.txt")
         self._generate_multi_m3u(categorized, output_dir / "tv_multi.m3u")
@@ -76,14 +76,12 @@ class Generator:
         name_lower = channel_name.lower()
         all_set = existing["all_set"]
 
-        # 央视
         for kw in ("cctv", "央视", "中央电视", "cntv", "cgtn"):
             if kw in name_lower:
                 if CCTV_CATEGORY in all_set:
                     return CCTV_CATEGORY
                 break
 
-        # 港澳台
         for kw in ("tvb", "翡翠", "明珠", "凤凰", "无线", "rthk", "hoy", "viu",
                    "东森", "民视", "台视", "华视", "中视", "三立", "纬来", "tvbs",
                    "香港", "澳门", "台湾", "澳视", "八大", "中天"):
@@ -92,12 +90,11 @@ class Generator:
                     return HKMT_CATEGORY
                 break
 
-        # 卫视
         if "卫视" in channel_name:
             if SATELLITE_CATEGORY in all_set:
                 return SATELLITE_CATEGORY
 
-        # 地方频道：复用 demo_filter.detect_province（含城市映射）
+        # 用扩展后的 detect_province（含县市/区映射）
         prov = detect_province(channel_name)
         if prov and prov != "港澳台":
             if prov in existing["province_map"]:
@@ -105,7 +102,6 @@ class Generator:
             if SATELLITE_CATEGORY in all_set:
                 return SATELLITE_CATEGORY
 
-        # 兜底
         if SATELLITE_CATEGORY in all_set:
             return SATELLITE_CATEGORY
         if CCTV_CATEGORY in all_set:
@@ -126,7 +122,7 @@ class Generator:
 
         channel_map = {ch["name"]: ch for ch in channels}
 
-        # 省份分组（用 detect_province，含城市映射）
+        # 按省份分组（用扩展后的 detect_province）
         province_channels: Dict[str, List[Dict]] = {}
         for ch in channels:
             prov = detect_province(ch["name"])
@@ -138,7 +134,7 @@ class Generator:
         matched = set()
         total_matched = 0
 
-        # 第一遍：具体频道名
+        # 第一遍：具体频道名匹配
         for cat, demo_name in demo_order:
             dn = demo_name.strip()
             if not dn or dn.startswith(CATEGORY_PREFIXES):
@@ -151,7 +147,8 @@ class Generator:
                     if name in matched:
                         continue
                     std = self.alias_matcher.normalize(name)
-                    if std == dn or dn in std:
+                    # 关键修复：双向包含
+                    if std == dn or dn in std or std in dn:
                         ch_found = c
                         break
             if ch_found and ch_found["name"] not in matched:
@@ -173,9 +170,10 @@ class Generator:
                         total_matched += 1
                         result[cat].append(ch)
                         added += 1
-                logger.info(f"📌 分类匹配: {dn} -> 新增 {added} 个频道")
+                if added:
+                    logger.info(f"📌 分类匹配: {dn} -> 新增 {added} 个频道")
 
-        # 第三遍：未匹配
+        # 第三遍：未匹配兜底
         unmatched = [ch for ch in channels if ch["name"] not in matched]
         if unmatched:
             unmatched.sort(key=lambda x: x["name"])
@@ -252,12 +250,8 @@ def generate_outputs_from_demo(ordered_channels, demo_order):
     Generator().generate_all(ordered_channels, demo_order)
 
 
-# ---------- 第一段快速产出（新增） ----------
 def quick_generate_from_stable(stable_sources: Dict[str, Dict], demo_order=None) -> int:
-    """
-    仅从数据库稳定源快速生成初版列表。
-    返回生成的频道数。
-    """
+    """从数据库稳定源快速生成初版列表"""
     if not stable_sources:
         return 0
     channels = []
