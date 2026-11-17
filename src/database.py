@@ -11,11 +11,6 @@ class DatabaseCache:
     _instance = None
     _conn = None
 
-    # 黑名单 TTL（小时）：过期后自动失效，允许自愈
-    BLACKLIST_TTL_HOURS = 6
-    # 失败次数阈值：达到此值才真正视为黑名单
-    BLACKLIST_FAIL_THRESHOLD = 3
-
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
@@ -28,13 +23,13 @@ class DatabaseCache:
             config.data_dir.mkdir(parents=True, exist_ok=True)
             self._conn = await aiosqlite.connect(str(config.data_dir / "iptv_cache.db"))
             await self._create_tables()
+            await self._migrate_from_blacklist()
             logger.info(f"✅ 数据库缓存已启用: {config.data_dir / 'iptv_cache.db'}")
         except Exception as e:
             logger.warning(f"⚠️ 数据库初始化失败: {e}")
             self._conn = None
 
     async def _create_tables(self):
-        # 所有表结构
         await self._conn.execute('''
             CREATE TABLE IF NOT EXISTS channel_cache (
                 channel_key TEXT PRIMARY KEY,
@@ -58,12 +53,14 @@ class DatabaseCache:
                 value TEXT
             )
         ''')
+        # 冻结表（替代旧 blacklist）
         await self._conn.execute('''
-            CREATE TABLE IF NOT EXISTS blacklist (
+            CREATE TABLE IF NOT EXISTS frozen_sources (
                 url TEXT PRIMARY KEY,
                 reason TEXT,
-                added_at TIMESTAMP,
-                fail_count INTEGER DEFAULT 1
+                frozen_at TIMESTAMP,
+                retest_after TIMESTAMP,
+                fail_streak INTEGER DEFAULT 1
             )
         ''')
         await self._conn.execute('''
@@ -112,12 +109,34 @@ class DatabaseCache:
                 status TEXT DEFAULT 'active'
             )
         ''')
-        # 索引
         await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_channel_cache_updated ON channel_cache(updated_at)')
         await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_speed_history_key_time ON speed_history(channel_key, timestamp)')
         await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_candidate_status ON candidate_pool(status)')
         await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_stable_channel ON stable_sources(channel_name)')
+        await self._conn.execute('CREATE INDEX IF NOT EXISTS idx_frozen_retest ON frozen_sources(retest_after)')
         await self._conn.commit()
+
+    async def _migrate_from_blacklist(self):
+        """若存在旧 blacklist 表，迁移到 frozen_sources 后删除"""
+        try:
+            cursor = await self._conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='blacklist'"
+            )
+            row = await cursor.fetchone()
+            await cursor.close()
+            if not row:
+                return
+            # 迁移
+            await self._conn.execute('''
+                INSERT OR IGNORE INTO frozen_sources (url, reason, frozen_at, retest_after, fail_streak)
+                SELECT url, COALESCE(reason, 'migrated'), COALESCE(added_at, ?), ?, COALESCE(fail_count, 1)
+                FROM blacklist
+            ''', (datetime.now().isoformat(), datetime.now().isoformat()))
+            await self._conn.execute('DROP TABLE blacklist')
+            await self._conn.commit()
+            logger.info("🔁 已将旧 blacklist 表迁移至 frozen_sources")
+        except Exception as e:
+            logger.warning(f"迁移 blacklist 失败: {e}")
 
     # ------- 原始缓存 -------
     async def get_raw_source(self, url: str) -> Optional[str]:
@@ -160,92 +179,108 @@ class DatabaseCache:
     async def save_speed_results(self, channels: List[Dict]):
         if not self._conn or not channels: return
         now = datetime.now().isoformat()
-        data = []
-        for ch in channels:
-            key = f"{ch['name']}|{ch['url']}"
-            data.append((key, ch.get("name",""), ch.get("url",""), ch.get("latency",9999), ch.get("video_codec",""), now))
+        data = [(f"{ch['name']}|{ch['url']}", ch.get("name",""), ch.get("url",""),
+                 ch.get("latency",9999), ch.get("video_codec",""), now) for ch in channels]
         await self._conn.executemany('''INSERT OR REPLACE INTO channel_cache VALUES (?,?,?,?,?,?)''', data)
         await self._conn.commit()
 
-    # ------- 黑名单（带 TTL + 自动清理 + 失败阈值） -------
-    async def add_to_blacklist(self, url: str, reason: str = "多次失败"):
+    # ------- 冻结机制 -------
+    async def freeze_source(self, url: str, reason: str = "连续失败", fail_streak: int = None):
+        """冻结一个源，按失败次数指数退避计算 retest_after"""
         if not self._conn: return
-        await self._conn.execute(
-            'INSERT OR REPLACE INTO blacklist (url, reason, added_at, fail_count) VALUES (?,?,?,1)',
-            (url, reason, datetime.now().isoformat())
-        )
+        now = datetime.now()
+        if fail_streak is None:
+            cursor = await self._conn.execute('SELECT fail_streak FROM frozen_sources WHERE url = ?', (url,))
+            row = await cursor.fetchone()
+            await cursor.close()
+            fail_streak = (row[0] if row else 0) + 1
+        base = int(config.freeze_retest_hours)
+        max_h = int(config.freeze_retest_max_hours)
+        # 指数退避：2h -> 4h -> 8h ... 封顶 max_h
+        hours = min(base * (2 ** max(0, fail_streak - 1)), max_h)
+        retest_after = (now + timedelta(hours=hours)).isoformat()
+        await self._conn.execute('''
+            INSERT OR REPLACE INTO frozen_sources (url, reason, frozen_at, retest_after, fail_streak)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (url, reason, now.isoformat(), retest_after, fail_streak))
         await self._conn.commit()
 
-    async def is_blacklisted(self, url: str) -> bool:
-        """
-        检查是否在黑名单中：
-        - 超过 BLACKLIST_TTL_HOURS 自动过期，返回 False（并顺手清理记录）
-        - 未达到 BLACKLIST_FAIL_THRESHOLD 失败次数，返回 False
-        """
+    async def unfreeze_source(self, url: str):
+        if not self._conn: return
+        await self._conn.execute('DELETE FROM frozen_sources WHERE url = ?', (url,))
+        await self._conn.commit()
+
+    async def is_frozen(self, url: str) -> bool:
+        """是否处于冻结状态（retest_after 未到）"""
         if not self._conn: return False
-        cursor = await self._conn.execute(
-            'SELECT added_at, fail_count FROM blacklist WHERE url = ?', (url,)
-        )
+        cursor = await self._conn.execute('SELECT retest_after FROM frozen_sources WHERE url = ?', (url,))
         row = await cursor.fetchone()
         await cursor.close()
-        if not row:
-            return False
-
-        added_at_str, fail_count = row[0], row[1]
+        if not row: return False
         try:
-            added_at = datetime.fromisoformat(added_at_str)
+            retest_after = datetime.fromisoformat(row[0])
         except Exception:
             return False
+        return datetime.now() < retest_after
 
-        # 1) 超过 TTL → 自动过期
-        if datetime.now() - added_at > timedelta(hours=self.BLACKLIST_TTL_HOURS):
-            try:
-                await self._conn.execute('DELETE FROM blacklist WHERE url = ?', (url,))
-                await self._conn.commit()
-            except Exception:
-                pass
-            return False
-
-        # 2) 失败次数达到阈值才算真正黑名单
-        if fail_count is not None and fail_count >= self.BLACKLIST_FAIL_THRESHOLD:
-            return True
-
-        return False
+    async def get_sources_to_retest(self, limit: int = 2000) -> List[str]:
+        """获取到期可重测的冻结源 URL 列表"""
+        if not self._conn: return []
+        now = datetime.now().isoformat()
+        cursor = await self._conn.execute(
+            'SELECT url FROM frozen_sources WHERE retest_after <= ? LIMIT ?', (now, limit)
+        )
+        rows = await cursor.fetchall()
+        await cursor.close()
+        return [r[0] for r in rows]
 
     async def increment_fail_count(self, url: str) -> int:
+        """兼容旧接口，返回当前连续失败次数（冻结表内）"""
         if not self._conn: return 0
-        cursor = await self._conn.execute('SELECT fail_count FROM blacklist WHERE url = ?', (url,))
+        cursor = await self._conn.execute('SELECT fail_streak FROM frozen_sources WHERE url = ?', (url,))
         row = await cursor.fetchone()
+        await cursor.close()
         if row:
             new = row[0] + 1
-            await self._conn.execute(
-                'UPDATE blacklist SET fail_count=?, added_at=? WHERE url=?',
-                (new, datetime.now().isoformat(), url)
-            )
-            await self._conn.commit()
+            await self.freeze_source(url, "连续失败", new)
             return new
-        else:
-            await self.add_to_blacklist(url, "首次失败")
-            return 1
+        # 首次失败也写入，用于计数
+        await self.freeze_source(url, "首次失败", 1)
+        return 1
 
-    async def cleanup_blacklist(self) -> int:
-        """清理过期的黑名单记录，返回删除条数"""
+    async def get_frozen_count(self) -> int:
         if not self._conn: return 0
-        cutoff = (datetime.now() - timedelta(hours=self.BLACKLIST_TTL_HOURS)).isoformat()
-        cursor = await self._conn.execute('DELETE FROM blacklist WHERE added_at < ?', (cutoff,))
-        await self._conn.commit()
-        deleted = cursor.rowcount or 0
-        if deleted > 0:
-            logger.info(f"🧹 已清理 {deleted} 条过期黑名单（TTL={self.BLACKLIST_TTL_HOURS}h）")
-        return deleted
-
-    async def get_blacklist_count(self) -> int:
-        """获取当前黑名单总数（用于诊断）"""
-        if not self._conn: return 0
-        cursor = await self._conn.execute('SELECT COUNT(*) FROM blacklist')
+        cursor = await self._conn.execute('SELECT COUNT(*) FROM frozen_sources')
         row = await cursor.fetchone()
         await cursor.close()
         return row[0] if row else 0
+
+    async def cleanup_frozen(self) -> int:
+        """清理 fail_streak 异常且已过期的条目（保留阈值内的）"""
+        if not self._conn: return 0
+        cutoff = (datetime.now() - timedelta(hours=int(config.freeze_retest_max_hours) * 2)).isoformat()
+        cursor = await self._conn.execute(
+            'DELETE FROM frozen_sources WHERE retest_after < ? AND fail_streak < ?',
+            (cutoff, config.max_retry_before_blacklist)
+        )
+        await self._conn.commit()
+        deleted = cursor.rowcount or 0
+        if deleted > 0:
+            logger.info(f"🧹 清理 {deleted} 条彻底失效的冻结源")
+        return deleted
+
+    # 兼容旧方法名
+    async def add_to_blacklist(self, url: str, reason: str = "多次失败"):
+        await self.freeze_source(url, reason)
+
+    async def is_blacklisted(self, url: str) -> bool:
+        return await self.is_frozen(url)
+
+    async def get_blacklist_count(self) -> int:
+        return await self.get_frozen_count()
+
+    async def cleanup_blacklist(self) -> int:
+        return await self.cleanup_frozen()
 
     # ------- 候选池 -------
     async def add_to_candidate(self, channel_key: str, name: str, url: str, latency: int = 0):
@@ -253,7 +288,8 @@ class DatabaseCache:
         await self._conn.execute('''INSERT OR REPLACE INTO candidate_pool
                                     (channel_key, name, url, discovered_at, last_check, avg_latency, status)
                                     VALUES (?,?,?,?,?,?,?)''',
-                                 (channel_key, name, url, datetime.now().isoformat(), datetime.now().isoformat(), latency, 'observing'))
+                                 (channel_key, name, url, datetime.now().isoformat(),
+                                  datetime.now().isoformat(), latency, 'observing'))
         await self._conn.commit()
 
     async def update_candidate_latency(self, channel_key: str, latency: int, success: bool):
@@ -349,8 +385,7 @@ class DatabaseCache:
 
     async def update_stable_status(self, channel_name: str, fail_count: int = None, status: str = None):
         if not self._conn: return
-        updates = []
-        params = []
+        updates, params = [], []
         if fail_count is not None:
             updates.append("fail_count=?")
             params.append(fail_count)
