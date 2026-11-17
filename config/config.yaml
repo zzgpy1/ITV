@@ -7,10 +7,11 @@ output_dir: output
 max_workers: 20
 timeout: 8
 http_timeout: 8
+fetch_timeout: 20            # 单源拉取超时（秒），新增
 
 # ========== ffmpeg ==========
 ffmpeg_enable: true
-ffmpeg_mode: deep          # deep / quick / off
+ffmpeg_mode: deep
 ffprobe_cache_hours: 168
 
 # ========== 缓存 ==========
@@ -27,46 +28,33 @@ enable_incremental_fetch: true
 enable_json_output: true
 enable_lite_version: true
 enable_epg_output: true
-demo_match_mode: contains   # contains / exact
+demo_match_mode: contains
 
 # ========== 合并 ==========
 max_sources_per_channel: 3
 
-# ========== 测速与黑名单 ==========
-max_retry_before_blacklist: 2
+# ========== 测速与黑名单（冻结机制） ==========
+max_retry_before_blacklist: 3        # 连续失败 N 次触发冻结
+freeze_retest_hours: 2                # 冻结后首次重测间隔（小时）
+freeze_retest_max_hours: 24           # 冻结重测最大间隔（小时）
 slow_speed_threshold: 3000
 download_chunk_size: 262144
 
+# ========== Host 缓存 ==========
+host_cache_ttl_seconds: 300          # Host 缓存有效期（秒）
+
+# ========== 最终校验 ==========
+final_verify_enable: true            # 最终 HEAD 校验开关
+
 # ========== 自治模式 ==========
 autonomous_mode: true
-auto_update_stable: true
-auto_replace_failed: true
-quality_check_interval: 24
-candidate_observation_hours: 24
 candidate_min_success: 3
 candidate_min_success_rate: 0.5
 candidate_max_latency: 3000
-auto_promote_threshold: 3
-
-# ========== 健康预测 ==========
-health_history_days: 30
-predict_threshold: 0.6
 
 # ========== 固定源优化 ==========
 enable_fixed_optimization: true
 fixed_optimization_threshold: 200
-
-# ========== RTMP 推流 ==========
-open_rtmp: false          # 默认关闭，需要时改为 true
-nginx_http_port: 8080
-nginx_rtmp_port: 1935
-rtmp_idle_timeout: 300
-rtmp_max_streams: 10
-rtmp_transcode_mode: copy
-
-# ========== EPG ==========
-open_epg: true
-open_subscribe_epg: true
 
 # ========== 订阅源 ==========
 subscribe_file: config/subscribe.txt
@@ -83,16 +71,29 @@ github_raw_proxies:
   - https://raw.kkgithub.com/
 github_proxy_timeout: 15
 
-# ========== IPTV 源列表（如果 subscribe.txt 存在，则忽略此项） ==========
-raw_sources:
-  - https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/cn.m3u
-  - https://raw.githubusercontent.com/iptv-org/iptv/gh-pages/countries/cn.m3u
-  - https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.txt
-  - https://raw.githubusercontent.com/zzgpy1/Collect-IPTV/main/best_sorted.m3u
-  - https://raw.githubusercontent.com/zzgpy1/ipv6-iptv/master/tv/iptv4.txt
-  - https://raw.githubusercontent.com/CCSH/IPTV/refs/heads/main/live.txt
-  - https://raw.githubusercontent.com/kakaxi-1/IPTV/main/iptv.txt
-  - https://raw.githubusercontent.com/zzgpy1/iptv-pro/main/iptv.txt
-direct_sources:
-  - https://tv.19860519.xyz/xymm
-  - https://iptv.19860519.xyz/result.txt
+# ========== 源分组（新增） ==========
+# 若 subscribe.txt 存在且非空，则 subscribe.txt 中的源作为 core 组使用；
+# 若 subscribe.txt 不存在或为空，则使用下方 source_groups 的配置
+source_groups:
+  core:
+    enabled: true
+    timeout: 20
+    sources:
+      - https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/cn.m3u
+      - https://raw.githubusercontent.com/iptv-org/iptv/gh-pages/countries/cn.m3u
+      - https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.txt
+      - https://raw.githubusercontent.com/zzgpy1/Collect-IPTV/main/best_sorted.m3u
+      - https://raw.githubusercontent.com/zzgpy1/ipv6-iptv/master/tv/iptv4.txt
+      - https://raw.githubusercontent.com/kakaxi-1/IPTV/main/iptv.txt
+      - https://raw.githubusercontent.com/zzgpy1/iptv-pro/main/iptv.txt
+  local:
+    enabled: true               # 默认关闭，需要地方台时改为 true
+    timeout: 20
+    sources:
+      - https://raw.githubusercontent.com/CCSH/IPTV/refs/heads/main/live.txt
+  experimental:
+    enabled: true
+    timeout: 20
+    sources:
+      - https://tv.19860519.xyz/xymm
+      - https://iptv.19860519.xyz/result.txt
