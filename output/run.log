@@ -25289,3 +25289,192 @@
 2026-11-17 15:19:11,174 - IPTVCollector - INFO -   候选池总数: 3201, 观察中: 343, 稳定: 2844
 2026-11-17 15:19:11,174 - IPTVCollector - INFO -   本次新提升: 1
 2026-11-17 15:19:11,174 - IPTVCollector - INFO - 🎉 全部完成！
+2026-11-18 00:16:16,581 - IPTVCollector - INFO - 🚀 IPTV 智能整理平台启动
+2026-11-18 00:16:16,583 - IPTVCollector - INFO - ✅ 数据库缓存已启用: data/iptv_cache.db
+2026-11-18 00:16:16,583 - IPTVCollector - INFO - ❄️ 当前冻结源: 855
+2026-11-18 00:16:16,626 - IPTVCollector - INFO - 📌 CCTV-1 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,627 - IPTVCollector - INFO - 📌 CCTV-2 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,628 - IPTVCollector - INFO - 📌 CCTV-3 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,629 - IPTVCollector - INFO - 📌 CCTV-4 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,630 - IPTVCollector - INFO - 📌 CCTV-5 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,631 - IPTVCollector - INFO - 📌 CCTV-5+ 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,632 - IPTVCollector - INFO - 📌 CCTV-6 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,632 - IPTVCollector - INFO - 📌 CCTV-7 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,635 - IPTVCollector - INFO - 📌 CCTV-8 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,636 - IPTVCollector - INFO - 📌 CCTV-9 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,637 - IPTVCollector - INFO - 📌 CCTV-10 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,638 - IPTVCollector - INFO - 📌 CCTV-11 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,639 - IPTVCollector - INFO - 📌 CCTV-12 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,639 - IPTVCollector - INFO - 📌 CCTV-13 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,640 - IPTVCollector - INFO - 📌 CCTV-14 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,641 - IPTVCollector - INFO - 📌 CCTV-15 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,642 - IPTVCollector - INFO - 📌 CCTV-16 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,643 - IPTVCollector - INFO - 📌 CCTV-17 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,644 - IPTVCollector - INFO - 📌 CCTV4欧洲 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,645 - IPTVCollector - INFO - 📌 CCTV4美洲 已设为固定源 (auto_optimize=True)
+2026-11-18 00:16:16,645 - IPTVCollector - INFO - 📌 固定源已同步
+2026-11-18 00:16:16,646 - IPTVCollector - INFO - 📋 从 demo.txt 解析到 3541 个有序频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO - 📊 Demo 匹配: 263，未匹配: 211（其中跳过 72），最终输出: 402
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    📺央视频道: 31 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    📡卫视频道: 38 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️上海频道: 6 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️江苏频道: 21 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️浙江频道: 99 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️安徽频道: 14 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️福建频道: 12 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️山东频道: 6 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️重庆频道: 9 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️四川频道: 12 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️贵州频道: 2 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️云南频道: 4 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️陕西频道: 4 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️甘肃频道: 4 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️青海频道: 3 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️新疆频道: 16 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️广东频道: 15 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️广西频道: 4 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️海南频道: 3 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️北京频道: 1 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️天津频道: 1 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️河北频道: 19 个频道
+2026-11-18 00:16:19,291 - IPTVCollector - INFO -    ☘️山西频道: 10 个频道
+2026-11-18 00:16:19,292 - IPTVCollector - INFO -    ☘️内蒙古频道: 3 个频道
+2026-11-18 00:16:19,292 - IPTVCollector - INFO -    ☘️吉林频道: 37 个频道
+2026-11-18 00:16:19,292 - IPTVCollector - INFO -    ☘️黑龙江频道: 11 个频道
+2026-11-18 00:16:19,292 - IPTVCollector - INFO -    ☘️河南频道: 3 个频道
+2026-11-18 00:16:19,292 - IPTVCollector - INFO -    ☘️湖北频道: 5 个频道
+2026-11-18 00:16:19,292 - IPTVCollector - INFO -    ☘️湖南频道: 2 个频道
+2026-11-18 00:16:19,292 - IPTVCollector - INFO -    🌊港·澳·台: 7 个频道
+2026-11-18 00:16:19,292 - IPTVCollector - INFO - ✅ M3U 已生成: output/tv.m3u (402)
+2026-11-18 00:16:19,293 - IPTVCollector - INFO - ✅ TXT 已生成: output/tv.txt
+2026-11-18 00:16:19,293 - IPTVCollector - INFO - ✅ 多源 M3U 已生成: output/tv_multi.m3u
+2026-11-18 00:16:19,297 - IPTVCollector - INFO - ✅ JSON 已生成: output/channels.json
+2026-11-18 00:16:19,297 - IPTVCollector - INFO - ✅ 所有输出文件已生成
+2026-11-18 00:16:19,297 - IPTVCollector - INFO - ⚡ 缓存初版已生成: 474 个频道
+2026-11-18 00:16:19,297 - IPTVCollector - INFO - 📋 subscribe.txt 提供 12 个源
+2026-11-18 00:16:19,298 - IPTVCollector - INFO - 📋 使用 12 个源
+2026-11-18 00:16:19,301 - IPTVCollector - INFO - 📥 拉取完成: 12/12 个源成功
+2026-11-18 00:16:19,437 - IPTVCollector - INFO - ❄️ 冻结源 68 个跳过；解冻重测 500 个；冻结表总数 855
+2026-11-18 00:18:32,588 - IPTVCollector - INFO - 🔎 最终校验剔除 8 个 Host 缓存假阳性频道
+2026-11-18 00:18:32,588 - IPTVCollector - INFO - 📊 测速完成，有效频道: 549/1362（冻结跳过 68，解冻重测 500）
+2026-11-18 00:18:32,588 - IPTVCollector - INFO - 📊 通过测速: 549
+2026-11-18 00:18:36,839 - IPTVCollector - INFO - 🔍 ffmpeg 深度验证: 1 个需验证，532 个来自缓存/HTTP
+2026-11-18 00:18:36,943 - IPTVCollector - INFO - ✅ ffmpeg 验证完成: 通过 532/549 个频道
+2026-11-18 00:18:36,943 - IPTVCollector - INFO - 📊 通过ffmpeg: 532
+2026-11-18 00:18:36,952 - IPTVCollector - INFO - 📦 缓存兜底：从稳定源补充 166 个频道
+2026-11-18 00:18:36,953 - IPTVCollector - INFO - 📊 合并完成: 585 个频道（固定 310，缓存兜底 166）
+2026-11-18 00:18:36,953 - IPTVCollector - INFO - 📊 合并: 585
+2026-11-18 00:18:36,979 - IPTVCollector - INFO - 📊 黑名单过滤后: 544
+2026-11-18 00:18:39,849 - IPTVCollector - INFO - 📊 Demo 匹配: 291，未匹配: 253（其中跳过 96），最终输出: 448
+2026-11-18 00:18:39,849 - IPTVCollector - INFO -    📺央视频道: 39 个频道
+2026-11-18 00:18:39,849 - IPTVCollector - INFO -    📡卫视频道: 37 个频道
+2026-11-18 00:18:39,849 - IPTVCollector - INFO -    ☘️上海频道: 6 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️江苏频道: 27 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️浙江频道: 104 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️安徽频道: 14 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️福建频道: 12 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️山东频道: 6 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️重庆频道: 9 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️四川频道: 13 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️贵州频道: 2 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️云南频道: 4 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️陕西频道: 4 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️甘肃频道: 4 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️青海频道: 3 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️新疆频道: 16 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️广东频道: 16 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️广西频道: 4 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️海南频道: 3 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️北京频道: 1 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️天津频道: 1 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️河北频道: 21 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️山西频道: 10 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️内蒙古频道: 3 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️吉林频道: 45 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️黑龙江频道: 14 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️河南频道: 5 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️湖北频道: 5 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    ☘️湖南频道: 3 个频道
+2026-11-18 00:18:39,850 - IPTVCollector - INFO -    🌊港·澳·台: 17 个频道
+2026-11-18 00:18:39,851 - IPTVCollector - INFO - ✅ M3U 已生成: output/tv.m3u (448)
+2026-11-18 00:18:39,852 - IPTVCollector - INFO - ✅ TXT 已生成: output/tv.txt
+2026-11-18 00:18:39,852 - IPTVCollector - INFO - ✅ 多源 M3U 已生成: output/tv_multi.m3u
+2026-11-18 00:18:39,857 - IPTVCollector - INFO - ✅ JSON 已生成: output/channels.json
+2026-11-18 00:18:39,857 - IPTVCollector - INFO - ✅ 所有输出文件已生成
+2026-11-18 00:18:39,857 - IPTVCollector - INFO - ✅ 最终输出已生成
+2026-11-18 00:18:39,857 - IPTVCollector - INFO - 🚀 IPTV 自治系统启动
+2026-11-18 00:18:39,858 - IPTVCollector - INFO - ⏭️ 跳过发现阶段
+2026-11-18 00:18:39,859 - IPTVCollector - INFO - ==================================================
+阶段1.5: 测速候选源
+==================================================
+2026-11-18 00:18:39,859 - IPTVCollector - INFO - 📊 候选池中有 339 个源需要测速
+2026-11-18 00:18:39,859 - IPTVCollector - INFO - 🔍 开始测速 339 个候选源...
+2026-11-18 00:18:39,866 - IPTVCollector - INFO - ❄️ 冻结源 6 个跳过；解冻重测 79 个；冻结表总数 859
+2026-11-18 00:18:53,117 - IPTVCollector - INFO - 🔎 最终校验剔除 11 个 Host 缓存假阳性频道
+2026-11-18 00:18:53,117 - IPTVCollector - INFO - 📊 测速完成，有效频道: 90/118（冻结跳过 6，解冻重测 79）
+2026-11-18 00:18:53,117 - IPTVCollector - INFO - ✅ 测速完成: 90/339 个有效
+2026-11-18 00:18:53,117 - IPTVCollector - INFO - 📌 提升 46 个频道的稳定源...
+2026-11-18 00:18:53,119 - IPTVCollector - INFO - ✅ retest 已提升为稳定源
+2026-11-18 00:18:53,120 - IPTVCollector - INFO - ✅ CCTV-8 已提升为稳定源
+2026-11-18 00:18:53,121 - IPTVCollector - INFO - ✅ 河北4K 已提升为稳定源
+2026-11-18 00:18:53,122 - IPTVCollector - INFO - ✅ 河北 已提升为稳定源
+2026-11-18 00:18:53,123 - IPTVCollector - INFO - ✅ 西藏卫视 已提升为稳定源
+2026-11-18 00:18:53,124 - IPTVCollector - INFO - ✅ CHC电影 已提升为稳定源
+2026-11-18 00:18:53,125 - IPTVCollector - INFO - ✅ 玛纳斯 已提升为稳定源
+2026-11-18 00:18:53,126 - IPTVCollector - INFO - ✅ 甘南县综合 已提升为稳定源
+2026-11-18 00:18:53,127 - IPTVCollector - INFO - ✅ Harbin Comprehensive News Channel 已提升为稳定源
+2026-11-18 00:18:53,128 - IPTVCollector - INFO - ✅ CCTV-3 已提升为稳定源
+2026-11-18 00:18:53,129 - IPTVCollector - INFO - ✅ 天津卫视 已提升为稳定源
+2026-11-18 00:18:53,130 - IPTVCollector - INFO - ✅ Chuxiong News Channel [Not 24/7] 已提升为稳定源
+2026-11-18 00:18:53,133 - IPTVCollector - INFO - ✅ Xinjiang TV 8 已提升为稳定源
+2026-11-18 00:18:53,137 - IPTVCollector - INFO - ✅ Xinjiang TV 5 已提升为稳定源
+2026-11-18 00:18:53,138 - IPTVCollector - INFO - ✅ 上虞文化影院 已提升为稳定源
+2026-11-18 00:18:53,139 - IPTVCollector - INFO - ✅ 上虞新商都 已提升为稳定源
+2026-11-18 00:18:53,140 - IPTVCollector - INFO - ✅ 东阳影视生活 已提升为稳定源
+2026-11-18 00:18:53,141 - IPTVCollector - INFO - ✅ 普陀电视台 已提升为稳定源
+2026-11-18 00:18:53,142 - IPTVCollector - INFO - ✅ 上虞新闻综合 已提升为稳定源
+2026-11-18 00:18:53,143 - IPTVCollector - INFO - ✅ 飞碟之谜01 已提升为稳定源
+2026-11-18 00:18:53,144 - IPTVCollector - INFO - ✅ 广德生活 已提升为稳定源
+2026-11-18 00:18:53,145 - IPTVCollector - INFO - ✅ Xinjiang TV 2 已提升为稳定源
+2026-11-18 00:18:53,146 - IPTVCollector - INFO - ✅ 奎屯哈萨克语 已提升为稳定源
+2026-11-18 00:18:53,147 - IPTVCollector - INFO - ✅ 荣昌综合 [Not 24/7] 已提升为稳定源
+2026-11-18 00:18:53,148 - IPTVCollector - INFO - ✅ 湖州新闻综合 已提升为稳定源
+2026-11-18 00:18:53,149 - IPTVCollector - INFO - ✅ 兵团五师双河影 已提升为稳定源
+2026-11-18 00:18:53,150 - IPTVCollector - INFO - ✅ 亳州农村 已提升为稳定源
+2026-11-18 00:18:53,151 - IPTVCollector - INFO - ✅ Lanzhou Comprehensive News Channel 已提升为稳定源
+2026-11-18 00:18:53,152 - IPTVCollector - INFO - ✅ Hunan Economy Channel 已提升为稳定源
+2026-11-18 00:18:53,153 - IPTVCollector - INFO - ✅ 武进生活 已提升为稳定源
+2026-11-18 00:18:53,154 - IPTVCollector - INFO - ✅ 西宁新闻综合 已提升为稳定源
+2026-11-18 00:18:53,155 - IPTVCollector - INFO - ✅ 新闻综合 已提升为稳定源
+2026-11-18 00:18:53,156 - IPTVCollector - INFO - ✅ 萧山生活 已提升为稳定源
+2026-11-18 00:18:53,157 - IPTVCollector - INFO - ✅ 洞头综合 已提升为稳定源
+2026-11-18 00:18:53,158 - IPTVCollector - INFO - ✅ 靖宇综合 已提升为稳定源
+2026-11-18 00:18:53,159 - IPTVCollector - INFO - ✅ 东莞新闻综合 已提升为稳定源
+2026-11-18 00:18:53,159 - IPTVCollector - INFO - ✅ 海宁新闻综合 已提升为稳定源
+2026-11-18 00:18:53,160 - IPTVCollector - INFO - ✅ 浙江生活 已提升为稳定源
+2026-11-18 00:18:53,161 - IPTVCollector - INFO - ✅ 长沙新闻综合 已提升为稳定源
+2026-11-18 00:18:53,162 - IPTVCollector - INFO - ✅ 河北都市 已提升为稳定源
+2026-11-18 00:18:53,163 - IPTVCollector - INFO - ✅ 河北经济 已提升为稳定源
+2026-11-18 00:18:53,164 - IPTVCollector - INFO - ✅ 河北少儿 已提升为稳定源
+2026-11-18 00:18:53,165 - IPTVCollector - INFO - ✅ 河北影视 已提升为稳定源
+2026-11-18 00:18:53,166 - IPTVCollector - INFO - ✅ 河北公共 已提升为稳定源
+2026-11-18 00:18:53,167 - IPTVCollector - INFO - ✅ 七台河新闻综合 已提升为稳定源
+2026-11-18 00:18:53,168 - IPTVCollector - INFO - ✅ 井研综合 已提升为稳定源
+2026-11-18 00:18:53,168 - IPTVCollector - INFO - ==================================================
+阶段2: 从缓存观察候选源
+==================================================
+2026-11-18 00:18:53,181 - IPTVCollector - INFO -   📊 观察进度: 100/339，稳定 0 个
+2026-11-18 00:18:53,188 - IPTVCollector - INFO -   📊 观察进度: 200/339，稳定 0 个
+2026-11-18 00:18:53,195 - IPTVCollector - INFO - ✅ 候选源稳定: 井研综合 (成功率 66.67%, 延迟 2445ms)
+2026-11-18 00:18:53,195 - IPTVCollector - INFO -   📊 观察进度: 300/339，稳定 1 个
+2026-11-18 00:18:53,198 - IPTVCollector - INFO - ✅ 观察阶段完成: 1 个源达到稳定标准
+2026-11-18 00:18:53,198 - IPTVCollector - INFO - ==================================================
+阶段3: 提升稳定源
+==================================================
+2026-11-18 00:18:53,199 - IPTVCollector - INFO - ✅ 井研综合 已提升为稳定源
+2026-11-18 00:18:53,200 - IPTVCollector - INFO - 📌 已提升: 井研综合
+2026-11-18 00:18:53,200 - IPTVCollector - INFO - ✅ 提升阶段完成: 1 个源被提升
+2026-11-18 00:18:53,200 - IPTVCollector - INFO - 📊 自治模式统计:
+2026-11-18 00:18:53,201 - IPTVCollector - INFO -   候选池总数: 3201, 观察中: 338, 稳定: 2849
+2026-11-18 00:18:53,201 - IPTVCollector - INFO -   本次新提升: 1
+2026-11-18 00:18:53,201 - IPTVCollector - INFO - 🎉 全部完成！
